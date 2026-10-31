@@ -623,7 +623,7 @@ def evaluate_interaction_aware_ppo(
             output_root=output_root,
             training_timesteps=config.policy.total_timesteps,
             episode_id=ep,
-            evaluation_mode="deterministic_evaluation",
+            evaluation_mode="deterministic_eval",
         )
 
         env = DOIMTrafficEnv(

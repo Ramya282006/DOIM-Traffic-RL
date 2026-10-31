@@ -179,13 +179,21 @@ class DOIMTrafficEnv(gym.Env):
 
         if self.enforce_safety_shield:
             phase_counts = {}
+            tls_programs = {}
             for tid in self.controllable_tls:
                 logics = traci.trafficlight.getAllProgramLogics(tid)
-                phase_counts[tid] = len(logics[0].phases) if logics else 4
+                if logics:
+                    phase_counts[tid] = len(logics[0].phases)
+                    tls_programs[tid] = [
+                        {"duration": p.duration, "state": p.state} for p in logics[0].phases
+                    ]
+                else:
+                    phase_counts[tid] = 4
                 traci.trafficlight.setPhaseDuration(tid, 999999)
             self.safety_shield = TrafficSafetyShield(
                 controllable_tls_ids=self.controllable_tls,
                 tls_phase_counts=phase_counts,
+                tls_programs=tls_programs,
                 min_green=10,
                 max_green=60,
                 yellow_duration=3,

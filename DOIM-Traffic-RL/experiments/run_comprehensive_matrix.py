@@ -57,7 +57,7 @@ def run_experiment_matrix(
                 eval_episodes=eval_episodes,
             )
 
-            # 2. Fixed-Time Baseline
+            # 2. Fixed-Time Baseline (Rule-based non-learning controller)
             print("--- Running Fixed-Time Baseline ---")
             run_fixed_time_experiment(
                 scenario_override=scenario,
@@ -65,6 +65,17 @@ def run_experiment_matrix(
                 seed=seed,
                 output_root=output_root,
             )
+            if eval_episodes > 0:
+                from baselines.fixed_time.fixed_time_controller import evaluate_fixed_time
+                print("--- Evaluating Fixed-Time Baseline Deterministically ---")
+                evaluate_fixed_time(
+                    scenario_override=scenario,
+                    n_episodes=eval_episodes,
+                    eval_seed=seed + 1000,
+                    train_seed=seed,
+                    max_steps_per_episode=timesteps,
+                    output_root=output_root,
+                )
 
             # 3. Fixed-Weight PPO Baseline
             print("--- Running Fixed-Weight PPO Baseline ---")
@@ -72,6 +83,7 @@ def run_experiment_matrix(
                 scenario_override=scenario,
                 total_timesteps=timesteps,
                 seed=seed,
+                eval_episodes=eval_episodes,
                 output_root=output_root,
             )
 
@@ -81,6 +93,7 @@ def run_experiment_matrix(
                 scenario_override=scenario,
                 total_timesteps=timesteps,
                 seed=seed,
+                eval_episodes=eval_episodes,
                 output_root=output_root,
             )
 
@@ -114,7 +127,7 @@ def run_experiment_matrix(
     print(f"ALL EXPERIMENTS COMPLETED IN {elapsed:.1f}s! RUNNING STATISTICAL ANALYSIS...")
     print("=" * 80)
 
-    analyzer = StatisticalAnalyzer(runs_dir=output_root)
+    analyzer = StatisticalAnalyzer(runs_root=output_root)
     analyzer.export_summary_tables()
 
     plotter = PublicationPlotGenerator()

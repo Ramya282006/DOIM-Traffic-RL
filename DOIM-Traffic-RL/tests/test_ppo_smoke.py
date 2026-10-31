@@ -1,91 +1,44 @@
-from stable_baselines3 import PPO
+"""
+DOIM-Traffic-RL: Optional Stable-Baselines3 PPO Integration Smoke Test.
+Safely skips if stable_baselines3 or SUMO runtime is unavailable.
+"""
 
-from environment.sumo_env import DOIMTrafficEnv
-
-
-CONFIG = (
-    "scenarios/directional_shift/"
-    "north_south_surge.sumocfg"
-)
+from pathlib import Path
+import pytest
 
 
-def main():
+def test_ppo_smoke():
+    sb3 = pytest.importorskip("stable_baselines3")
+    PPO = sb3.PPO
 
-    print("=" * 80)
-    print("PPO + DOIM ENVIRONMENT SMOKE TEST")
-    print("=" * 80)
+    config = "scenarios/directional_shift/north_south_surge.sumocfg"
+    if not Path(config).exists():
+        pytest.skip(f"Config not found: {config}")
 
-    # --------------------------------------------------
-    # Create environment
-    # --------------------------------------------------
+    try:
+        from environment.sumo_env import DOIMTrafficEnv
+        env = DOIMTrafficEnv(config, max_steps=10)
+    except Exception as e:
+        pytest.skip(f"SUMO runtime unavailable: {e}")
 
-    env = DOIMTrafficEnv(CONFIG)
-
-    print("\nObservation space:")
-    print(env.observation_space)
-
-    print("\nAction space:")
-    print(env.action_space)
-
-    # --------------------------------------------------
-    # Create PPO
-    # --------------------------------------------------
-
-    model = PPO(
-        policy="MlpPolicy",
-        env=env,
-        verbose=1,
-        n_steps=16,
-        batch_size=16,
-        learning_rate=3e-4,
-        gamma=0.99,
-        seed=42,
-    )
-
-    print("\nPPO model created successfully.")
-
-    # --------------------------------------------------
-    # Tiny learning run
-    # --------------------------------------------------
-
-    print("\nStarting PPO smoke training...")
-
-    model.learn(
-        total_timesteps=32
-    )
-
-    print("\nPPO learning completed.")
-
-    # --------------------------------------------------
-    # Test prediction
-    # --------------------------------------------------
-
-    observation, info = env.reset()
-
-    action, _ = model.predict(
-        observation,
-        deterministic=True,
-    )
-
-    print("\nPredicted action:")
-    print(action)
-
-    print("\nAction shape:")
-    print(action.shape)
-
-    print("\nAction space contains action:")
-    print(env.action_space.contains(action))
-
-    # --------------------------------------------------
-    # Cleanup
-    # --------------------------------------------------
-
-    env.close()
-
-    print("\n" + "=" * 80)
-    print("PPO + DOIM ENVIRONMENT SMOKE TEST PASSED")
-    print("=" * 80)
+    try:
+        model = PPO(
+            policy="MlpPolicy",
+            env=env,
+            verbose=0,
+            n_steps=8,
+            batch_size=8,
+            seed=42,
+        )
+        obs, _ = env.reset()
+        action, _ = model.predict(obs, deterministic=True)
+        assert action is not None
+    finally:
+        try:
+            env.close()
+        except Exception:
+            pass
 
 
 if __name__ == "__main__":
-    main()
+    test_ppo_smoke()

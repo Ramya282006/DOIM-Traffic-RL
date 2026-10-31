@@ -1,0 +1,451 @@
+{
+  "summary_counts": {
+    "VALID": 0,
+    "LEGACY_VALID": 44,
+    "INCOMPLETE": 4,
+    "INVALID": 1
+  },
+  "audit_records": [
+    {
+      "dir": "DOIM_no_interaction_north_south_surge_s123_20261031_151928",
+      "status": "LEGACY_VALID",
+      "reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "algorithm": "DOIM_no_interaction",
+      "scenario": "north_south_surge",
+      "train_seed": 123,
+      "timesteps": 128
+    },
+    {
+      "dir": "DOIM_no_interaction_north_south_surge_s2024_20261031_170430",
+      "status": "LEGACY_VALID",
+      "reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "algorithm": "DOIM_no_interaction",
+      "scenario": "north_south_surge",
+      "train_seed": 2024,
+      "timesteps": 128
+    },
+    {
+      "dir": "DOIM_no_interaction_north_south_surge_s42_20261031_151836",
+      "status": "LEGACY_VALID",
+      "reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "algorithm": "DOIM_no_interaction",
+      "scenario": "north_south_surge",
+      "train_seed": 42,
+      "timesteps": 128
+    },
+    {
+      "dir": "DOIM_no_interaction_north_south_surge_s456_20261031_170214",
+      "status": "LEGACY_VALID",
+      "reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "algorithm": "DOIM_no_interaction",
+      "scenario": "north_south_surge",
+      "train_seed": 456,
+      "timesteps": 128
+    },
+    {
+      "dir": "DOIM_no_interaction_north_south_surge_s789_20261031_170326",
+      "status": "LEGACY_VALID",
+      "reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "algorithm": "DOIM_no_interaction",
+      "scenario": "north_south_surge",
+      "train_seed": 789,
+      "timesteps": 128
+    },
+    {
+      "dir": "DOIM_no_interaction_rush_hour_s42_20261031_170647",
+      "status": "LEGACY_VALID",
+      "reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "algorithm": "DOIM_no_interaction",
+      "scenario": "rush_hour",
+      "train_seed": 42,
+      "timesteps": 128
+    },
+    {
+      "dir": "DOIM_rolling_pearson_north_south_surge_s123_20261031_151937",
+      "status": "LEGACY_VALID",
+      "reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "algorithm": "DOIM_rolling_pearson",
+      "scenario": "north_south_surge",
+      "train_seed": 123,
+      "timesteps": 128
+    },
+    {
+      "dir": "DOIM_rolling_pearson_north_south_surge_s2024_20261031_170441",
+      "status": "LEGACY_VALID",
+      "reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "algorithm": "DOIM_rolling_pearson",
+      "scenario": "north_south_surge",
+      "train_seed": 2024,
+      "timesteps": 128
+    },
+    {
+      "dir": "DOIM_rolling_pearson_north_south_surge_s42_20261031_151845",
+      "status": "LEGACY_VALID",
+      "reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "algorithm": "DOIM_rolling_pearson",
+      "scenario": "north_south_surge",
+      "train_seed": 42,
+      "timesteps": 128
+    },
+    {
+      "dir": "DOIM_rolling_pearson_north_south_surge_s456_20261031_170229",
+      "status": "LEGACY_VALID",
+      "reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "algorithm": "DOIM_rolling_pearson",
+      "scenario": "north_south_surge",
+      "train_seed": 456,
+      "timesteps": 128
+    },
+    {
+      "dir": "DOIM_rolling_pearson_north_south_surge_s789_20261031_170337",
+      "status": "LEGACY_VALID",
+      "reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "algorithm": "DOIM_rolling_pearson",
+      "scenario": "north_south_surge",
+      "train_seed": 789,
+      "timesteps": 128
+    },
+    {
+      "dir": "DOIM_rolling_pearson_rush_hour_s42_20261031_170702",
+      "status": "LEGACY_VALID",
+      "reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "algorithm": "DOIM_rolling_pearson",
+      "scenario": "rush_hour",
+      "train_seed": 42,
+      "timesteps": 128
+    },
+    {
+      "dir": "DOIM_SMOKE_directional_shift_s42_20261031_144955",
+      "status": "LEGACY_VALID",
+      "reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "algorithm": "DOIM_SMOKE",
+      "scenario": "directional_shift",
+      "train_seed": 42,
+      "timesteps": 30
+    },
+    {
+      "dir": "DOIM_SMOKE_directional_shift_s42_20261031_145037",
+      "status": "LEGACY_VALID",
+      "reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "algorithm": "DOIM_SMOKE",
+      "scenario": "directional_shift",
+      "train_seed": 42,
+      "timesteps": 30
+    },
+    {
+      "dir": "Fixed_Time_directional_shift_north_south_s42_20261031_150907",
+      "status": "LEGACY_VALID",
+      "reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "algorithm": "Fixed_Time",
+      "scenario": "directional_shift_north_south",
+      "train_seed": 42,
+      "timesteps": 128
+    },
+    {
+      "dir": "Fixed_Time_north_south_surge_s123_20261031_151903",
+      "status": "LEGACY_VALID",
+      "reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "algorithm": "Fixed_Time",
+      "scenario": "north_south_surge",
+      "train_seed": 123,
+      "timesteps": 128
+    },
+    {
+      "dir": "Fixed_Time_north_south_surge_s2024_20261031_170400",
+      "status": "LEGACY_VALID",
+      "reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "algorithm": "Fixed_Time",
+      "scenario": "north_south_surge",
+      "train_seed": 2024,
+      "timesteps": 128
+    },
+    {
+      "dir": "Fixed_Time_north_south_surge_s42_20261031_151810",
+      "status": "LEGACY_VALID",
+      "reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "algorithm": "Fixed_Time",
+      "scenario": "north_south_surge",
+      "train_seed": 42,
+      "timesteps": 128
+    },
+    {
+      "dir": "Fixed_Time_north_south_surge_s456_20261031_170138",
+      "status": "LEGACY_VALID",
+      "reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "algorithm": "Fixed_Time",
+      "scenario": "north_south_surge",
+      "train_seed": 456,
+      "timesteps": 128
+    },
+    {
+      "dir": "Fixed_Time_north_south_surge_s789_20261031_170256",
+      "status": "LEGACY_VALID",
+      "reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "algorithm": "Fixed_Time",
+      "scenario": "north_south_surge",
+      "train_seed": 789,
+      "timesteps": 128
+    },
+    {
+      "dir": "Fixed_Time_rush_hour_s42_20261031_170605",
+      "status": "LEGACY_VALID",
+      "reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "algorithm": "Fixed_Time",
+      "scenario": "rush_hour",
+      "train_seed": 42,
+      "timesteps": 128
+    },
+    {
+      "dir": "FW_PPO_directional_shift_north_south_s42_20261031_150954",
+      "status": "INCOMPLETE",
+      "reason": "Incomplete or unverified historical run (status='INITIALIZED')",
+      "algorithm": null,
+      "scenario": null,
+      "train_seed": null,
+      "timesteps": null
+    },
+    {
+      "dir": "FW_PPO_directional_shift_north_south_s42_20261031_151025",
+      "status": "LEGACY_VALID",
+      "reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "algorithm": "FW_PPO",
+      "scenario": "directional_shift_north_south",
+      "train_seed": 42,
+      "timesteps": 128
+    },
+    {
+      "dir": "FW_PPO_north_south_surge_s123_20261031_151911",
+      "status": "LEGACY_VALID",
+      "reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "algorithm": "FW_PPO",
+      "scenario": "north_south_surge",
+      "train_seed": 123,
+      "timesteps": 128
+    },
+    {
+      "dir": "FW_PPO_north_south_surge_s2024_20261031_170409",
+      "status": "LEGACY_VALID",
+      "reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "algorithm": "FW_PPO",
+      "scenario": "north_south_surge",
+      "train_seed": 2024,
+      "timesteps": 128
+    },
+    {
+      "dir": "FW_PPO_north_south_surge_s42_20261031_151818",
+      "status": "LEGACY_VALID",
+      "reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "algorithm": "FW_PPO",
+      "scenario": "north_south_surge",
+      "train_seed": 42,
+      "timesteps": 128
+    },
+    {
+      "dir": "FW_PPO_north_south_surge_s456_20261031_170149",
+      "status": "LEGACY_VALID",
+      "reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "algorithm": "FW_PPO",
+      "scenario": "north_south_surge",
+      "train_seed": 456,
+      "timesteps": 128
+    },
+    {
+      "dir": "FW_PPO_north_south_surge_s789_20261031_170305",
+      "status": "LEGACY_VALID",
+      "reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "algorithm": "FW_PPO",
+      "scenario": "north_south_surge",
+      "train_seed": 789,
+      "timesteps": 128
+    },
+    {
+      "dir": "FW_PPO_rush_hour_s42_20261031_170619",
+      "status": "LEGACY_VALID",
+      "reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "algorithm": "FW_PPO",
+      "scenario": "rush_hour",
+      "train_seed": 42,
+      "timesteps": 128
+    },
+    {
+      "dir": "IA_MOPPO_north_south_surge_s123_20261031_151854",
+      "status": "LEGACY_VALID",
+      "reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "algorithm": "IA_MOPPO",
+      "scenario": "north_south_surge",
+      "train_seed": 123,
+      "timesteps": 128
+    },
+    {
+      "dir": "IA_MOPPO_north_south_surge_s2024_20261031_170348",
+      "status": "LEGACY_VALID",
+      "reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "algorithm": "IA_MOPPO",
+      "scenario": "north_south_surge",
+      "train_seed": 2024,
+      "timesteps": 128
+    },
+    {
+      "dir": "IA_MOPPO_north_south_surge_s42_20261031_150420",
+      "status": "INVALID",
+      "reason": "Manifest file does not exist: d:\\DOIM-Traffic-RL\\DOIM-Traffic-RL\\results\\runs\\IA_MOPPO_north_south_surge_s42_20261031_150420\\experiment_manifest.json",
+      "algorithm": null,
+      "scenario": null,
+      "train_seed": null,
+      "timesteps": null
+    },
+    {
+      "dir": "IA_MOPPO_north_south_surge_s42_20261031_150516",
+      "status": "INCOMPLETE",
+      "reason": "Incomplete or unverified historical run (status='INITIALIZED')",
+      "algorithm": null,
+      "scenario": null,
+      "train_seed": null,
+      "timesteps": null
+    },
+    {
+      "dir": "IA_MOPPO_north_south_surge_s42_20261031_150551",
+      "status": "INCOMPLETE",
+      "reason": "Incomplete or unverified historical run (status='INITIALIZED')",
+      "algorithm": null,
+      "scenario": null,
+      "train_seed": null,
+      "timesteps": null
+    },
+    {
+      "dir": "IA_MOPPO_north_south_surge_s42_20261031_150620",
+      "status": "INCOMPLETE",
+      "reason": "Incomplete or unverified historical run (status='INITIALIZED')",
+      "algorithm": null,
+      "scenario": null,
+      "train_seed": null,
+      "timesteps": null
+    },
+    {
+      "dir": "IA_MOPPO_north_south_surge_s42_20261031_150647",
+      "status": "LEGACY_VALID",
+      "reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "algorithm": "IA_MOPPO",
+      "scenario": "north_south_surge",
+      "train_seed": 42,
+      "timesteps": 128
+    },
+    {
+      "dir": "IA_MOPPO_north_south_surge_s42_20261031_151659",
+      "status": "LEGACY_VALID",
+      "reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "algorithm": "IA_MOPPO",
+      "scenario": "north_south_surge",
+      "train_seed": 42,
+      "timesteps": 128
+    },
+    {
+      "dir": "IA_MOPPO_north_south_surge_s42_20261031_151759",
+      "status": "LEGACY_VALID",
+      "reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "algorithm": "IA_MOPPO",
+      "scenario": "north_south_surge",
+      "train_seed": 42,
+      "timesteps": 128
+    },
+    {
+      "dir": "IA_MOPPO_north_south_surge_s42_20261031_170035",
+      "status": "LEGACY_VALID",
+      "reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "algorithm": "IA_MOPPO",
+      "scenario": "north_south_surge",
+      "train_seed": 42,
+      "timesteps": 128
+    },
+    {
+      "dir": "IA_MOPPO_north_south_surge_s456_20261031_170123",
+      "status": "LEGACY_VALID",
+      "reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "algorithm": "IA_MOPPO",
+      "scenario": "north_south_surge",
+      "train_seed": 456,
+      "timesteps": 128
+    },
+    {
+      "dir": "IA_MOPPO_north_south_surge_s789_20261031_170244",
+      "status": "LEGACY_VALID",
+      "reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "algorithm": "IA_MOPPO",
+      "scenario": "north_south_surge",
+      "train_seed": 789,
+      "timesteps": 128
+    },
+    {
+      "dir": "IA_MOPPO_rush_hour_s42_20261031_170547",
+      "status": "LEGACY_VALID",
+      "reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "algorithm": "IA_MOPPO",
+      "scenario": "rush_hour",
+      "train_seed": 42,
+      "timesteps": 128
+    },
+    {
+      "dir": "SA_PPO_directional_shift_north_south_s42_20261031_151113",
+      "status": "LEGACY_VALID",
+      "reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "algorithm": "SA_PPO",
+      "scenario": "directional_shift_north_south",
+      "train_seed": 42,
+      "timesteps": 128
+    },
+    {
+      "dir": "SA_PPO_north_south_surge_s123_20261031_151920",
+      "status": "LEGACY_VALID",
+      "reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "algorithm": "SA_PPO",
+      "scenario": "north_south_surge",
+      "train_seed": 123,
+      "timesteps": 128
+    },
+    {
+      "dir": "SA_PPO_north_south_surge_s2024_20261031_170420",
+      "status": "LEGACY_VALID",
+      "reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "algorithm": "SA_PPO",
+      "scenario": "north_south_surge",
+      "train_seed": 2024,
+      "timesteps": 128
+    },
+    {
+      "dir": "SA_PPO_north_south_surge_s42_20261031_151827",
+      "status": "LEGACY_VALID",
+      "reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "algorithm": "SA_PPO",
+      "scenario": "north_south_surge",
+      "train_seed": 42,
+      "timesteps": 128
+    },
+    {
+      "dir": "SA_PPO_north_south_surge_s456_20261031_170200",
+      "status": "LEGACY_VALID",
+      "reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "algorithm": "SA_PPO",
+      "scenario": "north_south_surge",
+      "train_seed": 456,
+      "timesteps": 128
+    },
+    {
+      "dir": "SA_PPO_north_south_surge_s789_20261031_170316",
+      "status": "LEGACY_VALID",
+      "reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "algorithm": "SA_PPO",
+      "scenario": "north_south_surge",
+      "train_seed": 789,
+      "timesteps": 128
+    },
+    {
+      "dir": "SA_PPO_rush_hour_s42_20261031_170633",
+      "status": "LEGACY_VALID",
+      "reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "algorithm": "SA_PPO",
+      "scenario": "rush_hour",
+      "train_seed": 42,
+      "timesteps": 128
+    }
+  ]
+}

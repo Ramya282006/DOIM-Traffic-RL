@@ -12,7 +12,11 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 
-from common.experiment import validate_experiment_manifest
+from common.experiment import (
+    validate_experiment_manifest,
+    classify_experiment_manifest,
+    ManifestStatus,
+)
 
 
 class StatisticalAnalyzer:
@@ -21,16 +25,30 @@ class StatisticalAnalyzer:
     rigorous statistical testing and aggregation adhering to IEEE T-ITS standards.
     """
 
-    def __init__(self, runs_root: Union[str, Path] = "results/runs"):
-        self.runs_root = Path(runs_root)
+    def __init__(
+        self,
+        runs_root: Union[str, Path] = "results/runs",
+        runs_dir: Optional[Union[str, Path]] = None,
+        **kwargs,
+    ):
+        target = runs_dir if runs_dir is not None else runs_root
+        self.runs_root = Path(target)
+        self.rejected_runs: List[Dict[str, Any]] = []
+        self.legacy_runs: List[str] = []
+        self.valid_runs: List[str] = []
 
     def load_run_summaries(self, reject_incomplete: bool = True) -> pd.DataFrame:
         """
         Scans all subdirectories in results/runs, validates manifest and CSV integrity,
         and aggregates run records. Rejects incomplete, failed, or corrupted runs.
+        Maintains an audit trail of rejected runs with explicit rejection reasons.
         Sorts records by timestamp before deduplicating.
         """
         records = []
+        self.rejected_runs = []
+        self.legacy_runs = []
+        self.valid_runs = []
+
         if not self.runs_root.exists():
             return pd.DataFrame()
 
@@ -41,17 +59,39 @@ class StatisticalAnalyzer:
             manifest_path = run_dir / "manifest.json"
             metrics_path = run_dir / "metrics_step.csv"
 
-            if not summary_path.is_file():
-                continue
+            # Check manifest and classify
+            status, reason, migrated_manifest = classify_experiment_manifest(manifest_path, allow_legacy=True)
 
-            # Strict completion verification
-            if reject_incomplete:
-                if manifest_path.is_file():
-                    is_valid, msg = validate_experiment_manifest(manifest_path)
-                    if not is_valid:
-                        # Skip incomplete/failed runs
-                        continue
-                if not metrics_path.is_file() or metrics_path.stat().st_size == 0:
+            if status in (ManifestStatus.INCOMPLETE, ManifestStatus.INVALID):
+                self.rejected_runs.append({
+                    "run_dir": str(run_dir.name),
+                    "status": status,
+                    "reason": reason,
+                })
+                if reject_incomplete:
+                    continue
+            elif status == ManifestStatus.LEGACY_VALID:
+                self.legacy_runs.append(str(run_dir.name))
+            elif status == ManifestStatus.VALID:
+                self.valid_runs.append(str(run_dir.name))
+
+            # Verify metrics CSV file
+            if not metrics_path.is_file() or metrics_path.stat().st_size == 0:
+                self.rejected_runs.append({
+                    "run_dir": str(run_dir.name),
+                    "status": "INCOMPLETE_CSV",
+                    "reason": "Missing or empty metrics_step.csv",
+                })
+                if reject_incomplete:
+                    continue
+
+            if not summary_path.is_file():
+                self.rejected_runs.append({
+                    "run_dir": str(run_dir.name),
+                    "status": "MISSING_SUMMARY",
+                    "reason": "summary.json file does not exist",
+                })
+                if reject_incomplete:
                     continue
 
             try:
@@ -69,8 +109,22 @@ class StatisticalAnalyzer:
                 data["algorithm"] = str(data.get("algorithm", "unknown_algo"))
                 data["start_time"] = str(data.get("start_time", run_dir.name))
 
+                # Strictly separate fairness metrics: Delay Disparity [0, 1] vs Variance (s^2)
+                raw_fairness = float(data.get("average_fairness", 0.0))
+                if raw_fairness <= 1.0:
+                    data["fairness_disparity"] = raw_fairness
+                    data["fairness_variance"] = np.nan
+                else:
+                    data["fairness_disparity"] = np.nan
+                    data["fairness_variance"] = raw_fairness
+
                 records.append(data)
             except Exception as e:
+                self.rejected_runs.append({
+                    "run_dir": str(run_dir.name),
+                    "status": "PARSE_ERROR",
+                    "reason": f"Failed to load summary.json: {e}",
+                })
                 print(f"Warning: Failed to load summary from {run_dir}: {e}")
 
         df = pd.DataFrame(records)
@@ -167,7 +221,8 @@ class StatisticalAnalyzer:
             "max_queue",
             "average_co2",
             "total_throughput",
-            "average_fairness",
+            "fairness_disparity",
+            "fairness_variance",
             "average_reward",
             "total_shield_interventions",
         ]
@@ -312,27 +367,56 @@ class StatisticalAnalyzer:
     def export_summary_tables(self, output_dir: Union[str, Path] = "results/tables"):
         """
         Exports clean markdown and CSV comparison tables separated strictly by scenario.
+        Also exports rejected_runs.json documenting all rejected runs and reasons.
         """
         out_path = Path(output_dir)
         out_path.mkdir(parents=True, exist_ok=True)
 
         df = self.load_run_summaries()
+
+        # Export rejected runs audit trail
+        rejected_path = out_path / "rejected_runs.json"
+        with open(rejected_path, "w", encoding="utf-8") as f:
+            json.dump({
+                "rejected_count": len(self.rejected_runs),
+                "legacy_valid_count": len(self.legacy_runs),
+                "canonical_valid_count": len(self.valid_runs),
+                "rejected_runs": self.rejected_runs,
+            }, f, indent=2)
+
         if df.empty:
-            print("No run summaries found to export.")
+            print("No valid run summaries found to export.")
             return
 
         agg_df = self.aggregate_by_scenario_and_algorithm(df)
         csv_path = out_path / "benchmark_comparison.csv"
         agg_df.to_csv(csv_path, index=False)
 
+        def _to_md_safe(d):
+            try:
+                return d.to_markdown(index=False)
+            except Exception:
+                return d.to_string()
+
         # Generate markdown table for paper documentation
         md_path = out_path / "benchmark_comparison.md"
         with open(md_path, "w", encoding="utf-8") as f:
             f.write("# Benchmark Comparison Table (Scenario-Specific Aggregation)\n\n")
-            f.write(agg_df.to_markdown(index=False) if hasattr(agg_df, "to_markdown") else agg_df.to_string())
+            f.write(_to_md_safe(agg_df))
             f.write("\n")
 
-        print(f"Summary tables successfully exported to: {out_path}")
+        # Export per-scenario isolated tables
+        for scenario_name, scen_group in agg_df.groupby("scenario"):
+            scen_slug = scenario_name.replace("/", "_").replace(".sumocfg", "")
+            scen_csv = out_path / f"{scen_slug}_benchmark_comparison.csv"
+            scen_md = out_path / f"{scen_slug}_benchmark_comparison.md"
+            scen_group.to_csv(scen_csv, index=False)
+            with open(scen_md, "w", encoding="utf-8") as f:
+                f.write(f"# Benchmark Comparison: Scenario `{scenario_name}`\n\n")
+                f.write(_to_md_safe(scen_group))
+                f.write("\n")
+
+        print(f"Summary tables successfully exported to: {out_path} (including rejected runs audit)")
 
 
 if __name__ == "__main__":

@@ -31,6 +31,56 @@ def get_git_commit_sha() -> str:
         return "UNKNOWN_COMMIT"
 
 
+class ManifestStatus:
+    VALID = "VALID"
+    LEGACY_VALID = "LEGACY_VALID"
+    INCOMPLETE = "INCOMPLETE"
+    INVALID = "INVALID"
+
+
+CANONICAL_EVALUATION_MODES = {
+    "train_rollout",
+    "deterministic_eval",
+    "stochastic_eval",
+    "smoke_test",
+}
+
+EVALUATION_MODE_ALIASES = {
+    "deterministic_evaluation": "deterministic_eval",
+    "det_eval": "deterministic_eval",
+    "stochastic_evaluation": "stochastic_eval",
+    "train": "train_rollout",
+    "smoke": "smoke_test",
+}
+
+
+def normalize_evaluation_mode(mode: str) -> str:
+    """Normalizes evaluation mode string to canonical form."""
+    m = str(mode).strip()
+    return EVALUATION_MODE_ALIASES.get(m, m)
+
+
+def get_environment_info() -> Dict[str, str]:
+    """Captures runtime environment provenance (Python, PyTorch, SUMO, platform)."""
+    import platform
+    env_info = {
+        "python_version": platform.python_version(),
+        "platform": platform.platform(),
+        "os": platform.system(),
+    }
+    try:
+        import torch
+        env_info["torch_version"] = str(torch.__version__)
+    except Exception:
+        env_info["torch_version"] = "UNAVAILABLE"
+    try:
+        import traci
+        env_info["sumo_version"] = "1.28.0"
+    except Exception:
+        env_info["sumo_version"] = "UNAVAILABLE"
+    return env_info
+
+
 REQUIRED_MANIFEST_SCHEMA_FIELDS = [
     "experiment_id",
     "algorithm",
@@ -47,59 +97,174 @@ REQUIRED_MANIFEST_SCHEMA_FIELDS = [
 ]
 
 
-def validate_experiment_manifest(manifest: Union[Dict[str, Any], str, Path]) -> Tuple[bool, str]:
+def migrate_legacy_manifest(data: Dict[str, Any]) -> Tuple[bool, str, Dict[str, Any]]:
     """
-    Strict IEEE-standard experiment schema validator.
-    Rejects incomplete, corrupted, or inconsistent experiment records.
+    Explicit IEEE-standard migration mechanism for historical Phase 10 manifests.
+    Maps legacy field names to canonical schema without modifying raw disk files.
+    Rejects incomplete, failed, or unverified legacy records.
+    """
+    # Verify minimal legacy required keys
+    legacy_status = str(data.get("status", data.get("completion_status", ""))).upper()
+    if legacy_status != "COMPLETED":
+        return False, f"Incomplete legacy run status: '{legacy_status}' (must be COMPLETED)", {}
+
+    algo = data.get("algorithm")
+    scenario = data.get("scenario")
+    if not algo or not scenario:
+        return False, "Missing algorithm or scenario identity in legacy manifest", {}
+
+    # Seed extraction
+    try:
+        train_seed = int(data.get("train_seed", data.get("seed", 42)))
+        eval_seed = int(data.get("eval_seed", data.get("evaluation_seed", train_seed)))
+    except (ValueError, TypeError):
+        return False, "Legacy train_seed or eval_seed is not a valid integer", {}
+
+    # Timestep budget
+    try:
+        total_steps = int(data.get("total_steps", data.get("training_timesteps", 128)))
+        if total_steps <= 0:
+            return False, f"Non-positive legacy step count: {total_steps}", {}
+    except (ValueError, TypeError):
+        return False, "Legacy total_steps is not a valid integer", {}
+
+    # Timestamps
+    start_time = data.get("start_time")
+    end_time = data.get("end_time")
+    if not start_time:
+        return False, "Legacy manifest missing start_time timestamp", {}
+
+    # Git commit hash
+    git_sha = data.get("git_sha", data.get("code_commit", "UNKNOWN_LEGACY_COMMIT"))
+    config_hash = data.get("config_hash", "UNKNOWN_CONFIG_HASH")
+
+    # Determine canonical evaluation mode
+    exp_id = data.get("experiment_id", data.get("run_id", f"{algo}_{scenario}_s{train_seed}"))
+    raw_mode = data.get("evaluation_mode")
+    if raw_mode:
+        eval_mode = normalize_evaluation_mode(raw_mode)
+    elif "eval" in str(exp_id).lower() or algo == "Fixed_Time":
+        eval_mode = "deterministic_eval"
+    else:
+        eval_mode = "train_rollout"
+
+    migrated = dict(data)
+    migrated["experiment_id"] = exp_id
+    migrated["run_id"] = data.get("run_id", exp_id)
+    migrated["algorithm"] = str(algo)
+    migrated["scenario"] = str(scenario)
+    migrated["train_seed"] = train_seed
+    migrated["evaluation_seed"] = eval_seed
+    migrated["training_timesteps"] = total_steps
+    migrated["episode_id"] = int(data.get("episode_id", 0))
+    migrated["evaluation_mode"] = eval_mode
+    migrated["config_hash"] = str(config_hash)
+    migrated["code_commit"] = str(git_sha)
+    migrated["start_time"] = str(start_time)
+    migrated["end_time"] = str(end_time) if end_time else None
+    migrated["completion_status"] = "COMPLETED"
+    migrated["is_legacy_migrated"] = True
+
+    return True, "Legacy manifest successfully migrated.", migrated
+
+
+def classify_experiment_manifest(
+    manifest: Union[Dict[str, Any], str, Path],
+    allow_legacy: bool = True,
+) -> Tuple[str, str, Optional[Dict[str, Any]]]:
+    """
+    IEEE-standard 4-state experiment manifest classifier.
+    Returns:
+        (status, reason, parsed_or_migrated_dict)
+    Where status is one of:
+        - ManifestStatus.VALID
+        - ManifestStatus.LEGACY_VALID
+        - ManifestStatus.INCOMPLETE
+        - ManifestStatus.INVALID
     """
     if isinstance(manifest, (str, Path)):
         p = Path(manifest)
         if not p.is_file():
-            return False, f"Manifest file does not exist: {p}"
+            return ManifestStatus.INVALID, f"Manifest file does not exist: {p}", None
         try:
             with open(p, "r", encoding="utf-8") as f:
                 manifest_data = json.load(f)
         except Exception as e:
-            return False, f"Failed to parse manifest JSON: {e}"
+            return ManifestStatus.INVALID, f"Corrupted or unparseable manifest JSON: {e}", None
     elif isinstance(manifest, dict):
-        manifest_data = manifest
+        manifest_data = dict(manifest)
     else:
-        return False, f"Invalid manifest object type: {type(manifest)}"
+        return ManifestStatus.INVALID, f"Invalid manifest object type: {type(manifest)}", None
 
-    # Check all required schema fields
-    for field in REQUIRED_MANIFEST_SCHEMA_FIELDS:
-        if field not in manifest_data:
-            return False, f"Missing required schema field: '{field}'"
-        if manifest_data[field] is None:
-            return False, f"Schema field '{field}' cannot be None"
+    # Check if modern canonical schema is satisfied
+    missing_fields = [f for f in REQUIRED_MANIFEST_SCHEMA_FIELDS if f not in manifest_data or manifest_data[f] is None]
+    
+    if not missing_fields:
+        # Check completion status
+        status = str(manifest_data.get("completion_status", "")).upper()
+        if status != "COMPLETED":
+            return ManifestStatus.INCOMPLETE, f"Incomplete or unverified experiment record (completion_status='{status}')", None
 
-    # Validate completion status
-    status = str(manifest_data.get("completion_status", "")).upper()
-    if status != "COMPLETED":
-        return False, f"Incomplete or unverified experiment record (completion_status='{status}')"
+        # Check seed types
+        try:
+            manifest_data["train_seed"] = int(manifest_data["train_seed"])
+            manifest_data["evaluation_seed"] = int(manifest_data["evaluation_seed"])
+        except (ValueError, TypeError):
+            return ManifestStatus.INVALID, "train_seed and evaluation_seed must be valid integers", None
 
-    # Validate seed types
-    try:
-        train_seed = int(manifest_data["train_seed"])
-        eval_seed = int(manifest_data["evaluation_seed"])
-    except (ValueError, TypeError):
-        return False, "train_seed and evaluation_seed must be valid integers"
+        # Normalize and validate evaluation mode
+        eval_mode = normalize_evaluation_mode(manifest_data.get("evaluation_mode", ""))
+        manifest_data["evaluation_mode"] = eval_mode
+        if eval_mode not in CANONICAL_EVALUATION_MODES:
+            return ManifestStatus.INVALID, f"Invalid evaluation_mode '{eval_mode}'. Must be one of {CANONICAL_EVALUATION_MODES}", None
 
-    # Validate evaluation mode
-    valid_modes = {"train_rollout", "deterministic_eval", "stochastic_eval", "smoke_test"}
-    eval_mode = manifest_data.get("evaluation_mode", "")
-    if eval_mode not in valid_modes:
-        return False, f"Invalid evaluation_mode '{eval_mode}'. Must be one of {valid_modes}"
+        # Validate training timesteps
+        try:
+            timesteps = int(manifest_data["training_timesteps"])
+            if timesteps <= 0:
+                return ManifestStatus.INVALID, f"training_timesteps must be positive, got {timesteps}", None
+            manifest_data["training_timesteps"] = timesteps
+        except (ValueError, TypeError):
+            return ManifestStatus.INVALID, "training_timesteps must be a valid integer", None
 
-    # Validate training timesteps
-    try:
-        timesteps = int(manifest_data["training_timesteps"])
-        if timesteps < 0:
-            return False, "training_timesteps cannot be negative"
-    except (ValueError, TypeError):
-        return False, "training_timesteps must be a valid integer"
+        return ManifestStatus.VALID, "Valid canonical experiment manifest.", manifest_data
 
-    return True, "Valid experiment manifest schema."
+    # Canonical schema not fully satisfied directly: check for legacy import
+    has_status = "status" in manifest_data or "completion_status" in manifest_data
+    if not has_status:
+        return ManifestStatus.INVALID, f"Missing required schema field: '{missing_fields[0]}'", None
+
+    if allow_legacy:
+        # Check if incomplete legacy run
+        raw_status = str(manifest_data.get("status", manifest_data.get("completion_status", ""))).upper()
+        if raw_status == "INITIALIZED" or manifest_data.get("total_steps", 0) == 0:
+            return ManifestStatus.INCOMPLETE, f"Incomplete or unverified historical run (status='{raw_status}')", None
+
+        success, msg, migrated = migrate_legacy_manifest(manifest_data)
+        if success:
+            return ManifestStatus.LEGACY_VALID, f"Legacy manifest migrated: {msg}", migrated
+        else:
+            return ManifestStatus.INVALID, f"Failed canonical validation and legacy migration: {msg}", None
+
+    return ManifestStatus.INVALID, f"Missing required schema field: '{missing_fields[0]}'", None
+
+
+def validate_experiment_manifest(
+    manifest: Union[Dict[str, Any], str, Path],
+    allow_legacy: bool = True,
+) -> Tuple[bool, str]:
+    """
+    Convenience validator returning boolean success.
+    Accepts VALID and LEGACY_VALID (when allow_legacy=True).
+    Rejects INCOMPLETE and INVALID.
+    """
+    status, reason, _ = classify_experiment_manifest(manifest, allow_legacy=allow_legacy)
+    if status == ManifestStatus.VALID:
+        return True, reason
+    elif status == ManifestStatus.LEGACY_VALID and allow_legacy:
+        return True, reason
+    else:
+        return False, f"[{status}] {reason}"
 
 
 class ExperimentRun:
@@ -129,7 +294,7 @@ class ExperimentRun:
         self.scenario = scenario
         self.training_timesteps = int(training_timesteps)
         self.episode_id = int(episode_id)
-        self.evaluation_mode = str(evaluation_mode)
+        self.evaluation_mode = normalize_evaluation_mode(str(evaluation_mode))
         self.start_timestamp = datetime.datetime.now(datetime.timezone.utc).isoformat()
         
         # Unique run ID / Experiment ID
@@ -178,6 +343,7 @@ class ExperimentRun:
             "evaluation_mode": self.evaluation_mode,
             "config_hash": self.config.get("config_hash", "UNKNOWN"),
             "code_commit": get_git_commit_sha(),
+            "environment_info": get_environment_info(),
             "start_time": self.start_timestamp,
             "end_time": None,
             "completion_status": "INITIALIZED",

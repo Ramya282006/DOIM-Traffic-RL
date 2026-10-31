@@ -2,7 +2,8 @@
 DOIM-Traffic-RL: Comprehensive Experimental Matrix Runner
 Executes multi-seed, multi-scenario evaluation of Proposed DOIM-Traffic-RL against
 all baselines (Fixed-Time, FW-PPO, SA-PPO) and architectural ablations.
-Automatically generates statistical comparison tables and publication plots.
+Supports configurable budgets (128 smoke, 5000 pilot, 10000 intermediate, 50000 main convergence),
+periodic checkpointing, and independent deterministic evaluation loops.
 """
 
 import argparse
@@ -10,7 +11,7 @@ import os
 import sys
 from pathlib import Path
 import time
-from typing import List
+from typing import List, Optional
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 if str(REPO_ROOT) not in sys.path:
@@ -29,10 +30,14 @@ def run_experiment_matrix(
     seeds: List[int] = [42],
     include_ablations: bool = True,
     scenarios: List[str] = ["scenarios/directional_shift/north_south_surge.sumocfg"],
+    eval_episodes: int = 0,
+    checkpoint_interval: int = 2500,
+    output_root: str = "results/runs",
 ):
     print("=" * 80)
     print("STARTING DOIM-TRAFFIC-RL COMPREHENSIVE EXPERIMENT MATRIX")
-    print(f"Timesteps per run: {timesteps} | Seeds: {seeds} | Scenarios: {scenarios}")
+    print(f"Training Timesteps per run: {timesteps} | Seeds: {seeds} | Scenarios: {scenarios}")
+    print(f"Evaluation Episodes: {eval_episodes} | Checkpoint Interval: {checkpoint_interval}")
     print("=" * 80)
 
     start_time = time.time()
@@ -47,6 +52,9 @@ def run_experiment_matrix(
                 scenario_override=scenario,
                 total_timesteps=timesteps,
                 seed=seed,
+                output_root=output_root,
+                checkpoint_interval=checkpoint_interval,
+                eval_episodes=eval_episodes,
             )
 
             # 2. Fixed-Time Baseline
@@ -55,6 +63,7 @@ def run_experiment_matrix(
                 scenario_override=scenario,
                 total_timesteps=timesteps,
                 seed=seed,
+                output_root=output_root,
             )
 
             # 3. Fixed-Weight PPO Baseline
@@ -63,6 +72,7 @@ def run_experiment_matrix(
                 scenario_override=scenario,
                 total_timesteps=timesteps,
                 seed=seed,
+                output_root=output_root,
             )
 
             # 4. State-Adaptive PPO Baseline (Direct state-to-preference)
@@ -71,6 +81,7 @@ def run_experiment_matrix(
                 scenario_override=scenario,
                 total_timesteps=timesteps,
                 seed=seed,
+                output_root=output_root,
             )
 
             if include_ablations:
@@ -81,6 +92,9 @@ def run_experiment_matrix(
                     total_timesteps=timesteps,
                     seed=seed,
                     ablation_mode="no_interaction",
+                    output_root=output_root,
+                    checkpoint_interval=checkpoint_interval,
+                    eval_episodes=eval_episodes,
                 )
 
                 # 6. Ablation 2: Legacy Rolling Pearson Correlation
@@ -90,6 +104,9 @@ def run_experiment_matrix(
                     total_timesteps=timesteps,
                     seed=seed,
                     ablation_mode="rolling_pearson",
+                    output_root=output_root,
+                    checkpoint_interval=checkpoint_interval,
+                    eval_episodes=eval_episodes,
                 )
 
     elapsed = time.time() - start_time
@@ -97,7 +114,7 @@ def run_experiment_matrix(
     print(f"ALL EXPERIMENTS COMPLETED IN {elapsed:.1f}s! RUNNING STATISTICAL ANALYSIS...")
     print("=" * 80)
 
-    analyzer = StatisticalAnalyzer()
+    analyzer = StatisticalAnalyzer(runs_dir=output_root)
     analyzer.export_summary_tables()
 
     plotter = PublicationPlotGenerator()
@@ -109,11 +126,14 @@ def run_experiment_matrix(
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--timesteps", type=int, default=128)
-    parser.add_argument("--seeds", nargs="+", type=int, default=[42])
-    parser.add_argument("--scenarios", nargs="+", type=str, default=["scenarios/directional_shift/north_south_surge.sumocfg"])
-    parser.add_argument("--no_ablations", action="store_true")
+    parser = argparse.ArgumentParser(description="DOIM-Traffic-RL Experiment Matrix Runner")
+    parser.add_argument("--timesteps", type=int, default=128, help="Budget: 128 (smoke), 5000 (pilot), 10000 (intermediate), 50000 (main)")
+    parser.add_argument("--seeds", nargs="+", type=int, default=[42], help="List of independent training seeds")
+    parser.add_argument("--scenarios", nargs="+", type=str, default=["scenarios/directional_shift/north_south_surge.sumocfg"], help="List of scenario sumocfg paths")
+    parser.add_argument("--eval_episodes", type=int, default=0, help="Number of frozen deterministic evaluation episodes per model")
+    parser.add_argument("--checkpoint_interval", type=int, default=2500, help="Periodic checkpoint save interval")
+    parser.add_argument("--output_root", type=str, default="results/runs", help="Root directory for experiment logs")
+    parser.add_argument("--no_ablations", action="store_true", help="Skip ablations")
     args = parser.parse_args()
 
     run_experiment_matrix(
@@ -121,4 +141,7 @@ if __name__ == "__main__":
         seeds=args.seeds,
         scenarios=args.scenarios,
         include_ablations=not args.no_ablations,
+        eval_episodes=args.eval_episodes,
+        checkpoint_interval=args.checkpoint_interval,
+        output_root=args.output_root,
     )

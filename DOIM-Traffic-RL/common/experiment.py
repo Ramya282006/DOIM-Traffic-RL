@@ -12,7 +12,7 @@ import os
 from pathlib import Path
 import subprocess
 import time
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 import numpy as np
 
 from common.config import snapshot_config
@@ -31,6 +31,77 @@ def get_git_commit_sha() -> str:
         return "UNKNOWN_COMMIT"
 
 
+REQUIRED_MANIFEST_SCHEMA_FIELDS = [
+    "experiment_id",
+    "algorithm",
+    "scenario",
+    "train_seed",
+    "evaluation_seed",
+    "training_timesteps",
+    "episode_id",
+    "evaluation_mode",
+    "config_hash",
+    "code_commit",
+    "start_time",
+    "completion_status",
+]
+
+
+def validate_experiment_manifest(manifest: Union[Dict[str, Any], str, Path]) -> Tuple[bool, str]:
+    """
+    Strict IEEE-standard experiment schema validator.
+    Rejects incomplete, corrupted, or inconsistent experiment records.
+    """
+    if isinstance(manifest, (str, Path)):
+        p = Path(manifest)
+        if not p.is_file():
+            return False, f"Manifest file does not exist: {p}"
+        try:
+            with open(p, "r", encoding="utf-8") as f:
+                manifest_data = json.load(f)
+        except Exception as e:
+            return False, f"Failed to parse manifest JSON: {e}"
+    elif isinstance(manifest, dict):
+        manifest_data = manifest
+    else:
+        return False, f"Invalid manifest object type: {type(manifest)}"
+
+    # Check all required schema fields
+    for field in REQUIRED_MANIFEST_SCHEMA_FIELDS:
+        if field not in manifest_data:
+            return False, f"Missing required schema field: '{field}'"
+        if manifest_data[field] is None:
+            return False, f"Schema field '{field}' cannot be None"
+
+    # Validate completion status
+    status = str(manifest_data.get("completion_status", "")).upper()
+    if status != "COMPLETED":
+        return False, f"Incomplete or unverified experiment record (completion_status='{status}')"
+
+    # Validate seed types
+    try:
+        train_seed = int(manifest_data["train_seed"])
+        eval_seed = int(manifest_data["evaluation_seed"])
+    except (ValueError, TypeError):
+        return False, "train_seed and evaluation_seed must be valid integers"
+
+    # Validate evaluation mode
+    valid_modes = {"train_rollout", "deterministic_eval", "stochastic_eval", "smoke_test"}
+    eval_mode = manifest_data.get("evaluation_mode", "")
+    if eval_mode not in valid_modes:
+        return False, f"Invalid evaluation_mode '{eval_mode}'. Must be one of {valid_modes}"
+
+    # Validate training timesteps
+    try:
+        timesteps = int(manifest_data["training_timesteps"])
+        if timesteps < 0:
+            return False, "training_timesteps cannot be negative"
+    except (ValueError, TypeError):
+        return False, "training_timesteps must be a valid integer"
+
+    return True, "Valid experiment manifest schema."
+
+
 class ExperimentRun:
     """
     Manages the lifecycle, directory structure, logging, and metadata of a single experiment run.
@@ -45,6 +116,10 @@ class ExperimentRun:
         eval_seed: Optional[int] = None,
         scenario: str = "directional_shift",
         output_root: Union[str, Path] = "results/runs",
+        training_timesteps: int = 128,
+        episode_id: int = 0,
+        evaluation_mode: str = "train_rollout",
+        experiment_id: Optional[str] = None,
     ):
         self.experiment_name = experiment_name
         self.algorithm = algorithm
@@ -52,12 +127,16 @@ class ExperimentRun:
         self.train_seed = int(train_seed)
         self.eval_seed = int(eval_seed if eval_seed is not None else train_seed)
         self.scenario = scenario
+        self.training_timesteps = int(training_timesteps)
+        self.episode_id = int(episode_id)
+        self.evaluation_mode = str(evaluation_mode)
         self.start_timestamp = datetime.datetime.now(datetime.timezone.utc).isoformat()
         
-        # Unique run ID
+        # Unique run ID / Experiment ID
         timestamp_slug = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         seed_slug = f"s{self.train_seed}"
         self.run_id = f"{algorithm}_{scenario}_{seed_slug}_{timestamp_slug}"
+        self.experiment_id = experiment_id if experiment_id is not None else self.run_id
         
         # Directory structure
         self.run_dir = Path(output_root) / self.run_id
@@ -84,20 +163,24 @@ class ExperimentRun:
 
     def init_manifest(self) -> None:
         """
-        Initializes manifest.json with runtime metadata.
+        Initializes manifest.json with runtime metadata adhering strictly to Phase 1 schema.
         """
         manifest = {
+            "experiment_id": self.experiment_id,
             "run_id": self.run_id,
             "experiment_name": self.experiment_name,
             "algorithm": self.algorithm,
             "scenario": self.scenario,
             "train_seed": self.train_seed,
-            "eval_seed": self.eval_seed,
+            "evaluation_seed": self.eval_seed,
+            "training_timesteps": self.training_timesteps,
+            "episode_id": self.episode_id,
+            "evaluation_mode": self.evaluation_mode,
+            "config_hash": self.config.get("config_hash", "UNKNOWN"),
+            "code_commit": get_git_commit_sha(),
             "start_time": self.start_timestamp,
             "end_time": None,
-            "status": "INITIALIZED",
-            "git_sha": get_git_commit_sha(),
-            "config_hash": self.config.get("config_hash", "UNKNOWN"),
+            "completion_status": "INITIALIZED",
             "model_checkpoint_sha256": None,
             "total_steps": 0,
             "summary_metrics": {},
@@ -203,6 +286,7 @@ class ExperimentRun:
             manifest = json.load(f)
 
         manifest["end_time"] = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        manifest["completion_status"] = status
         manifest["status"] = status
         manifest["total_steps"] = len(self.step_records)
         manifest["summary_metrics"] = summary

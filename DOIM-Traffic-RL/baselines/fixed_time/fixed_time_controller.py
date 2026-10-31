@@ -17,6 +17,7 @@ if str(REPO_ROOT) not in sys.path:
 
 from common.config import load_experiment_config
 from common.experiment import ExperimentRun
+from environment.sumo_env import DOIMTrafficEnv
 
 
 class FixedTimeController:

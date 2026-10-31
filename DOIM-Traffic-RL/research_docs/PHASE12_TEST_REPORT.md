@@ -11,7 +11,7 @@
 **Execution Virtual Environment:** `.venv_clean` (Created cleanly via `py -3.11 -m venv .venv_clean`)
 **Working Branch:** `ramya` (Pull Request #5)
 **Base Commit on main:** `db720af5644536c4cbf08446c1922c8b977d1db5`
-**Latest Source Commit:** `554f2ed20b6665bec1c41f06b6164ce0ac67597a` (PR #5 Head)
+**Latest Source Commit:** `83304d8b368522f0ed9050732c6952f2a6bb1ea6` (PR #5 Head)
 
 ---
 
@@ -24,12 +24,12 @@ The full automated test suite was executed in the clean virtual environment with
 ```
 
 ### Overall Execution Statistics:
-- **Total Test Cases Collected:** 95
-- **Passed:** 94 ($98.95\%$)
-- **Skipped:** 1 ($1.05\%$) — `tests/test_ppo_smoke.py::test_ppo_smoke` (gracefully skipped due to absent optional external package `stable_baselines3`)
+- **Total Test Cases Collected:** 96
+- **Passed:** 95 ($98.96\%$)
+- **Skipped:** 1 ($1.04\%$) — `tests/test_ppo_smoke.py::test_ppo_smoke` (gracefully skipped due to absent optional external package `stable_baselines3`)
 - **Failed:** 0 ($0.00\%$)
 - **Errors:** 0 ($0.00\%$)
-- **Execution Wall-Clock Time:** 36.45 seconds
+- **Execution Wall-Clock Time:** 30.76 seconds
 
 ---
 
@@ -39,11 +39,11 @@ In strict accordance with scientific audit standards, all testing activities are
 
 | Category | Count | Scope & Verification Nature |
 | :--- | :---: | :--- |
-| **Tests Added (Phase 12 Corrections)** | 40 | Targeted regression tests added in Phase 12 covering fairness identity, deterministic evaluation schemas, manifest audit, non-default evaluation horizon propagation, and microscopic SUMO network conflict/yield mapping. |
-| **Tests Executed** | 94 | Genuinely executed in Python runtime against active simulation and model code. |
+| **Tests Added (Phase 12 Corrections)** | 41 | Targeted regression tests added in Phase 12 covering fairness identity, deterministic evaluation schemas, manifest audit, non-default evaluation horizon runtime propagation, and microscopic SUMO network conflict/yield mapping. |
+| **Tests Executed** | 95 | Genuinely executed in Python runtime against active simulation and model code. |
 | **Tests Skipped** | 1 | Optional third-party baseline test (`tests/test_ppo_smoke.py`). |
-| **Tests Independently Reproduced** | 94 | Executed in a fresh, clean virtual environment (`.venv_clean`) with bitwise determinism. |
-| **SUMO Integration Tests** | 6 | Live TraCI / SUMO simulation tests (`test_environment_initialization_guarded`, `test_adversarial_safety_shield_sumo_trace`, `test_actual_sumo_environment_safety_shield_integration`, `test_extract_programs_from_real_sumo_network`, `test_extract_tls_index_mapping_research_grid_all_five_controllable`, `test_active_tls_program_consistency_with_traci`). |
+| **Tests Independently Reproduced** | 95 | Executed in a fresh, clean virtual environment (`.venv_clean`) with bitwise determinism. |
+| **SUMO Integration Tests** | 7 | Live TraCI / SUMO simulation tests (`test_environment_initialization_guarded`, `test_adversarial_safety_shield_sumo_trace`, `test_actual_sumo_environment_safety_shield_integration`, `test_extract_programs_from_real_sumo_network`, `test_extract_tls_index_mapping_research_grid_all_five_controllable`, `test_active_tls_program_consistency_with_traci`, `test_live_sumo_eval_horizon_propagation`). |
 | **Actual Training Experiments** | 0 | No long-horizon training runs (5k, 10k, 50k steps) were executed during Phase 12 remediation. Only 128-step diagnostic pipeline checks have been run. |
 
 ---
@@ -62,8 +62,9 @@ In strict accordance with scientific audit standards, all testing activities are
 | `test_deterministic_evaluation.py` | `test_fixed_time_is_non_learning_and_deterministic` | PASSED | Zero learnable parameters, cycle determinism |
 | `test_deterministic_evaluation.py` | `test_deterministic_evaluation_reproducibility` | PASSED | Bitwise identical action trajectories with fixed seed |
 | `test_deterministic_evaluation.py` | `test_trained_baseline_parameters_frozen_during_evaluation` | PASSED | Neural parameters frozen (`eval()`, `torch.no_grad()`) |
-| `test_deterministic_evaluation.py` | `test_compatible_evaluation_artifact_schemas_across_all_four_controllers` | PASSED | Evaluation summary JSON schemas identical across all 4 algorithms |
-| `test_deterministic_evaluation.py` | `test_evaluation_horizon_propagation_non_default_value` | PASSED | Explicit propagation and recording of non-default horizon (900s) across all 4 algorithms |
+| `test_deterministic_evaluation.py` | `test_canonical_evaluation_artifacts_and_schema_symmetry` | PASSED | Evaluation summary JSON schemas identical across all 4 algorithms |
+| `test_deterministic_evaluation.py` | `test_evaluation_horizon_runtime_propagation_all_four_algorithms` | PASSED | Verifies --eval_horizon 900 reaches env.max_steps, loop termination, manifest, and summary across Fixed-Time, FW-PPO, SA-PPO, and IA-MOPPO |
+| `test_deterministic_evaluation.py` | `test_live_sumo_eval_horizon_propagation` | PASSED | Live SUMO TraCI execution truncates at step 15, recording horizon and step count in manifest, summary, and CSV |
 | `test_safety_shield_semantics.py` | `test_signal_state_string_validation` | PASSED | Validates standard SUMO signal characters |
 | `test_safety_shield_semantics.py` | `test_movement_conflict_verification` | PASSED | Conflicting 'G' states detected via connection conflicts |
 | `test_safety_shield_semantics.py` | `test_transition_clearance_verification` | PASSED | Clearance transitions require intermediate yellow |

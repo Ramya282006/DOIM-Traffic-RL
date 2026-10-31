@@ -6,7 +6,7 @@
 **Date:** October 31, 2026
 **Git Branch:** `ramya` (Pull Request #5)
 **Base Commit on main:** `db720af5644536c4cbf08446c1922c8b977d1db5`
-**Latest Source Commit:** `554f2ed20b6665bec1c41f06b6164ce0ac67597a` (PR #5 Head)
+**Latest Source Commit:** `83304d8b368522f0ed9050732c6952f2a6bb1ea6` (PR #5 Head)
 
 ---
 
@@ -19,7 +19,7 @@ Phase 12 was conducted to remediate all critical defects identified in Phase 11 
    - Corrected `experiments/run_comprehensive_matrix.py` to explicitly pass `--eval_horizon` to every algorithm's training and evaluation functions (`train_interaction_aware_ppo`, `evaluate_interaction_aware_ppo`, `evaluate_fixed_time`, `train_fixed_weight_ppo`, `evaluate_fixed_weight_ppo`, `train_state_adaptive_ppo`, `evaluate_state_adaptive_ppo`).
    - Recorded `eval_horizon` explicitly in `ExperimentRun`, `manifest.json`, and `summary.json`.
    - Bounded the deterministic evaluation loop with `step < effective_horizon` and `max_steps = effective_horizon`, preventing multi-episode chaining.
-   - Verified that non-default horizons (e.g., 900s) are recorded faithfully rather than silently reverting to 1800s (`tests/test_deterministic_evaluation.py::test_evaluation_horizon_propagation_non_default_value`).
+   - Verified that non-default horizons (e.g., 900s) propagate at runtime to environment `max_steps`, loop termination, manifest, and summary across all 4 algorithms (`test_evaluation_horizon_runtime_propagation_all_four_algorithms`) and verified live SUMO TraCI termination at step 15 (`test_live_sumo_eval_horizon_propagation`).
 2. **Correct Pilot Matrix & Statistical Analyzer Ablation Separation (Task 2):**
    - Defined the exact 12-run primary baseline comparison (4 primary algorithms: `IA-MOPPO`, `Fixed-Time`, `FW-PPO`, `SA-PPO` $\times$ 3 seeds: 42, 123, 456) using `--no_ablations`.
    - Documented the separate 18-run matrix when ablations (`no_interaction`, `rolling_pearson`) are included.
@@ -29,7 +29,7 @@ Phase 12 was conducted to remediate all critical defects identified in Phase 11 
    - Resolved multi-connection sharing: correctly mapped multiple connections sharing a single signal head (`linkIndex`) and aggregated their microscopic conflict foes.
    - Rigorously modeled SUMO priority-green (`G`) and permissive-green (`g`) right-of-way yield semantics: conflicting priority greens (`G` and `G`) are strictly rejected; permissive green (`g`) is permitted with opposing priority green (`G`) strictly when a validated right-of-way yield is registered in the junction `response` bitmask (`(idx_yield, idx_priority) in yield_pairs`).
    - Verified active TLS program consistency with live TraCI runtime states and verified link count parity across all 5 controllable intersections in the research grid network (`A1`, `B0`, `B1`, `B2`, `C1`).
-   - Enforced fail-safe behavior: unverified or unreliable junction mappings enforce fail-safe static progression without phase jumps.
+   - Enforced fail-safe behavior: unverified or unreliable junction mappings reject dynamic agent switches, enforce fail-safe static progression without phase jumps, and only cycle upon forced max green.
 4. **Fairness Metric Identity & Threshold Removal (DEF-P11-03):**
    - Completely eradicated the heuristic threshold `raw_fairness <= 1.0`.
    - Introduced explicit metric identity (`fairness_metric_name`: `"delay_disparity"` vs `"delay_variance"` vs `"UNKNOWN"`) and physical unit metadata (`fairness_metric_unit`: `"dimensionless"` vs `"s^2"` vs `"UNKNOWN"`).
@@ -39,7 +39,7 @@ Phase 12 was conducted to remediate all critical defects identified in Phase 11 
    - Separated historical completion on disk (`completed_on_disk: bool`) from scientific reproducibility eligibility (`reproducibility_eligible: bool`).
    - Retained all original historical manifests completely unchanged; generated `results/manifest_migration_audit.json` detailing field-by-field provenance across all 49 historical runs (44 completed on disk, 0 reproducibility-eligible due to missing decoupled evaluation provenance).
 6. **Environment Integrity & Complete Test Suite:**
-   - Executed the complete test suite in `.venv_clean`: 94 passed, 1 skipped (0 failed). Zero reliance on local certificates or binary modifications.
+   - Executed the complete test suite in `.venv_clean`: 95 passed, 1 skipped (0 failed) out of 96 collected. Zero reliance on local certificates or binary modifications.
 
 ---
 

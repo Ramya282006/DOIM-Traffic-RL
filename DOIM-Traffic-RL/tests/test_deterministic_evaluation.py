@@ -246,74 +246,206 @@ def test_compatible_evaluation_artifact_schemas_across_all_four_controllers(tmp_
             assert headers == expected_csv_headers, f"CSV headers mismatch for {algo}"
 
 
-def test_evaluation_horizon_propagation_non_default_value(tmp_path):
+def test_evaluation_horizon_runtime_propagation_all_four_algorithms(tmp_path, monkeypatch):
     """
-    Verifies that passing a non-default evaluation horizon (e.g., 900 seconds)
-    is explicitly propagated to and recorded by all 4 algorithms (Fixed_Time,
-    FW_PPO, SA_PPO, IA_MOPPO) in both manifest.json and summary.json,
-    rather than silently using the default 1800 seconds.
+    TASK 1 Verification:
+    Verifies that --eval_horizon 900 propagates at runtime to:
+    1. The actual SUMO environment's maximum-step configuration (DOIMTrafficEnv.max_steps == 900)
+    2. The evaluation loop termination condition (exactly 900 steps executed before break)
+    3. The evaluation manifest (manifest.json has eval_horizon == 900)
+    4. The evaluation summary (summary.json has eval_horizon == 900 and total_steps == 900)
+    across all four algorithms:
+    - Fixed-Time (evaluate_fixed_time)
+    - Fixed-Weight PPO (evaluate_fixed_weight_ppo)
+    - State-Adaptive PPO (evaluate_state_adaptive_ppo)
+    - IA-MOPPO (evaluate_interaction_aware_ppo)
     """
     import json
-    from common.experiment import ExperimentRun
-    from baselines.fixed_time.fixed_time_controller import run_fixed_time_experiment
+    import torch
+    from common.config import load_experiment_config
+    from baselines.fixed_time.fixed_time_controller import evaluate_fixed_time
+    from baselines.ppo.fixed_weight_ppo import evaluate_fixed_weight_ppo, FixedWeightPPOAgent
+    from baselines.ppo.state_adaptive_ppo import evaluate_state_adaptive_ppo, StateAdaptivePPOAgent
+    from training.interaction_aware_ppo import evaluate_interaction_aware_ppo, InteractionAwarePPOAgent
+    import baselines.fixed_time.fixed_time_controller as ftc_mod
+    import baselines.ppo.fixed_weight_ppo as fwp_mod
+    import baselines.ppo.state_adaptive_ppo as sap_mod
+    import training.interaction_aware_ppo as iap_mod
 
+    class InstrumentedMockEnv:
+        instances = []
+
+        def __init__(self, sumo_config=None, enforce_safety_shield=True, max_steps=1800):
+            self.sumo_config = sumo_config
+            self.enforce_safety_shield = enforce_safety_shield
+            self.max_steps = int(max_steps)
+            self.step_count = 0
+            self.current_time = 0
+            InstrumentedMockEnv.instances.append(self)
+
+        def reset(self, seed=None):
+            self.step_count = 0
+            self.current_time = 0
+            obs = np.zeros(69, dtype=np.float32)
+            info = {
+                "time": 0.0,
+                "node_features": np.zeros((9, 5), dtype=np.float32),
+                "raw_state": np.zeros(25, dtype=np.float32),
+                "normalized_objectives": np.array([0.2, 0.2, 0.2, 0.2, 0.2], dtype=np.float32),
+                "raw_objectives": np.array([10.0, 1.0, 100.0, 5.0, 0.1], dtype=np.float32),
+                "interaction_matrix": np.eye(5, dtype=np.float32),
+                "shield_interventions": 0,
+            }
+            return obs, info
+
+        def step(self, action, weights=None):
+            self.step_count += 1
+            self.current_time = self.step_count
+            obs = np.zeros(69, dtype=np.float32)
+            terminated = False
+            truncated = (self.current_time >= self.max_steps)
+            info = {
+                "time": float(self.current_time),
+                "node_features": np.zeros((9, 5), dtype=np.float32),
+                "raw_state": np.zeros(25, dtype=np.float32),
+                "normalized_objectives": np.array([0.2, 0.2, 0.2, 0.2, 0.2], dtype=np.float32),
+                "raw_objectives": np.array([10.0, 1.0, 100.0, 5.0, 0.1], dtype=np.float32),
+                "interaction_matrix": np.eye(5, dtype=np.float32),
+                "shield_interventions": 0,
+            }
+            reward = -1.0
+            return obs, reward, terminated, truncated, info
+
+        def close(self):
+            pass
+
+    monkeypatch.setattr(ftc_mod, "DOIMTrafficEnv", InstrumentedMockEnv)
+    monkeypatch.setattr(fwp_mod, "DOIMTrafficEnv", InstrumentedMockEnv)
+    monkeypatch.setattr(sap_mod, "DOIMTrafficEnv", InstrumentedMockEnv)
+    monkeypatch.setattr(iap_mod, "DOIMTrafficEnv", InstrumentedMockEnv)
+
+    config = load_experiment_config("configs/default.yaml")
     non_default_horizon = 900
-    train_seed = 42
     eval_seed = 1042
-    scenario = "north_south_surge"
-    controllers = ["Fixed_Time", "FW_PPO", "SA_PPO", "IA_MOPPO"]
+    train_seed = 42
 
-    for idx, algo in enumerate(controllers):
-        current_eval_seed = eval_seed + idx
-        run = ExperimentRun(
-            experiment_name=f"HORIZON_{algo}_test",
-            algorithm=algo,
-            config={"config_hash": "test_hash_horizon", "simulation": {"scenario_name": scenario}},
-            train_seed=train_seed,
-            eval_seed=current_eval_seed,
-            scenario=scenario,
-            output_root=str(tmp_path),
-            training_timesteps=1800,
-            episode_id=0,
-            evaluation_mode="deterministic_eval",
-            eval_horizon=non_default_horizon,
-        )
+    # 1. Fixed-Time runtime evaluation
+    InstrumentedMockEnv.instances.clear()
+    runs_ft = evaluate_fixed_time(
+        n_episodes=1,
+        eval_seed=eval_seed,
+        train_seed=train_seed,
+        eval_horizon=non_default_horizon,
+        output_root=str(tmp_path),
+    )
+    env_ft = InstrumentedMockEnv.instances[-1]
+    assert env_ft.max_steps == non_default_horizon, f"FT env max_steps was {env_ft.max_steps}"
+    assert env_ft.step_count == non_default_horizon, f"FT loop stepped {env_ft.step_count} times"
+    m_ft = json.loads((runs_ft[0].run_dir / "manifest.json").read_text(encoding="utf-8"))
+    s_ft = json.loads((runs_ft[0].run_dir / "summary.json").read_text(encoding="utf-8"))
+    assert m_ft["eval_horizon"] == non_default_horizon
+    assert s_ft["eval_horizon"] == non_default_horizon
+    assert s_ft["total_steps"] == non_default_horizon
 
-        # Log a dummy step
-        run.log_step(
-            step=0,
-            sim_time=1.0,
-            reward=-1.0,
-            raw_objs=np.array([10.0, 1.0, 1000.0, 1.0, 0.05]),
-            norm_objs=np.array([0.1, 0.1, 0.1, 0.1, 0.1]),
-            weights=np.full(5, 0.2, dtype=np.float32),
-            actions=[0, 0, 0, 0, 0],
-            shield_interventions=0,
-        )
-        summary = run.close(status="COMPLETED")
+    # 2. Fixed-Weight PPO runtime evaluation
+    agent_fw = FixedWeightPPOAgent(config=config, device="cpu")
+    InstrumentedMockEnv.instances.clear()
+    runs_fw = evaluate_fixed_weight_ppo(
+        agent_or_checkpoint=agent_fw,
+        n_episodes=1,
+        eval_seed=eval_seed,
+        train_seed=train_seed,
+        eval_horizon=non_default_horizon,
+        output_root=str(tmp_path),
+    )
+    env_fw = InstrumentedMockEnv.instances[-1]
+    assert env_fw.max_steps == non_default_horizon, f"FW env max_steps was {env_fw.max_steps}"
+    assert env_fw.step_count == non_default_horizon, f"FW loop stepped {env_fw.step_count} times"
+    m_fw = json.loads((runs_fw[0].run_dir / "manifest.json").read_text(encoding="utf-8"))
+    s_fw = json.loads((runs_fw[0].run_dir / "summary.json").read_text(encoding="utf-8"))
+    assert m_fw["eval_horizon"] == non_default_horizon
+    assert s_fw["eval_horizon"] == non_default_horizon
+    assert s_fw["total_steps"] == non_default_horizon
 
-        # Read back written manifest and summary
-        m_file = run.run_dir / "manifest.json"
-        s_file = run.run_dir / "summary.json"
+    # 3. State-Adaptive PPO runtime evaluation
+    agent_sa = StateAdaptivePPOAgent(config=config, device="cpu")
+    InstrumentedMockEnv.instances.clear()
+    runs_sa = evaluate_state_adaptive_ppo(
+        agent_or_checkpoint=agent_sa,
+        n_episodes=1,
+        eval_seed=eval_seed,
+        train_seed=train_seed,
+        eval_horizon=non_default_horizon,
+        output_root=str(tmp_path),
+    )
+    env_sa = InstrumentedMockEnv.instances[-1]
+    assert env_sa.max_steps == non_default_horizon, f"SA env max_steps was {env_sa.max_steps}"
+    assert env_sa.step_count == non_default_horizon, f"SA loop stepped {env_sa.step_count} times"
+    m_sa = json.loads((runs_sa[0].run_dir / "manifest.json").read_text(encoding="utf-8"))
+    s_sa = json.loads((runs_sa[0].run_dir / "summary.json").read_text(encoding="utf-8"))
+    assert m_sa["eval_horizon"] == non_default_horizon
+    assert s_sa["eval_horizon"] == non_default_horizon
+    assert s_sa["total_steps"] == non_default_horizon
 
-        assert m_file.exists(), f"Missing manifest for {algo}"
-        assert s_file.exists(), f"Missing summary for {algo}"
+    # 4. IA-MOPPO runtime evaluation
+    agent_ia = InteractionAwarePPOAgent(config=config, device="cpu")
+    InstrumentedMockEnv.instances.clear()
+    runs_ia = evaluate_interaction_aware_ppo(
+        agent_or_checkpoint=agent_ia,
+        n_episodes=1,
+        eval_seed=eval_seed,
+        train_seed=train_seed,
+        eval_horizon=non_default_horizon,
+        output_root=str(tmp_path),
+    )
+    env_ia = InstrumentedMockEnv.instances[-1]
+    assert env_ia.max_steps == non_default_horizon, f"IA env max_steps was {env_ia.max_steps}"
+    assert env_ia.step_count == non_default_horizon, f"IA loop stepped {env_ia.step_count} times"
+    m_ia = json.loads((runs_ia[0].run_dir / "manifest.json").read_text(encoding="utf-8"))
+    s_ia = json.loads((runs_ia[0].run_dir / "summary.json").read_text(encoding="utf-8"))
+    assert m_ia["eval_horizon"] == non_default_horizon
+    assert s_ia["eval_horizon"] == non_default_horizon
+    assert s_ia["total_steps"] == non_default_horizon
 
-        m_data = json.loads(m_file.read_text(encoding="utf-8"))
-        s_data = json.loads(s_file.read_text(encoding="utf-8"))
 
-        # Verify that 900 was recorded, NOT 1800
-        assert m_data["eval_horizon"] == non_default_horizon, (
-            f"Algorithm {algo} manifest recorded {m_data['eval_horizon']} instead of {non_default_horizon}"
-        )
-        assert s_data["eval_horizon"] == non_default_horizon, (
-            f"Algorithm {algo} summary recorded {s_data['eval_horizon']} instead of {non_default_horizon}"
-        )
-        assert m_data["evaluation_seed"] == current_eval_seed
-        assert s_data["eval_seed"] == current_eval_seed
-        assert m_data["algorithm"] == algo
-        assert s_data["algorithm"] == algo
-        assert m_data["scenario"] == scenario
-        assert s_data["scenario"] == scenario
-        assert m_data["episode_id"] == 0
-        assert s_data["episode_id"] == 0
+def test_live_sumo_eval_horizon_propagation(tmp_path):
+    """
+    Live SUMO verification:
+    Executes actual SUMO/TraCI simulation with non-default eval_horizon=15.
+    Verifies that the live simulation stops at exactly 15 steps due to max_steps truncation,
+    and both manifest.json and summary.json record eval_horizon=15 and total_steps=15.
+    """
+    import json
+    import csv
+    from baselines.fixed_time.fixed_time_controller import evaluate_fixed_time
+
+    horizon = 15
+    runs = evaluate_fixed_time(
+        scenario_override="scenarios/directional_shift/north_south_surge.sumocfg",
+        n_episodes=1,
+        eval_seed=1042,
+        eval_horizon=horizon,
+        output_root=str(tmp_path),
+    )
+    assert len(runs) == 1
+    run = runs[0]
+
+    m_file = run.run_dir / "manifest.json"
+    s_file = run.run_dir / "summary.json"
+    c_file = run.run_dir / "metrics_step.csv"
+
+    assert m_file.exists()
+    assert s_file.exists()
+    assert c_file.exists()
+
+    m = json.loads(m_file.read_text(encoding="utf-8"))
+    s = json.loads(s_file.read_text(encoding="utf-8"))
+
+    assert m["eval_horizon"] == horizon
+    assert s["eval_horizon"] == horizon
+    assert s["total_steps"] == horizon
+
+    # Count rows in metrics_step.csv (header + horizon rows)
+    with open(c_file, "r", encoding="utf-8") as f:
+        reader = list(csv.reader(f))
+        assert len(reader) == horizon + 1

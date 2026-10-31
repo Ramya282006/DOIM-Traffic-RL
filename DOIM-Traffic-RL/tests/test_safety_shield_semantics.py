@@ -443,23 +443,49 @@ def test_active_tls_program_consistency_with_traci():
 def test_fail_safe_behavior_on_unreliable_or_unmapped_tls():
     """
     Verifies that if a TLS mapping cannot be established reliably (e.g. unmapped connection),
-    TrafficSafetyShield safely logs a warning and enforces fail-safe behavior.
+    TrafficSafetyShield enforces fail-safe behavior:
+    1. Blocks dynamic agent switches even after min_green has elapsed to prevent unverified transitions.
+    2. Allows transition only when max_green is forced, ensuring safe static phase cycling.
     """
     from environment.safety_shield import TrafficSafetyShield
 
     shield = TrafficSafetyShield(
-        controllable_tls_ids=["TLS_UNKNOWN"],
-        tls_phase_counts={"TLS_UNKNOWN": 2},
-        tls_programs={"TLS_UNKNOWN": [
+        controllable_tls_ids=["TLS_UNRELIABLE"],
+        tls_phase_counts={"TLS_UNRELIABLE": 4},
+        tls_programs={"TLS_UNRELIABLE": [
+            {"duration": 30.0, "state": "GG"},
+            {"duration": 3.0, "state": "yy"},
             {"duration": 30.0, "state": "GG"},
             {"duration": 3.0, "state": "yy"},
         ]},
-        min_green=10,
-        max_green=60,
+        min_green=5,
+        max_green=20,
     )
 
-    # Unmapped TLS: attempting rapid switch should still be rejected by min green
-    raw_actions = np.array([1])
-    safe_actions, targets, interv = shield.filter_action(raw_actions, [0])
-    assert safe_actions[0] == 0
+    # Inject an unreliable index mapping (e.g., due to unmapped connection or ambiguous right-of-way)
+    shield.index_mappings = {
+        "TLS_UNRELIABLE": {
+            "is_reliable": False,
+            "unmapped_count": 2,
+            "reason": "Unmapped connections detected in network XML",
+        }
+    }
+
+    # Step past min_green (5 steps: time reaches 5 == min_green)
+    for _ in range(5):
+        shield.filter_action(np.array([0]), [0])
+
+    # Agent requests switch: despite min_green elapsed (time=6), it MUST be rejected due to unreliable mapping!
+    safe_actions, targets, interv = shield.filter_action(np.array([1]), [0])
+    assert safe_actions[0] == 0, "Unreliable TLS should reject dynamic agent switches in fail-safe mode"
+    assert targets[0] is None
     assert interv == 1
+
+    # Advance until just before max_green (13 steps: time advances from 6 to 19)
+    for _ in range(13):
+        shield.filter_action(np.array([0]), [0])
+
+    # Now time reaches 20 (max_green): fail-safe static progression must trigger clearance
+    safe_actions, targets, interv = shield.filter_action(np.array([0]), [0])
+    assert safe_actions[0] == 1, "Max green must trigger fail-safe clearance transition"
+    assert targets[0] == 1  # phase 1 (yellow clearance)

@@ -3,7 +3,7 @@
 [![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/downloads/release/python-3119/)
 [![PyTorch 2.15](https://img.shields.io/badge/PyTorch-2.15.0%2Bcpu-orange.svg)](https://pytorch.org/)
 [![SUMO 1.28](https://img.shields.io/badge/SUMO-1.28.0-green.svg)](https://eclipse.dev/sumo/)
-[![Tests](https://img.shields.io/badge/pytest-88%20passed%2C%201%20skipped-brightgreen.svg)](tests/)
+[![Tests](https://img.shields.io/badge/pytest-95%20passed%2C%201%20skipped-brightgreen.svg)](tests/)
 [![Target](https://img.shields.io/badge/target-IEEE%20T--ITS-darkblue.svg)](research_docs/paper/MANUSCRIPT.md)
 
 ---
@@ -173,7 +173,7 @@ DOIM-Traffic-RL/
 ├── research_docs/          # FINAL_IMPLEMENTATION_REPORT, THEORY, PROTOCOL, MANUSCRIPT
 ├── results/                # Immutable runs (runs/), tables (tables/), figures (figures/)
 ├── scenarios/              # SUMO network grid.net.xml, north_south_surge, rush_hour
-├── tests/                  # 88 passing pytest test suites (1 skipped)
+├── tests/                  # 95 passing pytest test suites (1 skipped)
 └── training/               # InteractionAwarePPOAgent, RolloutBuffer, train loop
 ```
 

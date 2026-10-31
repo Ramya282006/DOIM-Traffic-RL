@@ -622,11 +622,9 @@ class TrafficSafetyShield:
             state.step_clock()
             sim_phase = current_phases[i]
 
-            # Fail-safe check: if mapping for this TLS could not be reliably established, warn and fail safe
+            # Fail-safe check: if mapping for this TLS could not be reliably established, enforce fail-safe
             mapping = self.index_mappings.get(tid)
-            if mapping and not mapping.get("is_reliable", True):
-                # Cannot establish formal guarantees; enforce fail-safe static sequencing
-                pass
+            is_unreliable_mapping = bool(mapping and not mapping.get("is_reliable", True))
 
             # Synchronize state with simulator phase if unexpected jump occurred
             if not state.is_yellow and sim_phase != state.current_phase_index:
@@ -661,7 +659,13 @@ class TrafficSafetyShield:
             force_max_green = state.is_max_green_exceeded()
 
             if agent_requested_switch or force_max_green:
-                if state.can_switch_phase() or force_max_green:
+                if is_unreliable_mapping and not force_max_green:
+                    # Fail-safe: Reject unverified agent switch request on unreliable or unmapped connection topology
+                    safe_actions[i] = 0
+                    state.total_interventions += 1
+                    step_interventions += 1
+                    continue
+                elif state.can_switch_phase() or force_max_green:
                     # Legal transition: derive clearance stages and destination green
                     curr = state.current_phase_index
                     stages, next_green = state.get_clearance_stages(curr)

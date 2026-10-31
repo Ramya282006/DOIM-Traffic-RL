@@ -7,7 +7,8 @@
 **Auditor:** Senior Research Engineer & Independent IEEE Auditor
 **Working Branch:** `ramya` (Pull Request #5)
 **Base Commit on main:** `db720af5644536c4cbf08446c1922c8b977d1db5`
-**Latest Source Commit:** `5eeeb0271544744272d14b6404979a1e0c17ee24` (PR #5 Head)
+**Code Commit Under Test:** `5eeeb0271544744272d14b6404979a1e0c17ee24`
+**Documentation Reconciliation Commit:** `9db4af4ae6c0779567f3e6df35e73a73c7c4615c`
 
 ---
 

@@ -59,7 +59,7 @@ class ObjectiveNormalizer:
                     20.0,       # queue
                     120000.0,   # CO2
                     20.0,       # throughput
-                    3000.0,     # fairness
+                    1.0,        # fairness disparity in [0, 1]
                 ],
                 dtype=np.float32,
             )

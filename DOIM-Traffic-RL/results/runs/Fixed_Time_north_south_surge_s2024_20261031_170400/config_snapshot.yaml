@@ -1,0 +1,116 @@
+experiment:
+  project_name: DOIM-Traffic-RL
+  experiment_name: baseline_experiment
+  output_root: results/runs
+  log_level: INFO
+  save_checkpoints: true
+  checkpoint_freq_steps: 10000
+simulation:
+  sumo_config: scenarios/directional_shift/north_south_surge.sumocfg
+  step_length_seconds: 1.0
+  scenario_name: north_south_surge
+  time_to_teleport: -1
+  render_gui: false
+safety_and_constraints:
+  enforce_safety_shield: true
+  min_green_seconds: 10
+  max_green_seconds: 60
+  yellow_duration_seconds: 3
+  all_red_duration_seconds: 1
+  allow_immediate_flutter: false
+graph_and_network:
+  num_intersections: 9
+  num_controllable_tls: 5
+  controllable_tls_ids:
+  - A1
+  - B0
+  - B1
+  - B2
+  - C1
+  all_tls_ids:
+  - A0
+  - A1
+  - A2
+  - B0
+  - B1
+  - B2
+  - C0
+  - C1
+  - C2
+  node_feature_dim: 5
+  spatial_hidden_dim: 64
+  spatial_output_dim: 64
+  temporal_hidden_dim: 64
+objectives:
+  names:
+  - waiting
+  - queue
+  - co2
+  - throughput
+  - fairness
+  num_objectives: 5
+  directions:
+  - minimize
+  - minimize
+  - minimize
+  - maximize
+  - minimize
+  units:
+    waiting: vehicle_seconds
+    queue: halting_vehicles
+    co2: mg
+    throughput: completed_vehicles
+    fairness: jain_index_or_delay_disparity
+  normalization_bounds:
+    lower:
+    - 0.0
+    - 0.0
+    - 0.0
+    - 0.0
+    - 0.0
+    upper:
+    - 600.0
+    - 20.0
+    - 120000.0
+    - 20.0
+    - 3000.0
+  fairness_metric: jain_index
+interaction_model:
+  method: state_conditioned_doim
+  history_window: 30
+  interaction_dim: 32
+  latent_manifold_dim: 64
+  uncertainty_estimation: true
+  shrinkage: 0.1
+  regularization_weight: 0.01
+policy:
+  algorithm: PPO
+  architecture: MlpPolicy
+  learning_rate: 0.0003
+  n_steps: 128
+  batch_size: 64
+  n_epochs: 10
+  gamma: 0.99
+  gae_lambda: 0.95
+  clip_range: 0.2
+  ent_coef: 0.01
+  vf_coef: 0.5
+  max_grad_norm: 0.5
+  total_timesteps: 50000
+  preference_temperature: 1.0
+  preference_smoothness_lambda: 0.05
+reproducibility:
+  training_seeds:
+  - 42
+  - 123
+  - 456
+  - 789
+  - 2024
+  evaluation_seeds:
+  - 1001
+  - 1002
+  - 1003
+  - 1004
+  - 1005
+  deterministic_eval: true
+config_hash: 7888a45453a99435

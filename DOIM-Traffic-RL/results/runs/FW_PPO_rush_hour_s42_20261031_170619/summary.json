@@ -1,0 +1,24 @@
+{
+  "run_id": "FW_PPO_rush_hour_s42_20261031_170619",
+  "algorithm": "FW_PPO",
+  "scenario": "rush_hour",
+  "seed": 42,
+  "total_steps": 128,
+  "total_reward": -81.30246405303478,
+  "average_reward": -0.6351755004143342,
+  "average_waiting": 283.421875,
+  "max_waiting": 945.0,
+  "average_queue": 9.2578125,
+  "max_queue": 27.0,
+  "average_co2": 156462.31112480164,
+  "total_throughput": 25.0,
+  "average_fairness": 0.5067593106068671,
+  "total_shield_interventions": 254,
+  "average_weights": [
+    0.20000000298023224,
+    0.20000000298023224,
+    0.20000000298023224,
+    0.20000000298023224,
+    0.20000000298023224
+  ]
+}

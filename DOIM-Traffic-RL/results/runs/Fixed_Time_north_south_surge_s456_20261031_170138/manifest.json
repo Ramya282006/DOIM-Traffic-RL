@@ -1,0 +1,39 @@
+{
+  "run_id": "Fixed_Time_north_south_surge_s456_20261031_170138",
+  "experiment_name": "Fixed_Time_north_south_surge",
+  "algorithm": "Fixed_Time",
+  "scenario": "north_south_surge",
+  "train_seed": 456,
+  "eval_seed": 456,
+  "start_time": "2026-10-31T11:31:38.691602+00:00",
+  "end_time": "2026-10-31T11:31:49.270680+00:00",
+  "status": "COMPLETED",
+  "git_sha": "68e953a54adbf2b51ec392a06b92f76200323cc1",
+  "config_hash": "7888a45453a99435",
+  "model_checkpoint_sha256": null,
+  "total_steps": 128,
+  "summary_metrics": {
+    "run_id": "Fixed_Time_north_south_surge_s456_20261031_170138",
+    "algorithm": "Fixed_Time",
+    "scenario": "north_south_surge",
+    "seed": 456,
+    "total_steps": 128,
+    "total_reward": -50.20202773809433,
+    "average_reward": -0.39220334170386195,
+    "average_waiting": 63.921875,
+    "max_waiting": 214.0,
+    "average_queue": 2.3359375,
+    "max_queue": 9.0,
+    "average_co2": 56025.009765625,
+    "total_throughput": 4.0,
+    "average_fairness": 0.36373043432831764,
+    "total_shield_interventions": 0,
+    "average_weights": [
+      0.20000000298023224,
+      0.20000000298023224,
+      0.20000000298023224,
+      0.20000000298023224,
+      0.20000000298023224
+    ]
+  }
+}

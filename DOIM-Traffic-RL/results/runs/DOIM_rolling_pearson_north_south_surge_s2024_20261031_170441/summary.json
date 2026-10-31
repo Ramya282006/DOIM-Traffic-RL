@@ -1,0 +1,24 @@
+{
+  "run_id": "DOIM_rolling_pearson_north_south_surge_s2024_20261031_170441",
+  "algorithm": "DOIM_rolling_pearson",
+  "scenario": "north_south_surge",
+  "seed": 2024,
+  "total_steps": 128,
+  "total_reward": -62.07667115330696,
+  "average_reward": -0.48497399338521063,
+  "average_waiting": 136.40625,
+  "max_waiting": 520.0,
+  "average_queue": 4.2109375,
+  "max_queue": 15.0,
+  "average_co2": 55602.33718109131,
+  "total_throughput": 0.0,
+  "average_fairness": 0.5405886191874743,
+  "total_shield_interventions": 46,
+  "average_weights": [
+    0.17876666015945375,
+    0.19896478985901922,
+    0.23735416866838932,
+    0.18408935714978725,
+    0.2008250275393948
+  ]
+}

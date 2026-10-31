@@ -1,0 +1,39 @@
+{
+  "run_id": "DOIM_rolling_pearson_north_south_surge_s456_20261031_170229",
+  "experiment_name": "DOIM_rolling_pearson_north_south_surge",
+  "algorithm": "DOIM_rolling_pearson",
+  "scenario": "north_south_surge",
+  "train_seed": 456,
+  "eval_seed": 456,
+  "start_time": "2026-10-31T11:32:29.318457+00:00",
+  "end_time": "2026-10-31T11:32:44.308218+00:00",
+  "status": "COMPLETED",
+  "git_sha": "68e953a54adbf2b51ec392a06b92f76200323cc1",
+  "config_hash": "9455f65fd0b9e130",
+  "model_checkpoint_sha256": "3f150aa301c812754b516500eadc6ed1153887e93b6cd2508f0cc54c8b00e692",
+  "total_steps": 128,
+  "summary_metrics": {
+    "run_id": "DOIM_rolling_pearson_north_south_surge_s456_20261031_170229",
+    "algorithm": "DOIM_rolling_pearson",
+    "scenario": "north_south_surge",
+    "seed": 456,
+    "total_steps": 128,
+    "total_reward": -66.0521644949913,
+    "average_reward": -0.5160325351171196,
+    "average_waiting": 93.6875,
+    "max_waiting": 397.0,
+    "average_queue": 3.453125,
+    "max_queue": 12.0,
+    "average_co2": 55218.07685852051,
+    "total_throughput": 3.0,
+    "average_fairness": 0.6271408870816231,
+    "total_shield_interventions": 173,
+    "average_weights": [
+      0.12857699999585748,
+      0.2144023379078135,
+      0.20231429615523666,
+      0.21905379637610167,
+      0.2356525658397004
+    ]
+  }
+}

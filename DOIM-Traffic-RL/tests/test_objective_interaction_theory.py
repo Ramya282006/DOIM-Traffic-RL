@@ -76,8 +76,9 @@ def test_interaction_gradient_flow(learner):
     obj_next = torch.rand(2, 5)
 
     out = learner(traffic_emb, obj_vec)
+    actions = torch.randint(0, 2, (2, 5))
     loss = learner.compute_predictive_loss(
-        out["shrunk_matrix"], obj_vec, obj_next, torch.ones(2, 5)
+        out["shrunk_matrix"], obj_vec, actions, obj_next
     )
     loss.backward()
 
@@ -89,6 +90,24 @@ def test_interaction_gradient_flow(learner):
         assert float(torch.norm(p.grad)) > 0.0, f"No gradient reached {name}!"
 
 
+def test_zero_variance_and_extreme_values(learner):
+    """Controlled test for zero-variance inputs, constant objectives, and boundary values."""
+    # 1. Zero-variance constant inputs
+    traffic_const = torch.zeros(2, 64)
+    obj_const = torch.ones(2, 5) * 0.5
+    out_const = learner(traffic_const, obj_const)
+    m_const = out_const["shrunk_matrix"]
+    assert not torch.isnan(m_const).any(), "NaN detected in zero-variance inputs!"
+    assert not torch.isinf(m_const).any(), "Inf detected in zero-variance inputs!"
+
+    # 2. Extreme values (boundary 0.0 and 1.0)
+    traffic_extreme = torch.randn(2, 64) * 10.0
+    obj_extreme = torch.tensor([[0.0, 1.0, 0.0, 1.0, 0.0], [1.0, 0.0, 1.0, 0.0, 1.0]])
+    out_ext = learner(traffic_extreme, obj_extreme)
+    m_ext = out_ext["shrunk_matrix"]
+    assert torch.all(m_ext >= -1.0) and torch.all(m_ext <= 1.0), "Extreme values breached [-1, 1] bounds!"
+
+
 def test_comparison_with_pearson_correlation(learner):
     """
     Asserts the scientific distinction between static rolling correlation and SCOIL:
@@ -98,7 +117,6 @@ def test_comparison_with_pearson_correlation(learner):
     # 1. Classical rolling Pearson
     analyzer = ObjectiveInteractionAnalyzer(num_objectives=5, window_size=10)
     for _ in range(15):
-        # Monotonically increasing values (demand surge)
         analyzer.update([0.1, 0.2, 0.3, 0.4, 0.5])
     pearson_mat = analyzer.get_interaction_matrix()
     
@@ -115,3 +133,4 @@ def test_comparison_with_pearson_correlation(learner):
 
     # The learned interaction MUST change under different traffic states
     assert not np.allclose(m_low, m_high, atol=1e-3), "Interaction learner failed to condition on traffic state!"
+

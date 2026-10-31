@@ -1,0 +1,39 @@
+{
+  "run_id": "FW_PPO_rush_hour_s42_20261031_170619",
+  "experiment_name": "FW_PPO_rush_hour",
+  "algorithm": "FW_PPO",
+  "scenario": "rush_hour",
+  "train_seed": 42,
+  "eval_seed": 42,
+  "start_time": "2026-10-31T11:36:19.156723+00:00",
+  "end_time": "2026-10-31T11:36:33.494171+00:00",
+  "status": "COMPLETED",
+  "git_sha": "68e953a54adbf2b51ec392a06b92f76200323cc1",
+  "config_hash": "3d4882178ba88704",
+  "model_checkpoint_sha256": "0aa9abe6d0a3320a438a480aa86dcdef1e7e54eede6664c52872e969304db1e1",
+  "total_steps": 128,
+  "summary_metrics": {
+    "run_id": "FW_PPO_rush_hour_s42_20261031_170619",
+    "algorithm": "FW_PPO",
+    "scenario": "rush_hour",
+    "seed": 42,
+    "total_steps": 128,
+    "total_reward": -81.30246405303478,
+    "average_reward": -0.6351755004143342,
+    "average_waiting": 283.421875,
+    "max_waiting": 945.0,
+    "average_queue": 9.2578125,
+    "max_queue": 27.0,
+    "average_co2": 156462.31112480164,
+    "total_throughput": 25.0,
+    "average_fairness": 0.5067593106068671,
+    "total_shield_interventions": 254,
+    "average_weights": [
+      0.20000000298023224,
+      0.20000000298023224,
+      0.20000000298023224,
+      0.20000000298023224,
+      0.20000000298023224
+    ]
+  }
+}

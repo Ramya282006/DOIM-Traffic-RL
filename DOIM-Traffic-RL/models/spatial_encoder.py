@@ -21,7 +21,7 @@ class NativeGCNConv(nn.Module):
         self.linear = nn.Linear(in_channels, out_channels, bias=bias)
 
     def forward(self, x: torch.Tensor, edge_index: torch.Tensor) -> torch.Tensor:
-        num_nodes = x.size(0)
+        num_nodes = x.size(-2)
         device = x.device
 
         # Adjacency matrix with self-loops

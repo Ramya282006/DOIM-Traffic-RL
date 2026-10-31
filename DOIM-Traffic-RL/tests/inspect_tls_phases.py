@@ -1,5 +1,11 @@
 import os
+import sys
+from pathlib import Path
 import traci
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
 
 SUMO_CONFIG = os.path.join(
@@ -15,8 +21,11 @@ def main():
     print("TRAFFIC LIGHT PHASE INSPECTION")
     print("=" * 80)
 
+    from environment.sumo_locator import find_sumo_binary
+    sumo_bin = find_sumo_binary(prefer_gui=False)
+
     traci.start([
-        "sumo",
+        sumo_bin,
         "-c",
         SUMO_CONFIG,
         "--start",

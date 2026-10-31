@@ -1,0 +1,16 @@
+{
+  "run_id": "FW_PPO_directional_shift_north_south_s42_20261031_150954",
+  "experiment_name": "FW_PPO_directional_shift_north_south",
+  "algorithm": "FW_PPO",
+  "scenario": "directional_shift_north_south",
+  "train_seed": 42,
+  "eval_seed": 42,
+  "start_time": "2026-10-31T09:39:54.732329+00:00",
+  "end_time": null,
+  "status": "INITIALIZED",
+  "git_sha": "fd264346a9f3f5c7a6859c045561b9650b7dc922",
+  "config_hash": "258b73a76e884c81",
+  "model_checkpoint_sha256": null,
+  "total_steps": 0,
+  "summary_metrics": {}
+}

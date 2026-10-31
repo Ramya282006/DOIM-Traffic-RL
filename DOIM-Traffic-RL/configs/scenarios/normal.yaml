@@ -1,0 +1,7 @@
+scenario:
+  name: "normal"
+  sumocfg: "scenarios/normal/normal.sumocfg"
+  episode_horizon_seconds: 1800
+  demand_type: "uniform_ambient"
+  description: "Balanced baseline traffic across all 4 boundaries of the 3x3 network."
+  expected_inflow_veh_per_hour: 1200

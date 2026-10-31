@@ -1,0 +1,24 @@
+{
+  "run_id": "FW_PPO_directional_shift_north_south_s42_20261031_151025",
+  "algorithm": "FW_PPO",
+  "scenario": "directional_shift_north_south",
+  "seed": 42,
+  "total_steps": 128,
+  "total_reward": -43.740939766168594,
+  "average_reward": -0.34172609192319214,
+  "average_waiting": 24.5859375,
+  "max_waiting": 142.0,
+  "average_queue": 1.3671875,
+  "max_queue": 8.0,
+  "average_co2": 55483.839550971985,
+  "total_throughput": 6.0,
+  "average_fairness": 417.81878447532654,
+  "total_shield_interventions": 348,
+  "average_weights": [
+    0.20000000298023224,
+    0.20000000298023224,
+    0.20000000298023224,
+    0.20000000298023224,
+    0.20000000298023224
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "run_id": "DOIM_SMOKE_directional_shift_s42_20261031_144955",
+  "experiment_name": "smoke_test",
+  "algorithm": "DOIM_SMOKE",
+  "scenario": "directional_shift",
+  "train_seed": 42,
+  "eval_seed": 42,
+  "start_time": "2026-10-31T09:19:55.882877+00:00",
+  "end_time": "2026-10-31T09:20:03.499077+00:00",
+  "status": "COMPLETED",
+  "git_sha": "fd264346a9f3f5c7a6859c045561b9650b7dc922",
+  "config_hash": "258b73a76e884c81",
+  "model_checkpoint_sha256": null,
+  "total_steps": 30,
+  "summary_metrics": {
+    "run_id": "DOIM_SMOKE_directional_shift_s42_20261031_144955",
+    "algorithm": "DOIM_SMOKE",
+    "scenario": "directional_shift",
+    "seed": 42,
+    "total_steps": 30,
+    "total_reward": -5.286128103733063,
+    "average_reward": -0.17620427012443543,
+    "average_waiting": 0.0,
+    "max_waiting": 0.0,
+    "average_queue": 0.0,
+    "max_queue": 0.0,
+    "average_co2": 16763.60057373047,
+    "total_throughput": 0.0,
+    "average_fairness": 0.0,
+    "total_shield_interventions": 0,
+    "average_weights": [
+      0.188417952756087,
+      0.18276827186346054,
+      0.21766299058993657,
+      0.1460707227389018,
+      0.265080056587855
+    ]
+  }
+}

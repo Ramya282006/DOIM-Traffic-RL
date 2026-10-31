@@ -1,0 +1,39 @@
+{
+  "run_id": "Fixed_Time_directional_shift_north_south_s42_20261031_150907",
+  "experiment_name": "Fixed_Time_directional_shift_north_south",
+  "algorithm": "Fixed_Time",
+  "scenario": "directional_shift_north_south",
+  "train_seed": 42,
+  "eval_seed": 42,
+  "start_time": "2026-10-31T09:39:07.437371+00:00",
+  "end_time": "2026-10-31T09:39:15.221380+00:00",
+  "status": "COMPLETED",
+  "git_sha": "fd264346a9f3f5c7a6859c045561b9650b7dc922",
+  "config_hash": "258b73a76e884c81",
+  "model_checkpoint_sha256": null,
+  "total_steps": 128,
+  "summary_metrics": {
+    "run_id": "Fixed_Time_directional_shift_north_south_s42_20261031_150907",
+    "algorithm": "Fixed_Time",
+    "scenario": "directional_shift_north_south",
+    "seed": 42,
+    "total_steps": 128,
+    "total_reward": -42.6138334274292,
+    "average_reward": -0.3329205736517906,
+    "average_waiting": 54.734375,
+    "max_waiting": 169.0,
+    "average_queue": 1.8828125,
+    "max_queue": 9.0,
+    "average_co2": 55596.86237812042,
+    "total_throughput": 4.0,
+    "average_fairness": 387.94517493247986,
+    "total_shield_interventions": 0,
+    "average_weights": [
+      0.20000000298023224,
+      0.20000000298023224,
+      0.20000000298023224,
+      0.20000000298023224,
+      0.20000000298023224
+    ]
+  }
+}

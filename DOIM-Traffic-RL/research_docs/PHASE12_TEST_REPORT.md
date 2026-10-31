@@ -11,7 +11,7 @@
 **Execution Virtual Environment:** `.venv_clean` (Created cleanly via `py -3.11 -m venv .venv_clean`)
 **Working Branch:** `ramya` (Pull Request #5)
 **Base Commit on main:** `db720af5644536c4cbf08446c1922c8b977d1db5`
-**Latest Source Commit:** `83304d8b368522f0ed9050732c6952f2a6bb1ea6` (PR #5 Head)
+**Latest Source Commit:** `5eeeb0271544744272d14b6404979a1e0c17ee24` (PR #5 Head)
 
 ---
 
@@ -129,21 +129,21 @@ Execution terminal output summary:
 platform win32 -- Python 3.11.9, pytest-9.2.0, pluggy-1.7.0
 rootdir: D:\DOIM-Traffic-RL\DOIM-Traffic-RL
 configfile: pytest.ini
-collected 95 items
+collected 96 items
 
 tests\test_actual_training_gradient_flow.py .                            [  1%]
 tests\test_checkpoint_and_eval.py ..                                     [  3%]
-tests\test_deterministic_evaluation.py .....                             [  8%]
-tests\test_doim_architecture.py ......                                   [ 14%]
-tests\test_environment.py ..                                             [ 16%]
+tests\test_deterministic_evaluation.py ......                            [  9%]
+tests\test_doim_architecture.py ......                                   [ 15%]
+tests\test_environment.py ..                                             [ 17%]
 tests\test_experiment_schema.py ....                                     [ 21%]
-tests\test_fairness_and_objectives.py ....                               [ 25%]
-tests\test_fairness_definitions.py .....                                 [ 30%]
-tests\test_ia_moppo_integration.py .....                                 [ 35%]
+tests\test_fairness_and_objectives.py ....                               [ 26%]
+tests\test_fairness_definitions.py .....                                 [ 31%]
+tests\test_ia_moppo_integration.py .....                                 [ 36%]
 tests\test_manifest_migration_and_classification.py .....                [ 41%]
 tests\test_manuscript_consistency.py .....                               [ 46%]
-tests\test_objective_interaction_theory.py ......                        [ 52%]
-tests\test_phase1_infrastructure.py ......                               [ 58%]
+tests\test_objective_interaction_theory.py ......                        [ 53%]
+tests\test_phase1_infrastructure.py ......                               [ 59%]
 tests\test_ppo_smoke.py s                                                [ 60%]
 tests\test_runner_interface.py ..                                        [ 62%]
 tests\test_safety_shield.py ...                                          [ 65%]
@@ -154,7 +154,7 @@ tests\test_scenario_specific_statistics.py ......                        [ 89%]
 tests\test_scoil_validation.py ....                                      [ 93%]
 tests\test_traffic_safety.py ......                                      [100%]
 
-================= 94 passed, 1 skipped, 8 warnings in 36.45s ==================
+================= 95 passed, 1 skipped, 8 warnings in 30.76s ==================
 ```
 
-All 94 active tests passed with zero failures and zero errors.
+All 95 active tests passed with zero failures and zero errors.

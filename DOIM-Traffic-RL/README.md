@@ -94,11 +94,11 @@ python -c "import torch, sumo, gymnasium; print('Dependencies OK')"
 
 > **Environment Integrity & Platform Support:** The project uses standard canonical dependencies specified in `requirements.txt`. On Linux, macOS, and standard Windows systems, dependencies install cleanly via `pip install -r requirements.txt`. On Windows 11 systems with Smart App Control (SAC) enabled in 'Enforce' mode, Microsoft cloud reputation inspects binary hashes; unmodified PyPI wheels execute cleanly without requiring local developer certificates (`LocalDevCert`).
 
-### 3.3 Running Automated Test Suite (88 Tests Verified)
+### 3.3 Running Automated Test Suite (95 Passed, 1 Skipped)
 ```powershell
 python -m pytest tests/ -v
 ```
-All 88 active tests pass with 100% success rate (1 optional external SB3 test skipped):
+All 95 active tests pass with 100% success rate (1 optional external SB3 test skipped):
 - `tests/test_safety_shield_semantics.py`: Dynamic SUMO tlLogic parsing, clearance intervals, single-phase junction stability, and signal conflict validation.
 - `tests/test_deterministic_evaluation.py`: Deterministic evaluation reproducibility, frozen baseline weights, non-learning Fixed-Time controller verification.
 - `tests/test_manifest_migration_and_classification.py`: 4-state manifest classification (VALID, LEGACY_VALID, INCOMPLETE, INVALID) and canonical schema normalization.

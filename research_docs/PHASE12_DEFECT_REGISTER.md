@@ -7,7 +7,7 @@
 **Auditor:** Senior Research Engineer & Independent IEEE Auditor
 **Working Branch:** `ramya` (Pull Request #5)
 **Base Commit on main:** `db720af5644536c4cbf08446c1922c8b977d1db5`
-**Latest Source Commit:** `83304d8b368522f0ed9050732c6952f2a6bb1ea6` (PR #5 Head)
+**Latest Source Commit:** `5eeeb0271544744272d14b6404979a1e0c17ee24` (PR #5 Head)
 
 ---
 
@@ -67,7 +67,7 @@
 
 ### DEF-P11-05: Top-Level TraCI Execution in Test Collection
 - **Remediation Details:** Removed all global execution statements from `tests/test_environment.py`, `environment/test_sumo_connection.py`, and `tests/test_ppo_smoke.py`. All SUMO/TraCI logic is encapsulated in guarded test functions with try/finally teardown. Configured `pytest.ini` to restrict collection to `tests/`.
-- **Test Evidence:** `tests/test_environment.py::test_import_environment_has_no_simulation_side_effects` (passed). Pytest collects 95 items in $<1.0\,\text{s}$ with zero background processes.
+- **Test Evidence:** `tests/test_environment.py::test_import_environment_has_no_simulation_side_effects` (passed). Pytest collects 96 items in $<1.0\,\text{s}$ with zero background processes.
 
 ### DEF-P11-06: Scientific Reporting of 128-Step Diagnostic Runs
 - **Remediation Details:** Added comprehensive scientific notes to `README.md` and `MANUSCRIPT.md` Section VIII-B clarifying that 128-step runs are diagnostic smoke tests. Provided the physical traffic rationale: random exploration in RL triggers frequent phase switching requests, each incurring 3 seconds of yellow clearance ($23\%$ lost green time), whereas Fixed-Time follows pre-timed progression losing only $9\%$ of time. Clarified that long-horizon convergence is evaluated at 5,000–50,000 steps. Strictly avoided claiming convergence or algorithmic superiority.

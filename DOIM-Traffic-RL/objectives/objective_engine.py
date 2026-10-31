@@ -69,13 +69,11 @@ class MultiObjectiveEngine:
         # Objective 4: Step throughput (completed vehicles)
         step_throughput = float(self.throughput_tracker.update(completed_vehicles))
 
-        # Objective 5: Fairness Disparity (1.0 - Jain Index across intersections)
+        # Objective 5: Fairness Disparity (1.0 - Jain Index across intersections in [0, 1])
         if self.fairness_mode == "jain_disparity":
-            fairness = CorridorFairnessCalculator.compute_delay_disparity(waiting)
-            # Scale to match typical normalizer bounds [0, 1]
-            fairness_val = float(fairness * 1000.0) # Scaled for calibrated bounds
+            fairness_val = float(CorridorFairnessCalculator.compute_delay_disparity(waiting))
         else:
-            # Fallback to classical variance
+            # Fallback to normalized variance
             fairness_val = float(np.var(waiting) if waiting else 0.0)
 
         return np.array(

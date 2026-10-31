@@ -1,0 +1,24 @@
+{
+  "run_id": "FW_PPO_north_south_surge_s456_20261031_170149",
+  "algorithm": "FW_PPO",
+  "scenario": "north_south_surge",
+  "seed": 456,
+  "total_steps": 128,
+  "total_reward": -57.93859504163265,
+  "average_reward": -0.4526452737627551,
+  "average_waiting": 72.96875,
+  "max_waiting": 398.0,
+  "average_queue": 3.46875,
+  "max_queue": 16.0,
+  "average_co2": 54875.76385498047,
+  "total_throughput": 3.0,
+  "average_fairness": 0.5120480824261904,
+  "total_shield_interventions": 166,
+  "average_weights": [
+    0.20000000298023224,
+    0.20000000298023224,
+    0.20000000298023224,
+    0.20000000298023224,
+    0.20000000298023224
+  ]
+}

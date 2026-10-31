@@ -182,6 +182,7 @@ class DOIMTrafficEnv(gym.Env):
             for tid in self.controllable_tls:
                 logics = traci.trafficlight.getAllProgramLogics(tid)
                 phase_counts[tid] = len(logics[0].phases) if logics else 4
+                traci.trafficlight.setPhaseDuration(tid, 999999)
             self.safety_shield = TrafficSafetyShield(
                 controllable_tls_ids=self.controllable_tls,
                 tls_phase_counts=phase_counts,
@@ -206,7 +207,7 @@ class DOIMTrafficEnv(gym.Env):
             info,
         )
 
-    def _build_info(self, vehicle_count, interventions=0):
+    def _build_info(self, vehicle_count, interventions=0, active_weights=None):
         feature_matrix = self.latest_doim_result.get("feature_matrix", np.zeros((9, 5), dtype=np.float32))
         interaction_matrix = self.latest_doim_result.get("interaction_matrix", np.zeros((5, 5), dtype=np.float32))
         
@@ -218,6 +219,17 @@ class DOIMTrafficEnv(gym.Env):
         else:
             raw_state = np.zeros(25, dtype=np.float32)
 
+        # Vehicle-level fairness disparity (distinct from intersection disparity)
+        try:
+            vehicle_ids = traci.vehicle.getIDList()
+            veh_waits = [traci.vehicle.getAccumulatedWaitingTime(vid) for vid in vehicle_ids]
+            from objectives.fairness import CorridorFairnessCalculator
+            veh_disparity = CorridorFairnessCalculator.compute_vehicle_fairness_disparity(veh_waits)
+        except Exception:
+            veh_disparity = 0.0
+
+        weights_to_log = active_weights if active_weights is not None else self.latest_doim_result["weights"]
+
         return {
             "time": self.current_time,
             "shield_interventions": interventions,
@@ -226,14 +238,16 @@ class DOIMTrafficEnv(gym.Env):
             "current_phases": self.signal_controller.get_current_phases(),
             "raw_objectives": self.latest_doim_result["raw_objectives"],
             "normalized_objectives": self.latest_doim_result["normalized_objectives"],
-            "doim_weights": self.latest_doim_result["weights"],
+            "doim_weights": weights_to_log,
             "feature_matrix": feature_matrix,
             "node_features": feature_matrix,
             "interaction_matrix": interaction_matrix,
             "raw_state": raw_state,
+            "intersection_fairness_disparity": float(self.latest_doim_result["raw_objectives"][4]),
+            "vehicle_fairness_disparity": float(veh_disparity),
             "objective_contributions": self.reward_engine.get_contributions(
                 self.latest_doim_result["normalized_objectives"],
-                self.latest_doim_result["weights"],
+                weights_to_log,
             ),
         }
 
@@ -244,6 +258,7 @@ class DOIMTrafficEnv(gym.Env):
     def step(
         self,
         action,
+        weights=None,
     ):
 
         # --------------------------------------------------
@@ -287,6 +302,7 @@ class DOIMTrafficEnv(gym.Env):
             for tid, target_phase in zip(self.controllable_tls, target_phases):
                 if target_phase is not None:
                     traci.trafficlight.setPhase(tid, target_phase)
+                    traci.trafficlight.setPhaseDuration(tid, 999999)
         else:
             self.signal_controller.apply_action(
                 action
@@ -311,13 +327,6 @@ class DOIMTrafficEnv(gym.Env):
         )
 
         # --------------------------------------------------
-        # Temporary reward
-        #
-        # We are NOT using this as the final
-        # research reward yet.
-        # --------------------------------------------------
-
-        # --------------------------------------------------
         # DOIM adaptive reward
         # --------------------------------------------------
 
@@ -327,15 +336,18 @@ class DOIMTrafficEnv(gym.Env):
             ]
         )
 
-        weights = (
-            self.latest_doim_result[
-                "weights"
-            ]
-        )
+        if weights is not None:
+            w = np.asarray(weights, dtype=np.float32)
+            w_sum = np.sum(w)
+            active_weights = w / (w_sum + 1e-8) if w_sum > 0 else np.ones(5, dtype=np.float32) / 5.0
+        else:
+            active_weights = self.latest_doim_result.get(
+                "weights", np.ones(5, dtype=np.float32) / 5.0
+            )
 
         reward = self.reward_engine.compute(
             normalized_objectives,
-            weights,
+            active_weights,
         )
 
         vehicle_count = (
@@ -359,7 +371,7 @@ class DOIMTrafficEnv(gym.Env):
         # Information
         # --------------------------------------------------
 
-        info = self._build_info(vehicle_count, interventions=interventions)
+        info = self._build_info(vehicle_count, interventions=interventions, active_weights=active_weights)
 
         return (
             observation,

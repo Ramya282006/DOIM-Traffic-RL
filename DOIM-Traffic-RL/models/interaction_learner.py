@@ -41,12 +41,14 @@ class StateConditionedInteractionLearner(nn.Module):
         traffic_dim: int = 64,
         latent_dim: int = 32,
         shrinkage_lambda: float = 0.5,
+        num_controllable_tls: int = 5,
     ):
         super().__init__()
 
         self.num_objectives = num_objectives
         self.latent_dim = latent_dim
         self.shrinkage_lambda = float(shrinkage_lambda)
+        self.num_controllable_tls = num_controllable_tls
 
         context_dim = traffic_dim + num_objectives
 
@@ -70,6 +72,9 @@ class StateConditionedInteractionLearner(nn.Module):
             nn.Linear(64, num_objectives * num_objectives),
             nn.Softplus(),
         )
+
+        # Primary action-impact projection (maps discrete actions to primary objective shift)
+        self.action_impact = nn.Linear(num_controllable_tls, num_objectives, bias=False)
 
     def forward(
         self,
@@ -145,15 +150,24 @@ class StateConditionedInteractionLearner(nn.Module):
         self,
         m_t: torch.Tensor,
         z_t: torch.Tensor,
+        actions: torch.Tensor,
         z_next: torch.Tensor,
-        action_indicator: torch.Tensor,
     ) -> torch.Tensor:
         """
-        Auxiliary loss training the interaction matrix to predict directional objective changes:
-            z_{t+1} - z_t ≈ M_t · Δ_action
+        Auxiliary loss training the interaction matrix to model cross-objective predictive dynamics:
+            Δz_primary = W_a · a_t
+            Δz_cross = M_t · Δz_primary
+            z_hat_{t+1} = clamp(z_t + Δz_cross, 0.0, 1.0)
+            Loss = MSE(z_hat_{t+1}, z_{t+1})
+            
+        Guarantees:
+          1. Action conditioning: actions genuinely drive the predicted transition.
+          2. Zero future leakage: z_next is used solely as regression target, never as input.
+          3. Backpropagation through M_t to train bilinear queries, keys, and asymmetry heads.
         """
-        delta_z = z_next - z_t # [B, K]
-        # Linear projection through interaction operator
-        predicted_delta = torch.bmm(m_t, delta_z.unsqueeze(-1)).squeeze(-1)
-        loss = F.mse_loss(predicted_delta, delta_z)
-        return loss
+        delta_primary = self.action_impact(actions.float()) # [B, K]
+        # Propagate through state-conditioned interaction operator M_t
+        delta_cross = torch.bmm(m_t, delta_primary.unsqueeze(-1)).squeeze(-1) # [B, K]
+        z_pred_next = torch.clamp(z_t + delta_cross, 0.0, 1.0)
+        return F.mse_loss(z_pred_next, z_next)
+

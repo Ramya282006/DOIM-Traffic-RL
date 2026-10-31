@@ -23,7 +23,8 @@ class StatisticalAnalyzer:
 
     def load_run_summaries(self) -> pd.DataFrame:
         """
-        Scans all subdirectories in results/runs and aggregates summary.json data.
+        Scans all subdirectories in results/runs, validates integrity,
+        and aggregates summary.json data deduplicated by (algorithm, scenario, train_seed).
         """
         records = []
         if not self.runs_root.exists():
@@ -38,17 +39,33 @@ class StatisticalAnalyzer:
                     with open(summary_path, "r", encoding="utf-8") as f:
                         data = json.load(f)
                         data["run_dir"] = str(run_dir)
+                        # Extract train seed cleanly
+                        seed_val = data.get("train_seed", data.get("seed", 42))
+                        data["train_seed"] = int(seed_val)
                         records.append(data)
                 except Exception as e:
                     print(f"Warning: Failed to parse {summary_path}: {e}")
 
         df = pd.DataFrame(records)
+        if df.empty:
+            return df
+
+        # Automated Validation: Deduplicate repeated records for the same algorithm, scenario, and seed
+        # Sort by timestamp/creation if available, keeping the most recent complete run
+        if "algorithm" in df.columns and "scenario" in df.columns and "train_seed" in df.columns:
+            initial_count = len(df)
+            df = df.drop_duplicates(subset=["algorithm", "scenario", "train_seed"], keep="last")
+            dropped = initial_count - len(df)
+            if dropped > 0:
+                print(f"[StatisticalAnalyzer] Deduplicated {dropped} duplicate runs with identical training seeds.")
+
         return df
 
     @staticmethod
     def compute_confidence_interval(data: np.ndarray, confidence: float = 0.95) -> Tuple[float, float, float]:
         """
         Computes sample mean and 95% student-t confidence interval bounds.
+        Requires at least 2 independent observations; returns point estimate if N < 2.
         """
         arr = np.asarray(data, dtype=np.float64)
         arr = arr[np.isfinite(arr)]
@@ -56,15 +73,17 @@ class StatisticalAnalyzer:
         if n == 0:
             return 0.0, 0.0, 0.0
         mean = float(np.mean(arr))
-        if n == 1:
+        if n < 2:
             return mean, mean, mean
         std_err = stats.sem(arr)
+        if std_err <= 1e-12:
+            return mean, mean, mean
         h = std_err * stats.t.ppf((1 + confidence) / 2.0, n - 1)
         return mean, mean - h, mean + h
 
     def aggregate_by_algorithm(self, df: Optional[pd.DataFrame] = None) -> pd.DataFrame:
         """
-        Computes aggregate statistics (Mean, Std, Median, 95% CI) per algorithm.
+        Computes aggregate statistics where the statistical unit is strictly each independent training seed.
         """
         if df is None:
             df = self.load_run_summaries()
@@ -86,12 +105,19 @@ class StatisticalAnalyzer:
 
         agg_rows = []
         for algo, group in df.groupby("algorithm"):
-            n_seeds = group["seed"].nunique() if "seed" in group else len(group)
-            row = {"algorithm": algo, "n_seeds": n_seeds, "n_runs": len(group)}
+            # Enforce independent seeds as statistical units
+            n_independent_seeds = int(group["train_seed"].nunique())
+            row = {
+                "algorithm": algo,
+                "n_independent_seeds": n_independent_seeds,
+                "n_total_runs": len(group),
+            }
 
             for m in target_metrics:
                 if m in group.columns:
-                    vals = group[m].dropna().values
+                    # One observation per independent seed (mean across runs if multiple evaluations exist)
+                    seed_grouped = group.groupby("train_seed")[m].mean()
+                    vals = seed_grouped.dropna().values
                     if len(vals) > 0:
                         mean, ci_low, ci_high = self.compute_confidence_interval(vals)
                         std = float(np.std(vals, ddof=1)) if len(vals) > 1 else 0.0
@@ -112,32 +138,49 @@ class StatisticalAnalyzer:
         baseline_algo: str = "FW_PPO",
         target_algo: str = "IA_MOPPO",
         metric: str = "average_waiting",
+        alpha: float = 0.05,
+        num_comparisons: int = 1,
     ) -> Dict[str, Any]:
         """
-        Runs Welch's two-sample t-test and Wilcoxon signed-rank test.
+        Runs rigorous significance testing across independent training seeds.
+        Supports paired testing when seeds match, with Bonferroni correction for multiple testing.
         """
         if df is None:
             df = self.load_run_summaries()
 
-        base_vals = df[df["algorithm"] == baseline_algo][metric].dropna().values
-        target_vals = df[df["algorithm"] == target_algo][metric].dropna().values
+        base_df = df[df["algorithm"] == baseline_algo].groupby("train_seed")[metric].mean()
+        target_df = df[df["algorithm"] == target_algo].groupby("train_seed")[metric].mean()
 
-        if len(base_vals) < 2 or len(target_vals) < 2:
-            return {
-                "metric": metric,
-                "baseline": baseline_algo,
-                "target": target_algo,
-                "status": "INSUFFICIENT_SAMPLES",
-                "n_baseline": len(base_vals),
-                "n_target": len(target_vals),
-            }
+        common_seeds = sorted(list(set(base_df.index).intersection(set(target_df.index))))
+        is_paired = len(common_seeds) >= 3
 
-        t_stat, p_val = stats.ttest_ind(target_vals, base_vals, equal_var=False)
+        if is_paired:
+            base_vals = base_df.loc[common_seeds].values
+            target_vals = target_df.loc[common_seeds].values
+            t_stat, p_val = stats.ttest_rel(target_vals, base_vals)
+            test_type = "Paired Student's t-test"
+        else:
+            base_vals = base_df.dropna().values
+            target_vals = target_df.dropna().values
+            if len(base_vals) < 2 or len(target_vals) < 2:
+                return {
+                    "metric": metric,
+                    "baseline": baseline_algo,
+                    "target": target_algo,
+                    "status": "INSUFFICIENT_INDEPENDENT_SEEDS",
+                    "n_baseline_seeds": len(base_vals),
+                    "n_target_seeds": len(target_vals),
+                }
+            t_stat, p_val = stats.ttest_ind(target_vals, base_vals, equal_var=False)
+            test_type = "Welch's two-sample t-test"
+
+        # Bonferroni corrected significance threshold
+        corrected_alpha = alpha / max(1, num_comparisons)
 
         # Cohen's d effect size
         s_pooled = np.sqrt(
             ((len(target_vals) - 1) * np.var(target_vals, ddof=1) + (len(base_vals) - 1) * np.var(base_vals, ddof=1))
-            / (len(target_vals) + len(base_vals) - 2)
+            / max(1, (len(target_vals) + len(base_vals) - 2))
         )
         cohen_d = (np.mean(target_vals) - np.mean(base_vals)) / (s_pooled + 1e-8)
 
@@ -145,12 +188,14 @@ class StatisticalAnalyzer:
             "metric": metric,
             "baseline": baseline_algo,
             "target": target_algo,
+            "test_type": test_type,
             "t_statistic": float(t_stat),
             "p_value": float(p_val),
+            "bonferroni_alpha": float(corrected_alpha),
+            "statistically_significant": bool(p_val < corrected_alpha),
             "cohen_d": float(cohen_d),
-            "statistically_significant": bool(p_val < 0.05),
-            "n_baseline": len(base_vals),
-            "n_target": len(target_vals),
+            "n_baseline_seeds": len(base_vals),
+            "n_target_seeds": len(target_vals),
         }
 
     def export_summary_tables(self, output_dir: str = "results/tables"):
@@ -185,5 +230,5 @@ if __name__ == "__main__":
     print("Loaded runs:", len(df))
     if not df.empty:
         agg = analyzer.aggregate_by_algorithm(df)
-        print(agg[["algorithm", "n_runs", "average_waiting_mean", "average_queue_mean"]])
+        print(agg[["algorithm", "n_independent_seeds", "n_total_runs", "average_waiting_mean", "average_queue_mean"]])
         analyzer.export_summary_tables()

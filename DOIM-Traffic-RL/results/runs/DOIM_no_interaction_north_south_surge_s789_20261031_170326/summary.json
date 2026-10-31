@@ -1,0 +1,24 @@
+{
+  "run_id": "DOIM_no_interaction_north_south_surge_s789_20261031_170326",
+  "algorithm": "DOIM_no_interaction",
+  "scenario": "north_south_surge",
+  "seed": 789,
+  "total_steps": 128,
+  "total_reward": -62.504495054483414,
+  "average_reward": -0.48831636761315167,
+  "average_waiting": 109.875,
+  "max_waiting": 358.0,
+  "average_queue": 2.90625,
+  "max_queue": 11.0,
+  "average_co2": 57448.14991760254,
+  "total_throughput": 2.0,
+  "average_fairness": 0.6275292707141489,
+  "total_shield_interventions": 57,
+  "average_weights": [
+    0.22144460945855826,
+    0.19334241817705333,
+    0.20738803269341588,
+    0.22626254719216377,
+    0.15156239282805473
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "run_id": "SA_PPO_rush_hour_s42_20261031_170633",
+  "algorithm": "SA_PPO",
+  "scenario": "rush_hour",
+  "seed": 42,
+  "total_steps": 128,
+  "total_reward": -109.4614341147244,
+  "average_reward": -0.8551674540212844,
+  "average_waiting": 301.96875,
+  "max_waiting": 1078.0,
+  "average_queue": 9.8125,
+  "max_queue": 35.0,
+  "average_co2": 153992.8244304657,
+  "total_throughput": 23.0,
+  "average_fairness": 0.5410507703199983,
+  "total_shield_interventions": 261,
+  "average_weights": [
+    0.0010990487644450572,
+    0.040126993621022705,
+    0.6744661874891671,
+    0.28222302369152263,
+    0.0020847447449341416
+  ]
+}

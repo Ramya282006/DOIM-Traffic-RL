@@ -42,15 +42,42 @@ class CorridorFairnessCalculator:
         return float(np.clip(jain, 1.0 / k, 1.0))
 
     @staticmethod
-    def compute_delay_disparity(corridor_delays: List[float]) -> float:
+    def compute_delay_disparity(delays: List[float]) -> float:
         """
-        Computes disparity penalty in [0, 1]:
+        Computes generic delay disparity penalty in [0, 1]:
             Disparity = 1.0 - JainIndex
         0.0 = perfect equity (desirable).
         1.0 = maximum starvation / inequity (undesirable).
         """
-        jain = CorridorFairnessCalculator.compute_jain_index(corridor_delays)
+        jain = CorridorFairnessCalculator.compute_jain_index(delays)
         return float(1.0 - jain)
+
+    @staticmethod
+    def compute_intersection_fairness(intersection_delays: List[float]) -> Dict[str, float]:
+        """
+        Computes intersection-level equity metrics:
+          - Jain's Fairness Index
+          - Disparity penalty (1.0 - Jain)
+          - Gini coefficient
+        """
+        jain = CorridorFairnessCalculator.compute_jain_index(intersection_delays)
+        disparity = float(1.0 - jain)
+        gini = CorridorFairnessCalculator.compute_gini_coefficient(intersection_delays)
+        return {
+            "jain_index": float(jain),
+            "disparity": disparity,
+            "gini": float(gini),
+        }
+
+    @staticmethod
+    def compute_vehicle_fairness_disparity(vehicle_waits: List[float]) -> float:
+        """
+        Computes vehicle-level delay disparity across all active vehicles in the network:
+            Disparity_veh = 1.0 - JainIndex(vehicle_waiting_times)
+        """
+        if not vehicle_waits:
+            return 0.0
+        return float(1.0 - CorridorFairnessCalculator.compute_jain_index(vehicle_waits))
 
     @staticmethod
     def compute_gini_coefficient(delays: List[float]) -> float:
@@ -66,3 +93,4 @@ class CorridorFairnessCalculator:
         index = np.arange(1, n + 1)
         gini = (2.0 * np.sum(index * arr) - (n + 1) * np.sum(arr)) / (n * np.sum(arr))
         return float(np.clip(gini, 0.0, 1.0))
+

@@ -48,6 +48,7 @@ class DOIMNetwork(nn.Module):
         self.num_intersections = num_intersections
         self.num_controllable_tls = num_controllable_tls
         self.num_objectives = num_objectives
+        self.spatial_dim = spatial_dim
         self.temperature = float(temperature)
 
         # ----------------------------------------------------------------------
@@ -128,8 +129,9 @@ class DOIMNetwork(nn.Module):
 
         # ----------------------------------------------------------------------
         # 8. Auxiliary Objective Transition Predictor (Counterfactual dynamics)
+        # Residual dynamics: z_{t+1} = clamp(z_t + Δz(manifold, action, z_t), 0, 1)
         # ----------------------------------------------------------------------
-        aux_input_dim = manifold_dim + num_controllable_tls
+        aux_input_dim = manifold_dim + num_controllable_tls + num_objectives
         self.aux_predictor = nn.Sequential(
             nn.Linear(aux_input_dim, 64),
             nn.ReLU(),
@@ -160,18 +162,35 @@ class DOIMNetwork(nn.Module):
         if node_features.dim() == 2:
             node_features = node_features.unsqueeze(0)
 
-        batch_size, num_nodes, _ = node_features.shape
-        embeddings = []
+        h = self.spatial_activation(self.gcn1(node_features, edge_index))
+        h = self.gcn2(h, edge_index)
+        return h.mean(dim=-2)
 
-        for b in range(batch_size):
-            x = node_features[b]
-            h = self.spatial_activation(self.gcn1(x, edge_index))
-            h = self.gcn2(h, edge_index)
-            # Global mean pooling over intersections
-            h_pooled = h.mean(dim=0)
-            embeddings.append(h_pooled)
+    def encode_spatial_sequence(
+        self,
+        node_history: torch.Tensor,
+        edge_index: Optional[torch.Tensor] = None,
+    ) -> torch.Tensor:
+        """
+        Vectorized spatio-temporal message passing over historical graph snapshots.
+        Ensures full end-to-end backpropagation through all GCN parameters.
+        
+        Args:
+            node_history: [B, L, N, D_in]
+            edge_index: [2, E]
+            
+        Returns:
+            Sequence of pooled spatial embeddings: [B, L, spatial_dim]
+        """
+        if edge_index is None:
+            edge_index = self.default_edge_index
 
-        return torch.stack(embeddings, dim=0)
+        b, l, n, d = node_history.shape
+        flat_nodes = node_history.reshape(b * l, n, d)
+        h = self.spatial_activation(self.gcn1(flat_nodes, edge_index))
+        h = self.gcn2(h, edge_index)
+        h_pooled = h.mean(dim=-2)
+        return h_pooled.reshape(b, l, -1)
 
     def encode_temporal(self, spatial_sequence: torch.Tensor) -> torch.Tensor:
         """
@@ -254,9 +273,16 @@ class DOIMNetwork(nn.Module):
         self,
         manifold: torch.Tensor,
         actions: torch.Tensor,
+        current_obj: Optional[torch.Tensor] = None,
     ) -> torch.Tensor:
         """
-        Auxiliary forward pass: predicts next-step objective vector z_{t+1}.
+        Auxiliary forward pass: predicts next-step objective vector z_{t+1} via residual dynamics:
+            z_{t+1} = clamp(z_t + Δz(manifold, action, z_t), 0.0, 1.0)
+        Prevents future observation leakage and guarantees action conditioning.
         """
-        aux_input = torch.cat([manifold, actions.float()], dim=-1)
-        return self.aux_predictor(aux_input)
+        if current_obj is None:
+            current_obj = torch.zeros(manifold.size(0), self.num_objectives, device=manifold.device)
+        aux_input = torch.cat([manifold, actions.float(), current_obj], dim=-1)
+        delta = self.aux_predictor(aux_input)
+        return torch.clamp(current_obj + delta, 0.0, 1.0)
+

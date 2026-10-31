@@ -112,11 +112,13 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--timesteps", type=int, default=128)
     parser.add_argument("--seeds", nargs="+", type=int, default=[42])
+    parser.add_argument("--scenarios", nargs="+", type=str, default=["scenarios/directional_shift/north_south_surge.sumocfg"])
     parser.add_argument("--no_ablations", action="store_true")
     args = parser.parse_args()
 
     run_experiment_matrix(
         timesteps=args.timesteps,
         seeds=args.seeds,
+        scenarios=args.scenarios,
         include_ablations=not args.no_ablations,
     )

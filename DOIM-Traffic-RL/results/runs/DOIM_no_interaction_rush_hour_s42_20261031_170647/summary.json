@@ -1,0 +1,24 @@
+{
+  "run_id": "DOIM_no_interaction_rush_hour_s42_20261031_170647",
+  "algorithm": "DOIM_no_interaction",
+  "scenario": "rush_hour",
+  "seed": 42,
+  "total_steps": 128,
+  "total_reward": -73.39849473536015,
+  "average_reward": -0.5734257401200011,
+  "average_waiting": 198.03125,
+  "max_waiting": 886.0,
+  "average_queue": 7.1328125,
+  "max_queue": 23.0,
+  "average_co2": 153259.04702568054,
+  "total_throughput": 26.0,
+  "average_fairness": 0.46147674485109746,
+  "total_shield_interventions": 323,
+  "average_weights": [
+    0.19390404445584863,
+    0.1772881100187078,
+    0.21858672762755305,
+    0.16000269539654255,
+    0.2502184194745496
+  ]
+}

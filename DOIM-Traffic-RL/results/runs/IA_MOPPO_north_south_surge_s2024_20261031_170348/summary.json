@@ -1,0 +1,24 @@
+{
+  "run_id": "IA_MOPPO_north_south_surge_s2024_20261031_170348",
+  "algorithm": "IA_MOPPO",
+  "scenario": "north_south_surge",
+  "seed": 2024,
+  "total_steps": 128,
+  "total_reward": -62.13903161883354,
+  "average_reward": -0.48546118452213705,
+  "average_waiting": 136.40625,
+  "max_waiting": 520.0,
+  "average_queue": 4.2109375,
+  "max_queue": 15.0,
+  "average_co2": 55602.33718109131,
+  "total_throughput": 0.0,
+  "average_fairness": 0.5405886191874743,
+  "total_shield_interventions": 46,
+  "average_weights": [
+    0.17933100380469114,
+    0.198384516290389,
+    0.2361150876386091,
+    0.1851294154766947,
+    0.2010399728314951
+  ]
+}

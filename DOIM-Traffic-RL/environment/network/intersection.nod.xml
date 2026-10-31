@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<nodes>
+    <node id="N" x="0" y="200" />
+    <node id="S" x="0" y="-200" />
+    <node id="E" x="200" y="0" />
+    <node id="W" x="-200" y="0" />
+
+    <node id="J0" x="0" y="0" type="traffic_light" />
+</nodes>

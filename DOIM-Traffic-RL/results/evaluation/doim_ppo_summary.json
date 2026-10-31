@@ -1,0 +1,25 @@
+{
+    "model": "doim_ppo",
+    "model_path": "results/ppo/doim_ppo_final",
+    "evaluation_steps": 1000,
+    "total_reward": -447.8831447213888,
+    "average_reward": -0.4478831447213888,
+    "average_waiting": 93.339,
+    "maximum_waiting": 266.0,
+    "average_queue": 1.496,
+    "maximum_queue": 6.0,
+    "average_co2": 99428.0452602539,
+    "total_throughput": 249.0,
+    "average_fairness": 710.0751847846657,
+    "total_actions": 5000,
+    "keep_decisions": 1010,
+    "change_decisions": 3990,
+    "change_ratio": 0.798,
+    "average_doim_weights": [
+        0.16960853338241577,
+        0.2285875678062439,
+        0.21420682966709137,
+        0.18431435525417328,
+        0.20328257977962494
+    ]
+}

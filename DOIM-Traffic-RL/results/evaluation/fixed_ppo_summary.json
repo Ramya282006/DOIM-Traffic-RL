@@ -1,0 +1,25 @@
+{
+    "model": "fixed_ppo",
+    "model_path": "results/ppo_fixed/fixed_ppo_final",
+    "evaluation_steps": 1000,
+    "total_reward": -461.9345764070749,
+    "average_reward": -0.4619345764070749,
+    "average_waiting": 115.328,
+    "maximum_waiting": 305.0,
+    "average_queue": 2.18,
+    "maximum_queue": 7.0,
+    "average_co2": 101169.61391845703,
+    "total_throughput": 234.0,
+    "average_fairness": 672.1850367366671,
+    "total_actions": 5000,
+    "keep_decisions": 1242,
+    "change_decisions": 3758,
+    "change_ratio": 0.7516,
+    "average_doim_weights": [
+        0.16956928372383118,
+        0.22883456945419312,
+        0.2141890823841095,
+        0.18409831821918488,
+        0.20330847799777985
+    ]
+}

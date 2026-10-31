@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<routes>
+
+    <vType
+        id="car"
+        accel="2.6"
+        decel="4.5"
+        sigma="0.5"
+        length="5"
+        minGap="2.5"
+        maxSpeed="13.89"
+        guiShape="passenger"
+    />
+
+    <!-- North → South -->
+    <route id="N_S" edges="N_to_J0 J0_to_S"/>
+
+    <!-- South → North -->
+    <route id="S_N" edges="S_to_J0 J0_to_N"/>
+
+    <!-- East → West -->
+    <route id="E_W" edges="E_to_J0 J0_to_W"/>
+
+    <!-- West → East -->
+    <route id="W_E" edges="W_to_J0 J0_to_E"/>
+
+
+    <flow
+        id="north_traffic"
+        type="car"
+        route="N_S"
+        begin="0"
+        end="300"
+        vehsPerHour="300"
+    />
+
+    <flow
+        id="south_traffic"
+        type="car"
+        route="S_N"
+        begin="0"
+        end="300"
+        vehsPerHour="300"
+    />
+
+    <flow
+        id="east_traffic"
+        type="car"
+        route="E_W"
+        begin="0"
+        end="300"
+        vehsPerHour="300"
+    />
+
+    <flow
+        id="west_traffic"
+        type="car"
+        route="W_E"
+        begin="0"
+        end="300"
+        vehsPerHour="300"
+    />
+
+</routes>

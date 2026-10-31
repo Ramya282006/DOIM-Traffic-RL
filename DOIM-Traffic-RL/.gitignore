@@ -1,0 +1,6 @@
+.venv_doim/
+__pycache__/
+*.pyc
+.pytest_cache/
+scratch/
+*.log

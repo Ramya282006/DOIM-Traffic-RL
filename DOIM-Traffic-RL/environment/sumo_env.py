@@ -236,6 +236,7 @@ class DOIMTrafficEnv(gym.Env):
             "vehicle_count": int(vehicle_count),
             "controllable_tls": self.controllable_tls,
             "current_phases": self.signal_controller.get_current_phases(),
+            "phase_strings": {tid: traci.trafficlight.getRedYellowGreenState(tid) for tid in self.controllable_tls},
             "raw_objectives": self.latest_doim_result["raw_objectives"],
             "normalized_objectives": self.latest_doim_result["normalized_objectives"],
             "doim_weights": weights_to_log,

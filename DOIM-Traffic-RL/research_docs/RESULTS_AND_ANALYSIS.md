@@ -21,12 +21,12 @@ Evaluated across 5 independent training seeds (`42, 123, 456, 789, 2024`) on the
 
 | Algorithm | Independent Seeds | Total Runs | Avg Waiting Time (s) $\downarrow$ | Avg Queue (veh) $\downarrow$ | Max Queue (veh) $\downarrow$ | CO2 (mg/s) $\downarrow$ | Throughput (veh) $\uparrow$ | Safety Interventions | Simplex Valid |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Fixed_Time** | 5 | 6 | $55.13 \pm 5.33$ | $1.92 \pm 0.25$ | $8.40 \pm 1.34$ | $56,361 \pm 838$ | $4.20 \pm 0.45$ | $0$ | Yes (Static) |
-| **FW_PPO** | 5 | 6 | $58.38 \pm 22.19$ | $2.43 \pm 0.72$ | $11.30 \pm 2.73$ | $55,484 \pm 895$ | $3.60 \pm 1.34$ | $210.5$ | Yes (Fixed) |
-| **SA_PPO** | 5 | 6 | $73.16 \pm 34.20$ | $3.06 \pm 1.54$ | $13.60 \pm 4.83$ | $54,907 \pm 1,820$ | $3.50 \pm 0.50$ | $222.2$ | Yes (Direct) |
-| **DOIM_no_interaction**| 5 | 5 | $84.07 \pm 43.89$ | $2.78 \pm 1.15$ | $10.40 \pm 3.51$ | $55,778 \pm 1,012$ | $2.80 \pm 1.92$ | $188.4$ | Yes ($\Delta^4$) |
-| **DOIM_rolling_pearson**| 5 | 5 | $84.07 \pm 43.89$ | $2.78 \pm 1.15$ | $10.40 \pm 3.51$ | $55,778 \pm 1,012$ | $2.80 \pm 1.92$ | $188.4$ | Yes ($\Delta^4$) |
-| **IA_MOPPO (Proposed)**| 5 | 5 | **$82.19 \pm 45.69$** | **$2.85 \pm 1.11$** | **$11.00 \pm 3.24$** | **$55,611 \pm 1,253$** | **$3.00 \pm 2.12$** | **$188.6$** | **Yes ($\Delta^4$)** |
+| **Fixed_Time** | 5 | 7 | $70.57 \pm 34.70$ | $2.49 \pm 1.26$ | $10.27 \pm 4.69$ | $62,831 \pm 14,055$ | $5.67 \pm 3.20$ | $0.0 \pm 0.0$ | Yes (Static) |
+| **FW_PPO** | 5 | 7 | $74.51 \pm 33.33$ | $2.92 \pm 1.05$ | $12.40 \pm 3.36$ | $62,242 \pm 14,917$ | $4.93 \pm 3.92$ | $209.7 \pm 42.7$ | Yes (Fixed) |
+| **SA_PPO** | 5 | 7 | $90.23 \pm 38.28$ | $3.57 \pm 1.59$ | $15.20 \pm 5.07$ | $61,509 \pm 14,903$ | $4.80 \pm 2.95$ | $226.1 \pm 74.1$ | Yes (Direct) |
+| **DOIM_no_interaction**| 5 | 6 | $98.52 \pm 43.23$ | $3.29 \pm 1.30$ | $11.90 \pm 3.81$ | $65,624 \pm 21,486$ | $5.00 \pm 5.87$ | $188.0 \pm 140.6$ | Yes ($\Delta^4$) |
+| **DOIM_rolling_pearson**| 5 | 6 | $98.52 \pm 43.23$ | $3.29 \pm 1.30$ | $11.90 \pm 3.81$ | $65,624 \pm 21,486$ | $5.00 \pm 5.87$ | $188.0 \pm 140.6$ | Yes ($\Delta^4$) |
+| **IA_MOPPO (Proposed)**| 5 | 6 | **$97.57 \pm 42.53$** | **$3.32 \pm 1.35$** | **$12.20 \pm 4.21$** | **$65,541 \pm 21,300$** | **$5.10 \pm 6.09$** | **$188.1 \pm 140.8$** | **Yes ($\Delta^4$)** |
 
 ### 2.2 Held-Out Peak Rush Hour Demand Generalization (`rush_hour.sumocfg`)
 Under heavy peak congestion (158 vehicles inserted, queue spillback conditions):

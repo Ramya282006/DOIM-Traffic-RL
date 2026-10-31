@@ -8,7 +8,7 @@ import os
 import sys
 from pathlib import Path
 import time
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 import numpy as np
 import torch
 import torch.nn as nn
@@ -168,6 +168,29 @@ class InteractionAwarePPOAgent:
         self.max_grad_norm = config.policy.max_grad_norm
         self.batch_size = config.policy.batch_size
         self.n_epochs = config.policy.n_epochs
+
+    def save_checkpoint(self, path: Union[str, Path], step: int) -> None:
+        """Saves model and optimizer checkpoint with weights_only safety."""
+        p = Path(path)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        torch.save({
+            "step": int(step),
+            "network_state_dict": self.network.state_dict(),
+            "scoil_state_dict": self.interaction_learner.state_dict(),
+            "optimizer_state_dict": self.optimizer.state_dict(),
+        }, p)
+
+    def load_checkpoint(self, path: Union[str, Path]) -> int:
+        """Loads model and optimizer checkpoint, returning saved step index."""
+        p = Path(path)
+        if not p.exists():
+            raise FileNotFoundError(f"Checkpoint not found at: {p}")
+        checkpoint = torch.load(p, map_location=self.device, weights_only=False)
+        self.network.load_state_dict(checkpoint["network_state_dict"])
+        self.interaction_learner.load_state_dict(checkpoint["scoil_state_dict"])
+        if "optimizer_state_dict" in checkpoint:
+            self.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+        return int(checkpoint.get("step", 0))
 
     def act(
         self,
@@ -382,9 +405,14 @@ def train_interaction_aware_ppo(
     output_root: str = "results/runs",
     ablation_mode: Optional[str] = None,
     enforce_safety_shield: bool = True,
+    checkpoint_interval: int = 2500,
+    eval_episodes: int = 0,
+    eval_seed: Optional[int] = None,
 ) -> ExperimentRun:
     """
-    Executes an interaction-aware PPO experiment with live SUMO and manifest tracking.
+    Executes an interaction-aware PPO experiment with live SUMO, periodic checkpointing,
+    and manifest tracking.
+    Supports budgets: 128 (smoke), 5000 (pilot), 10000 (intermediate), 50000 (main).
     Supports ablations: 'no_interaction', 'rolling_pearson', 'no_shield'.
     """
     config = load_experiment_config(config_path)
@@ -403,6 +431,8 @@ def train_interaction_aware_ppo(
         train_seed=seed,
         scenario=Path(config.simulation.sumo_config).stem,
         output_root=output_root,
+        training_timesteps=total_timesteps,
+        evaluation_mode="train_rollout",
     )
 
     env = DOIMTrafficEnv(
@@ -485,6 +515,12 @@ def train_interaction_aware_ppo(
             current_step += 1
             info = next_info
 
+            # Periodic model checkpoint
+            if checkpoint_interval > 0 and current_step % checkpoint_interval == 0:
+                ckpt_path = run.checkpoints_dir / f"model_step_{current_step}.pt"
+                agent.save_checkpoint(ckpt_path, step=current_step)
+                print(f"[CHECKPOINT] Periodic model saved to {ckpt_path.name}")
+
             # Roll node history forward with real node features from SUMO
             new_node_feat = torch.tensor(info["node_features"], dtype=torch.float32).unsqueeze(0).unsqueeze(1)
             node_history = torch.cat([node_history[:, 1:], new_node_feat], dim=1)
@@ -511,20 +547,139 @@ def train_interaction_aware_ppo(
 
     # Save final model
     model_save_path = run.checkpoints_dir / "ia_moppo_final.pt"
-    torch.save({
-        "network_state_dict": agent.network.state_dict(),
-        "scoil_state_dict": agent.interaction_learner.state_dict(),
-        "optimizer_state_dict": agent.optimizer.state_dict(),
-        "config": config,
-    }, model_save_path)
+    agent.save_checkpoint(model_save_path, step=current_step)
 
     summary = run.close(status="COMPLETED", final_model_path=str(model_save_path))
     print("=" * 80)
     print(f"IA-MOPPO TRAINING COMPLETED! Output saved to: {run.run_dir}")
     print(f"Total Steps: {summary['total_steps']}, Total Reward: {summary['total_reward']:.2f}")
     print("=" * 80)
+
+    # Optional deterministic evaluation
+    if eval_episodes > 0:
+        actual_eval_seed = eval_seed if eval_seed is not None else seed + 10000
+        print(f"\n[EVALUATION] Launching {eval_episodes} deterministic evaluation episodes with seed {actual_eval_seed}...")
+        evaluate_interaction_aware_ppo(
+            agent_or_checkpoint=agent,
+            config_path=config_path,
+            scenario_override=scenario_override,
+            eval_seed=actual_eval_seed,
+            train_seed=seed,
+            n_episodes=eval_episodes,
+            output_root=output_root,
+            ablation_mode=ablation_mode,
+            enforce_safety_shield=enforce_safety_shield,
+        )
+
     return run
+
+
+def evaluate_interaction_aware_ppo(
+    agent_or_checkpoint: Union[InteractionAwarePPOAgent, str, Path],
+    config_path: str = "configs/default.yaml",
+    scenario_override: Optional[str] = None,
+    eval_seed: int = 1042,
+    train_seed: int = 42,
+    n_episodes: int = 1,
+    max_steps_per_episode: int = 1800,
+    output_root: str = "results/runs",
+    ablation_mode: Optional[str] = None,
+    enforce_safety_shield: bool = True,
+) -> List[ExperimentRun]:
+    """
+    Rigorously evaluates a trained IA-MOPPO agent using a deterministic policy (argmax action).
+    Separates evaluation episodes with independent evaluation seeds from training rollouts.
+    Ensures model parameters are frozen (torch.no_grad(), eval mode).
+    """
+    config = load_experiment_config(config_path)
+    if scenario_override:
+        config.simulation.sumo_config = scenario_override
+    scenario_name = Path(config.simulation.sumo_config).stem
+    algo_name = f"DOIM_{ablation_mode}" if ablation_mode else "IA_MOPPO"
+    shield_enabled = False if ablation_mode == "no_shield" else enforce_safety_shield
+
+    if isinstance(agent_or_checkpoint, (str, Path)):
+        agent = InteractionAwarePPOAgent(config=config, device="cpu", ablation_mode=ablation_mode)
+        agent.load_checkpoint(agent_or_checkpoint)
+    else:
+        agent = agent_or_checkpoint
+
+    agent.network.eval()
+    agent.interaction_learner.eval()
+
+    eval_runs = []
+
+    for ep in range(n_episodes):
+        current_eval_seed = eval_seed + ep
+        seed_everything(current_eval_seed)
+
+        run = ExperimentRun(
+            experiment_name=f"EVAL_{algo_name}_{scenario_name}_s{train_seed}_e{current_eval_seed}",
+            algorithm=algo_name,
+            config=config,
+            train_seed=train_seed,
+            eval_seed=current_eval_seed,
+            scenario=scenario_name,
+            output_root=output_root,
+            training_timesteps=config.policy.total_timesteps,
+            episode_id=ep,
+            evaluation_mode="deterministic_evaluation",
+        )
+
+        env = DOIMTrafficEnv(
+            sumo_config=config.simulation.sumo_config,
+            enforce_safety_shield=shield_enabled,
+            max_steps=max_steps_per_episode,
+        )
+
+        obs, info = env.reset(seed=current_eval_seed)
+        node_feat = torch.tensor(info["node_features"], dtype=torch.float32).unsqueeze(0)
+        node_history = node_feat.unsqueeze(1).repeat(1, 10, 1, 1)
+        raw_state = torch.tensor(info["raw_state"], dtype=torch.float32).unsqueeze(0)
+
+        step = 0
+        done = False
+        while not done and step < max_steps_per_episode:
+            obj_vec = torch.tensor(info["normalized_objectives"], dtype=torch.float32).unsqueeze(0)
+
+            with torch.no_grad():
+                action, value, log_prob, weights, int_mat = agent.act(
+                    node_history=node_history,
+                    obj_vec=obj_vec,
+                    raw_state=raw_state,
+                    deterministic=True,
+                    rolling_pearson=info.get("interaction_matrix"),
+                )
+
+            next_obs, reward, terminated, truncated, next_info = env.step(
+                action, weights=weights[0].numpy()
+            )
+            done = terminated or truncated
+
+            run.log_step(
+                step=step,
+                sim_time=next_info["time"],
+                reward=reward,
+                raw_objs=next_info["raw_objectives"],
+                norm_objs=next_info["normalized_objectives"],
+                weights=weights[0].numpy(),
+                actions=action.tolist(),
+                shield_interventions=next_info.get("shield_interventions", 0),
+            )
+
+            step += 1
+            info = next_info
+            new_node_feat = torch.tensor(info["node_features"], dtype=torch.float32).unsqueeze(0).unsqueeze(1)
+            node_history = torch.cat([node_history[:, 1:], new_node_feat], dim=1)
+            raw_state = torch.tensor(info["raw_state"], dtype=torch.float32).unsqueeze(0)
+
+        env.close()
+        run.close(status="COMPLETED")
+        eval_runs.append(run)
+
+    return eval_runs
 
 
 if __name__ == "__main__":
     train_interaction_aware_ppo(total_timesteps=128)
+

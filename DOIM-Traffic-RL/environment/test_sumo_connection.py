@@ -1,22 +1,18 @@
+from environment.sumo_locator import find_sumo_binary
 import traci
-import shutil
 
-# Find SUMO automatically from PATH
-sumo_binary = shutil.which("sumo")
 
-if sumo_binary is None:
-    raise RuntimeError("SUMO was not found in PATH.")
+def test_connection():
+    sumo_binary = find_sumo_binary()
+    if sumo_binary is None:
+        raise RuntimeError("SUMO was not found in PATH or environment.")
 
-print("SUMO found at:", sumo_binary)
+    print("SUMO found at:", sumo_binary)
+    traci.start([sumo_binary, "--version"])
+    print("TraCI successfully connected to SUMO!")
+    traci.close()
+    print("Connection closed successfully.")
 
-# Start SUMO
-traci.start([
-    sumo_binary,
-    "--version"
-])
 
-print("TraCI successfully connected to SUMO!")
-
-traci.close()
-
-print("Connection closed successfully.")
+if __name__ == "__main__":
+    test_connection()

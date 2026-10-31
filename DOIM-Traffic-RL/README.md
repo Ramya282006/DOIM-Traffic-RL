@@ -3,7 +3,7 @@
 [![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/downloads/release/python-3119/)
 [![PyTorch 2.15](https://img.shields.io/badge/PyTorch-2.15.0%2Bcpu-orange.svg)](https://pytorch.org/)
 [![SUMO 1.28](https://img.shields.io/badge/SUMO-1.28.0-green.svg)](https://eclipse.dev/sumo/)
-[![Tests](https://img.shields.io/badge/pytest-80%20passed%2C%201%20skipped-brightgreen.svg)](tests/)
+[![Tests](https://img.shields.io/badge/pytest-88%20passed%2C%201%20skipped-brightgreen.svg)](tests/)
 [![Target](https://img.shields.io/badge/target-IEEE%20T--ITS-darkblue.svg)](research_docs/paper/MANUSCRIPT.md)
 
 ---
@@ -94,11 +94,11 @@ python -c "import torch, sumo, gymnasium; print('Dependencies OK')"
 
 > **Environment Integrity & Platform Support:** The project uses standard canonical dependencies specified in `requirements.txt`. On Linux, macOS, and standard Windows systems, dependencies install cleanly via `pip install -r requirements.txt`. On Windows 11 systems with Smart App Control (SAC) enabled in 'Enforce' mode, Microsoft cloud reputation inspects binary hashes; unmodified PyPI wheels execute cleanly without requiring local developer certificates (`LocalDevCert`).
 
-### 3.3 Running Automated Test Suite (80 Tests Verified)
+### 3.3 Running Automated Test Suite (88 Tests Verified)
 ```powershell
 python -m pytest tests/ -v
 ```
-All 80 active tests pass with 100% success rate (1 optional external SB3 test skipped):
+All 88 active tests pass with 100% success rate (1 optional external SB3 test skipped):
 - `tests/test_safety_shield_semantics.py`: Dynamic SUMO tlLogic parsing, clearance intervals, single-phase junction stability, and signal conflict validation.
 - `tests/test_deterministic_evaluation.py`: Deterministic evaluation reproducibility, frozen baseline weights, non-learning Fixed-Time controller verification.
 - `tests/test_manifest_migration_and_classification.py`: 4-state manifest classification (VALID, LEGACY_VALID, INCOMPLETE, INVALID) and canonical schema normalization.
@@ -121,8 +121,8 @@ All 80 active tests pass with 100% success rate (1 optional external SB3 test sk
 # 1. Smoke Test (Diagnostic execution check)
 .venv_doim\Scripts\python.exe -c "from training.interaction_aware_ppo import train_interaction_aware_ppo; train_interaction_aware_ppo(total_timesteps=128, seed=42)"
 
-# 2. Comprehensive Multi-Seed Matrix (Baselines + Ablations across 5 independent seeds)
-.venv_doim\Scripts\python.exe experiments/run_comprehensive_matrix.py --timesteps 128 --seeds 42 123 456 789 2024
+# 2. Comprehensive Multi-Seed Matrix (Baselines + Ablations across 5 independent seeds with frozen deterministic evaluation)
+.venv_doim\Scripts\python.exe experiments/run_comprehensive_matrix.py --timesteps 128 --eval_episodes 1 --eval_horizon 1800 --seeds 42 123 456 789 2024
 
 # 3. Held-Out Peak Congestion Generalization (Rush Hour demand)
 .venv_doim\Scripts\python.exe experiments/run_comprehensive_matrix.py --timesteps 128 --seeds 42 --scenarios scenarios/rush_hour/rush_hour.sumocfg
@@ -173,7 +173,7 @@ DOIM-Traffic-RL/
 ├── research_docs/          # FINAL_IMPLEMENTATION_REPORT, THEORY, PROTOCOL, MANUSCRIPT
 ├── results/                # Immutable runs (runs/), tables (tables/), figures (figures/)
 ├── scenarios/              # SUMO network grid.net.xml, north_south_surge, rush_hour
-├── tests/                  # 80 passing pytest test suites (1 skipped)
+├── tests/                  # 88 passing pytest test suites (1 skipped)
 └── training/               # InteractionAwarePPOAgent, RolloutBuffer, train loop
 ```
 

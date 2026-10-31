@@ -99,11 +99,34 @@ def verify_transition_clearance(
     return len(violations) == 0, violations
 
 
+def find_net_file_from_sumocfg(sumo_config_path: Union[str, Path]) -> Optional[Path]:
+    """
+    Parses a SUMO .sumocfg file and resolves the absolute path to the referenced .net.xml file.
+    """
+    p = Path(sumo_config_path)
+    if not p.is_file():
+        return None
+    try:
+        tree = ET.parse(p)
+        root = tree.getroot()
+        net_elem = root.find(".//net-file")
+        if net_elem is not None and net_elem.get("value"):
+            net_val = net_elem.get("value")
+            resolved = (p.parent / net_val).resolve()
+            if resolved.is_file():
+                return resolved
+    except Exception:
+        pass
+    return None
+
+
 def extract_tls_programs_from_net(
-    net_xml_path: Union[str, Path]
+    net_xml_path: Union[str, Path],
+    preferred_program_id: Optional[str] = "0",
 ) -> Dict[str, List[Dict[str, Any]]]:
     """
     Parses <tlLogic> tags from SUMO network XML and returns phase programs per TLS.
+    Properly handles multiple programs per traffic light by selecting matching programID.
     """
     p = Path(net_xml_path)
     if not p.is_file():
@@ -111,18 +134,69 @@ def extract_tls_programs_from_net(
     try:
         tree = ET.parse(p)
         root = tree.getroot()
-        programs = {}
+        programs_by_tl: Dict[str, Dict[str, List[Dict[str, Any]]]] = {}
         for tl in root.findall("tlLogic"):
             tid = tl.get("id")
+            pid = str(tl.get("programID", "0"))
             phases = []
             for ph in tl.findall("phase"):
                 phases.append({
                     "duration": float(ph.get("duration", 30)),
                     "state": ph.get("state", ""),
                 })
-            if phases:
-                programs[tid] = phases
-        return programs
+            if phases and tid:
+                programs_by_tl.setdefault(tid, {})[pid] = phases
+
+        selected_programs: Dict[str, List[Dict[str, Any]]] = {}
+        for tid, progs in programs_by_tl.items():
+            if preferred_program_id and preferred_program_id in progs:
+                selected_programs[tid] = progs[preferred_program_id]
+            elif "0" in progs:
+                selected_programs[tid] = progs["0"]
+            else:
+                first_pid = next(iter(progs))
+                selected_programs[tid] = progs[first_pid]
+
+        return selected_programs
+    except Exception:
+        return {}
+
+
+def extract_tls_conflicts_from_net(
+    net_xml_path: Union[str, Path]
+) -> Dict[str, List[Tuple[int, int]]]:
+    """
+    Parses <junction type="traffic_light"> and their <request> foes bitmasks
+    from SUMO network XML to derive exact microscopic conflict pairs.
+    Each pair (idx1, idx2) represents intersecting/conflicting movements that
+    cannot simultaneously hold priority green 'G'.
+    """
+    p = Path(net_xml_path)
+    if not p.is_file():
+        return {}
+    try:
+        tree = ET.parse(p)
+        root = tree.getroot()
+        conflicts: Dict[str, List[Tuple[int, int]]] = {}
+        for j in root.findall("junction"):
+            if j.get("type") == "traffic_light":
+                jid = j.get("id")
+                reqs = j.findall("request")
+                j_conflicts = set()
+                for r in reqs:
+                    try:
+                        k = int(r.get("index"))
+                        foes = str(r.get("foes", ""))
+                        n_bits = len(foes)
+                        for m in range(n_bits):
+                            if foes[-(m + 1)] == "1" and k != m:
+                                pair = (min(k, m), max(k, m))
+                                j_conflicts.add(pair)
+                    except (ValueError, TypeError):
+                        continue
+                if j_conflicts and jid:
+                    conflicts[jid] = sorted(list(j_conflicts))
+        return conflicts
     except Exception:
         return {}
 
@@ -131,8 +205,8 @@ class SignalPhaseState:
     """
     Maintains the temporal state and legal phase timing for a single controllable traffic light.
     Dynamically maps phase transitions based on microscopic SUMO signal definitions.
-    Supports single-phase junctions, multi-phase systems, and multi-stage clearance intervals
-    (e.g., yellow followed by all-red).
+    Supports single-phase junctions, multi-phase systems, mixed green/yellow signals,
+    and multi-stage clearance intervals (e.g., yellow followed by all-red).
     """
 
     def __init__(
@@ -165,6 +239,7 @@ class SignalPhaseState:
 
         # Phase metadata
         self.program_phases = list(program_phases) if program_phases else []
+        self.phase_types: Dict[int, str] = {}
         self.green_phases: List[int] = []
         self.clearance_phases: List[int] = []
         # Dynamic transition map: green_phase_idx -> (List[(clearance_phase_idx, duration)], next_green_phase_idx)
@@ -175,7 +250,7 @@ class SignalPhaseState:
     def _init_program_transitions(self, program_phases: List[Dict[str, Any]]) -> None:
         """
         Derives valid clearance and green phase transition graphs from program phases.
-        Accounts for yellow, all-red, clearance intervals, and transition semantics.
+        Correctly classifies mixed green/yellow states, yellow clearance, and all-red clearance.
         """
         if program_phases and len(program_phases) >= 1:
             n = len(program_phases)
@@ -183,10 +258,22 @@ class SignalPhaseState:
 
             for idx, p in enumerate(program_phases):
                 st = str(p.get("state", "")).lower()
-                # Classification: contains 'y' -> yellow clearance; all 'r' -> all-red clearance
-                if "y" in st or (set(st).issubset({"r"}) and len(st) > 0):
+                has_yellow = "y" in st
+                has_green = "g" in st
+                is_all_red = set(st).issubset({"r"}) and len(st) > 0
+
+                # Explicit classification of phase semantics
+                if has_yellow and has_green:
+                    self.phase_types[idx] = "mixed_clearance"
+                    self.clearance_phases.append(idx)
+                elif has_yellow:
+                    self.phase_types[idx] = "yellow_clearance"
+                    self.clearance_phases.append(idx)
+                elif is_all_red:
+                    self.phase_types[idx] = "all_red_clearance"
                     self.clearance_phases.append(idx)
                 else:
+                    self.phase_types[idx] = "green"
                     self.green_phases.append(idx)
 
             # Case A: Exactly 1 phase (e.g., perimeter un-signalized green node A0, A2, C0, C2)
@@ -289,7 +376,8 @@ class TrafficSafetyShield:
     """
     Supervises multi-intersection action execution, enforcing legal signal safety constraints.
     Supports dynamic phase program extraction from SUMO network XML or TraCI logics.
-    Guarantees conflict-free clearance intervals and protects against unsafe phase jumps.
+    Enforces conflict-free clearance intervals and protects against unsafe phase jumps using
+    movement conflicts derived from microscopic SUMO junction connection topologies.
     """
 
     def __init__(
@@ -298,6 +386,7 @@ class TrafficSafetyShield:
         tls_phase_counts: Optional[Dict[str, int]] = None,
         tls_programs: Optional[Dict[str, List[Dict[str, Any]]]] = None,
         net_xml_path: Optional[Union[str, Path]] = None,
+        tls_conflicts: Optional[Dict[str, List[Tuple[int, int]]]] = None,
         min_green: int = 10,
         max_green: int = 60,
         yellow_duration: int = 3,
@@ -305,11 +394,16 @@ class TrafficSafetyShield:
     ):
         self.controllable_tls = list(controllable_tls_ids)
         self.states: Dict[str, SignalPhaseState] = {}
+        self.net_xml_path = Path(net_xml_path) if net_xml_path else None
 
         # Parse program phases from network XML if provided
         programs_from_xml = extract_tls_programs_from_net(net_xml_path) if net_xml_path else {}
         programs = tls_programs or programs_from_xml
         counts = tls_phase_counts or {}
+
+        # Parse movement conflicts from network XML if provided
+        conflicts_from_xml = extract_tls_conflicts_from_net(net_xml_path) if net_xml_path else {}
+        self.conflicts: Dict[str, List[Tuple[int, int]]] = tls_conflicts or conflicts_from_xml
 
         for tid in self.controllable_tls:
             prog = programs.get(tid)
@@ -393,6 +487,18 @@ class TrafficSafetyShield:
                         # No clearance defined (e.g. 1-phase or immediate): safe action is 0
                         safe_actions[i] = 0
                         continue
+
+                    # Verify next green phase does not violate network-derived movement conflicts
+                    if next_green < len(state.program_phases):
+                        next_state_str = state.program_phases[next_green].get("state", "")
+                        tls_conf = self.conflicts.get(tid, [])
+                        is_valid_phase, violations = verify_phase_conflicts(next_state_str, tls_conf)
+                        if not is_valid_phase:
+                            # Conflicting green detected: reject transition
+                            safe_actions[i] = 0
+                            state.total_interventions += 1
+                            step_interventions += 1
+                            continue
 
                     state.is_yellow = True
                     state.clearance_timer = 0

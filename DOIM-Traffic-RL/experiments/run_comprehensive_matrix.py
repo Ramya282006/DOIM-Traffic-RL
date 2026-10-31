@@ -30,14 +30,15 @@ def run_experiment_matrix(
     seeds: List[int] = [42],
     include_ablations: bool = True,
     scenarios: List[str] = ["scenarios/directional_shift/north_south_surge.sumocfg"],
-    eval_episodes: int = 0,
+    eval_episodes: int = 1,
+    eval_horizon: int = 1800,
     checkpoint_interval: int = 2500,
     output_root: str = "results/runs",
 ):
     print("=" * 80)
     print("STARTING DOIM-TRAFFIC-RL COMPREHENSIVE EXPERIMENT MATRIX")
     print(f"Training Timesteps per run: {timesteps} | Seeds: {seeds} | Scenarios: {scenarios}")
-    print(f"Evaluation Episodes: {eval_episodes} | Checkpoint Interval: {checkpoint_interval}")
+    print(f"Evaluation Episodes: {eval_episodes} (Horizon: {eval_horizon}s) | Checkpoint Interval: {checkpoint_interval}")
     print("=" * 80)
 
     start_time = time.time()
@@ -73,7 +74,7 @@ def run_experiment_matrix(
                     n_episodes=eval_episodes,
                     eval_seed=seed + 1000,
                     train_seed=seed,
-                    max_steps_per_episode=timesteps,
+                    max_steps_per_episode=eval_horizon,
                     output_root=output_root,
                 )
 
@@ -143,7 +144,8 @@ if __name__ == "__main__":
     parser.add_argument("--timesteps", type=int, default=128, help="Budget: 128 (smoke), 5000 (pilot), 10000 (intermediate), 50000 (main)")
     parser.add_argument("--seeds", nargs="+", type=int, default=[42], help="List of independent training seeds")
     parser.add_argument("--scenarios", nargs="+", type=str, default=["scenarios/directional_shift/north_south_surge.sumocfg"], help="List of scenario sumocfg paths")
-    parser.add_argument("--eval_episodes", type=int, default=0, help="Number of frozen deterministic evaluation episodes per model")
+    parser.add_argument("--eval_episodes", type=int, default=1, help="Number of frozen deterministic evaluation episodes per model (default: 1)")
+    parser.add_argument("--eval_horizon", type=int, default=1800, help="Evaluation horizon in seconds per episode (default: 1800)")
     parser.add_argument("--checkpoint_interval", type=int, default=2500, help="Periodic checkpoint save interval")
     parser.add_argument("--output_root", type=str, default="results/runs", help="Root directory for experiment logs")
     parser.add_argument("--no_ablations", action="store_true", help="Skip ablations")
@@ -155,6 +157,8 @@ if __name__ == "__main__":
         scenarios=args.scenarios,
         include_ablations=not args.no_ablations,
         eval_episodes=args.eval_episodes,
+        eval_horizon=args.eval_horizon,
         checkpoint_interval=args.checkpoint_interval,
         output_root=args.output_root,
     )
+

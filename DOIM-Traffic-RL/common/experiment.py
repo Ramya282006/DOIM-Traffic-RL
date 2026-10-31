@@ -101,9 +101,9 @@ def migrate_legacy_manifest(data: Dict[str, Any]) -> Tuple[bool, str, Dict[str, 
     """
     Explicit IEEE-standard migration mechanism for historical Phase 10 manifests.
     Maps legacy field names to canonical schema without modifying raw disk files.
-    Rejects incomplete, failed, or unverified legacy records.
+    Preserves exact provenance without inventing default seeds, timesteps, hashes, or modes.
+    Separates historical completion status from reproducibility eligibility.
     """
-    # Verify minimal legacy required keys
     legacy_status = str(data.get("status", data.get("completion_status", ""))).upper()
     if legacy_status != "COMPLETED":
         return False, f"Incomplete legacy run status: '{legacy_status}' (must be COMPLETED)", {}
@@ -113,20 +113,47 @@ def migrate_legacy_manifest(data: Dict[str, Any]) -> Tuple[bool, str, Dict[str, 
     if not algo or not scenario:
         return False, "Missing algorithm or scenario identity in legacy manifest", {}
 
-    # Seed extraction
-    try:
-        train_seed = int(data.get("train_seed", data.get("seed", 42)))
-        eval_seed = int(data.get("eval_seed", data.get("evaluation_seed", train_seed)))
-    except (ValueError, TypeError):
-        return False, "Legacy train_seed or eval_seed is not a valid integer", {}
+    # Seed extraction without invented defaults
+    train_seed = None
+    if "train_seed" in data and data["train_seed"] is not None:
+        try:
+            train_seed = int(data["train_seed"])
+        except (ValueError, TypeError):
+            return False, "Legacy train_seed is not a valid integer", {}
+    elif "seed" in data and data["seed"] is not None:
+        try:
+            train_seed = int(data["seed"])
+        except (ValueError, TypeError):
+            return False, "Legacy seed is not a valid integer", {}
 
-    # Timestep budget
-    try:
-        total_steps = int(data.get("total_steps", data.get("training_timesteps", 128)))
-        if total_steps <= 0:
-            return False, f"Non-positive legacy step count: {total_steps}", {}
-    except (ValueError, TypeError):
-        return False, "Legacy total_steps is not a valid integer", {}
+    eval_seed = None
+    if "eval_seed" in data and data["eval_seed"] is not None:
+        try:
+            eval_seed = int(data["eval_seed"])
+        except (ValueError, TypeError):
+            return False, "Legacy eval_seed is not a valid integer", {}
+    elif "evaluation_seed" in data and data["evaluation_seed"] is not None:
+        try:
+            eval_seed = int(data["evaluation_seed"])
+        except (ValueError, TypeError):
+            return False, "Legacy evaluation_seed is not a valid integer", {}
+
+    # Timestep budget without invented defaults
+    total_steps = None
+    if "total_steps" in data and data["total_steps"] is not None:
+        try:
+            total_steps = int(data["total_steps"])
+            if total_steps <= 0:
+                return False, f"Non-positive legacy step count: {total_steps}", {}
+        except (ValueError, TypeError):
+            return False, "Legacy total_steps is not a valid integer", {}
+    elif "training_timesteps" in data and data["training_timesteps"] is not None:
+        try:
+            total_steps = int(data["training_timesteps"])
+            if total_steps <= 0:
+                return False, f"Non-positive legacy training_timesteps: {total_steps}", {}
+        except (ValueError, TypeError):
+            return False, "Legacy training_timesteps is not a valid integer", {}
 
     # Timestamps
     start_time = data.get("start_time")
@@ -134,19 +161,34 @@ def migrate_legacy_manifest(data: Dict[str, Any]) -> Tuple[bool, str, Dict[str, 
     if not start_time:
         return False, "Legacy manifest missing start_time timestamp", {}
 
-    # Git commit hash
-    git_sha = data.get("git_sha", data.get("code_commit", "UNKNOWN_LEGACY_COMMIT"))
-    config_hash = data.get("config_hash", "UNKNOWN_CONFIG_HASH")
+    # Git commit hash and config hash without invented defaults
+    git_sha = data.get("code_commit", data.get("git_sha"))
+    if not git_sha:
+        git_sha = "UNKNOWN"
 
-    # Determine canonical evaluation mode
-    exp_id = data.get("experiment_id", data.get("run_id", f"{algo}_{scenario}_s{train_seed}"))
+    config_hash = data.get("config_hash")
+    if not config_hash:
+        config_hash = "UNKNOWN"
+
+    # Evaluation mode without guessing
     raw_mode = data.get("evaluation_mode")
     if raw_mode:
         eval_mode = normalize_evaluation_mode(raw_mode)
-    elif "eval" in str(exp_id).lower() or algo == "Fixed_Time":
-        eval_mode = "deterministic_eval"
     else:
-        eval_mode = "train_rollout"
+        # DO NOT guess evaluation mode from experiment_id or algorithm name!
+        eval_mode = "UNKNOWN"
+
+    # Check reproducibility eligibility
+    is_reproducible = (
+        train_seed is not None
+        and eval_seed is not None
+        and total_steps is not None
+        and git_sha != "UNKNOWN"
+        and config_hash != "UNKNOWN"
+        and eval_mode != "UNKNOWN"
+    )
+
+    exp_id = data.get("experiment_id", data.get("run_id", f"{algo}_{scenario}_s{train_seed if train_seed is not None else 'unknown'}"))
 
     migrated = dict(data)
     migrated["experiment_id"] = exp_id
@@ -164,8 +206,10 @@ def migrate_legacy_manifest(data: Dict[str, Any]) -> Tuple[bool, str, Dict[str, 
     migrated["end_time"] = str(end_time) if end_time else None
     migrated["completion_status"] = "COMPLETED"
     migrated["is_legacy_migrated"] = True
+    migrated["reproducibility_eligible"] = is_reproducible
 
     return True, "Legacy manifest successfully migrated.", migrated
+
 
 
 def classify_experiment_manifest(
@@ -315,6 +359,23 @@ class ExperimentRun:
         # Snapshot configuration
         snapshot_config(config, self.run_dir)
         
+        # Determine explicit fairness metric identity and unit metadata from config
+        objs_cfg = self.config.get("objectives", {}) if isinstance(self.config, dict) else getattr(self.config, "objectives", {})
+        if isinstance(objs_cfg, dict):
+            raw_metric = str(objs_cfg.get("fairness_metric", "delay_disparity")).lower()
+        else:
+            raw_metric = str(getattr(objs_cfg, "fairness_metric", "delay_disparity")).lower()
+            
+        if raw_metric in ("delay_disparity", "jain_index", "jain_index_or_delay_disparity", "intersection_fairness_disparity"):
+            self.fairness_metric_name = "delay_disparity"
+            self.fairness_metric_unit = "dimensionless"
+        elif raw_metric in ("delay_variance", "variance"):
+            self.fairness_metric_name = "delay_variance"
+            self.fairness_metric_unit = "s^2"
+        else:
+            self.fairness_metric_name = raw_metric
+            self.fairness_metric_unit = "unknown"
+
         # Manifest
         self.manifest_path = self.run_dir / "manifest.json"
         self.metrics_csv_path = self.run_dir / "metrics_step.csv"
@@ -341,7 +402,7 @@ class ExperimentRun:
             "training_timesteps": self.training_timesteps,
             "episode_id": self.episode_id,
             "evaluation_mode": self.evaluation_mode,
-            "config_hash": self.config.get("config_hash", "UNKNOWN"),
+            "config_hash": self.config.get("config_hash", "UNKNOWN") if isinstance(self.config, dict) else getattr(self.config, "config_hash", "UNKNOWN"),
             "code_commit": get_git_commit_sha(),
             "environment_info": get_environment_info(),
             "start_time": self.start_timestamp,
@@ -349,7 +410,10 @@ class ExperimentRun:
             "completion_status": "INITIALIZED",
             "model_checkpoint_sha256": None,
             "total_steps": 0,
-            "summary_metrics": {},
+            "summary_metrics": {
+                "fairness_metric_name": self.fairness_metric_name,
+                "fairness_metric_unit": self.fairness_metric_unit,
+            },
         }
         with open(self.manifest_path, "w", encoding="utf-8") as f:
             json.dump(manifest, f, indent=2)
@@ -488,6 +552,10 @@ class ExperimentRun:
             "algorithm": self.algorithm,
             "scenario": self.scenario,
             "seed": self.train_seed,
+            "train_seed": self.train_seed,
+            "eval_seed": self.eval_seed,
+            "episode_id": self.episode_id,
+            "evaluation_mode": self.evaluation_mode,
             "total_steps": len(self.step_records),
             "total_reward": float(np.sum(rewards)),
             "average_reward": float(np.mean(rewards)),
@@ -498,6 +566,10 @@ class ExperimentRun:
             "average_co2": float(np.mean(co2s)),
             "total_throughput": float(np.sum(throughputs)),
             "average_fairness": float(np.mean(fairnesses)),
+            "fairness_metric_name": self.fairness_metric_name,
+            "fairness_metric_unit": self.fairness_metric_unit,
+            "fairness_disparity": float(np.mean(fairnesses)) if self.fairness_metric_name == "delay_disparity" else None,
+            "fairness_variance": float(np.mean(fairnesses)) if self.fairness_metric_name == "delay_variance" else None,
             "total_shield_interventions": int(np.sum(shields)),
             "average_weights": [float(w) for w in np.mean(weights_matrix, axis=0)],
         }

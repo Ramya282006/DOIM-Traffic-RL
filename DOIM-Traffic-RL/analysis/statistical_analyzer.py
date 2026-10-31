@@ -37,6 +37,10 @@ class StatisticalAnalyzer:
         self.legacy_runs: List[str] = []
         self.valid_runs: List[str] = []
 
+    def load_completed_runs(self, reject_incomplete: bool = True) -> pd.DataFrame:
+        """Alias for load_run_summaries."""
+        return self.load_run_summaries(reject_incomplete=reject_incomplete)
+
     def load_run_summaries(self, reject_incomplete: bool = True) -> pd.DataFrame:
         """
         Scans all subdirectories in results/runs, validates manifest and CSV integrity,
@@ -75,12 +79,26 @@ class StatisticalAnalyzer:
             elif status == ManifestStatus.VALID:
                 self.valid_runs.append(str(run_dir.name))
 
-            # Verify metrics CSV file
+            # Verify metrics CSV file and count recorded steps
             if not metrics_path.is_file() or metrics_path.stat().st_size == 0:
                 self.rejected_runs.append({
                     "run_dir": str(run_dir.name),
                     "status": "INCOMPLETE_CSV",
                     "reason": "Missing or empty metrics_step.csv",
+                })
+                if reject_incomplete:
+                    continue
+
+            try:
+                with open(metrics_path, "r", encoding="utf-8") as f_csv:
+                    # Count non-header non-empty rows
+                    csv_lines = [line.strip() for line in f_csv if line.strip()]
+                    csv_step_count = max(0, len(csv_lines) - 1)
+            except Exception as e:
+                self.rejected_runs.append({
+                    "run_dir": str(run_dir.name),
+                    "status": "CORRUPT_CSV",
+                    "reason": f"Failed to read metrics_step.csv: {e}",
                 })
                 if reject_incomplete:
                     continue
@@ -99,24 +117,113 @@ class StatisticalAnalyzer:
                     data = json.load(f)
 
                 data["run_dir"] = str(run_dir)
-                # Seed extraction
-                seed_val = data.get("train_seed", data.get("seed", 42))
-                data["train_seed"] = int(seed_val)
-                data["eval_seed"] = int(data.get("eval_seed", data.get("evaluation_seed", seed_val)))
-                data["episode_id"] = int(data.get("episode_id", 0))
-                data["evaluation_mode"] = str(data.get("evaluation_mode", "train_rollout"))
-                data["scenario"] = str(data.get("scenario", "unknown_scenario"))
-                data["algorithm"] = str(data.get("algorithm", "unknown_algo"))
-                data["start_time"] = str(data.get("start_time", run_dir.name))
 
-                # Strictly separate fairness metrics: Delay Disparity [0, 1] vs Variance (s^2)
+                # Cross-Artifact Consistency Checks (Summary vs Manifest vs Metrics CSV)
+                inconsistencies = []
+
+                # 1. Step count consistency
+                sum_steps = data.get("total_steps")
+                if sum_steps is not None and int(sum_steps) != csv_step_count:
+                    inconsistencies.append(
+                        f"Step count mismatch: summary says {sum_steps} steps, but metrics_step.csv has {csv_step_count} rows"
+                    )
+
+                # 2. Manifest vs Summary identity consistency
+                if migrated_manifest:
+                    man_algo = migrated_manifest.get("algorithm")
+                    sum_algo = data.get("algorithm")
+                    if sum_algo and man_algo and sum_algo != man_algo:
+                        inconsistencies.append(f"Algorithm mismatch: summary='{sum_algo}' vs manifest='{man_algo}'")
+
+                    man_scen = migrated_manifest.get("scenario")
+                    sum_scen = data.get("scenario")
+                    if sum_scen and man_scen and sum_scen != man_scen:
+                        inconsistencies.append(f"Scenario mismatch: summary='{sum_scen}' vs manifest='{man_scen}'")
+
+                    sum_train = data.get("train_seed", data.get("seed"))
+                    man_train = migrated_manifest.get("train_seed")
+                    if sum_train is not None and man_train is not None and int(sum_train) != int(man_train):
+                        inconsistencies.append(f"Train seed mismatch: summary={sum_train} vs manifest={man_train}")
+
+                    sum_eval = data.get("eval_seed")
+                    man_eval = migrated_manifest.get("evaluation_seed", migrated_manifest.get("eval_seed"))
+                    if sum_eval is not None and man_eval is not None and int(sum_eval) != int(man_eval):
+                        inconsistencies.append(f"Eval seed mismatch: summary={sum_eval} vs manifest={man_eval}")
+
+                    sum_mode = data.get("evaluation_mode")
+                    man_mode = migrated_manifest.get("evaluation_mode")
+                    if sum_mode and man_mode and man_mode != "UNKNOWN" and sum_mode != man_mode:
+                        inconsistencies.append(f"Evaluation mode mismatch: summary='{sum_mode}' vs manifest='{man_mode}'")
+
+                if inconsistencies:
+                    self.rejected_runs.append({
+                        "run_dir": str(run_dir.name),
+                        "status": "DATA_INCONSISTENCY",
+                        "reason": "; ".join(inconsistencies),
+                    })
+                    if reject_incomplete:
+                        continue
+
+                # Seed & provenance extraction without invented defaults
+                sum_train = data.get("train_seed", data.get("seed"))
+                man_train = migrated_manifest.get("train_seed") if migrated_manifest else None
+                train_seed = int(sum_train) if sum_train is not None else (int(man_train) if man_train is not None else None)
+                data["train_seed"] = train_seed
+
+                sum_eval = data.get("eval_seed")
+                man_eval = migrated_manifest.get("evaluation_seed", migrated_manifest.get("eval_seed")) if migrated_manifest else None
+                eval_seed = int(sum_eval) if sum_eval is not None else (int(man_eval) if man_eval is not None else None)
+                data["eval_seed"] = eval_seed
+
+                data["episode_id"] = int(data.get("episode_id", migrated_manifest.get("episode_id", 0) if migrated_manifest else 0))
+
+                sum_mode = data.get("evaluation_mode")
+                man_mode = migrated_manifest.get("evaluation_mode") if migrated_manifest else None
+                data["evaluation_mode"] = str(sum_mode or man_mode or "UNKNOWN")
+                data["scenario"] = str(data.get("scenario", migrated_manifest.get("scenario", "unknown_scenario") if migrated_manifest else "unknown_scenario"))
+                data["algorithm"] = str(data.get("algorithm", migrated_manifest.get("algorithm", "unknown_algo") if migrated_manifest else "unknown_algo"))
+                data["start_time"] = str(data.get("start_time", run_dir.name))
+                data["reproducibility_eligible"] = bool(migrated_manifest.get("reproducibility_eligible", False) if migrated_manifest else False)
+
+                # Fairness metric identification strictly via explicit metadata (NO numerical thresholding!)
                 raw_fairness = float(data.get("average_fairness", 0.0))
-                if raw_fairness <= 1.0:
+                metric_name = data.get("fairness_metric_name")
+                if not metric_name and migrated_manifest:
+                    metric_name = migrated_manifest.get("summary_metrics", {}).get("fairness_metric_name")
+
+                # Also inspect config_snapshot.yaml if available
+                if not metric_name:
+                    cfg_path = run_dir / "config_snapshot.yaml"
+                    if cfg_path.is_file():
+                        try:
+                            import yaml
+                            with open(cfg_path, "r", encoding="utf-8") as cf:
+                                loaded_cfg = yaml.safe_load(cf)
+                                if isinstance(loaded_cfg, dict):
+                                    metric_name = loaded_cfg.get("objectives", {}).get("fairness_metric")
+                        except Exception:
+                            pass
+
+                metric_name_str = str(metric_name).lower() if metric_name else ""
+                if metric_name_str in ("delay_disparity", "jain_index", "jain_index_or_delay_disparity", "intersection_fairness_disparity", "vehicle_fairness_disparity"):
+                    data["fairness_metric_name"] = "delay_disparity"
+                    data["fairness_metric_unit"] = "dimensionless"
                     data["fairness_disparity"] = raw_fairness
                     data["fairness_variance"] = np.nan
-                else:
+                    data["fairness_eligible"] = True
+                elif metric_name_str in ("delay_variance", "variance", "delay_var"):
+                    data["fairness_metric_name"] = "delay_variance"
+                    data["fairness_metric_unit"] = "s^2"
                     data["fairness_disparity"] = np.nan
                     data["fairness_variance"] = raw_fairness
+                    data["fairness_eligible"] = True
+                else:
+                    # Unidentifiable / ambiguous fairness metric: classify as UNKNOWN / ineligible rather than guessing!
+                    data["fairness_metric_name"] = "UNKNOWN"
+                    data["fairness_metric_unit"] = "UNKNOWN"
+                    data["fairness_disparity"] = np.nan
+                    data["fairness_variance"] = np.nan
+                    data["fairness_eligible"] = False
 
                 records.append(data)
             except Exception as e:
@@ -132,7 +239,9 @@ class StatisticalAnalyzer:
             return df
 
         # Sort explicitly by start_time / run_dir before deduplication
-        df = df.sort_values(by=["algorithm", "scenario", "train_seed", "episode_id", "start_time"])
+        df["train_seed_sort"] = df["train_seed"].fillna(-1)
+        df = df.sort_values(by=["algorithm", "scenario", "train_seed_sort", "episode_id", "start_time"])
+        df = df.drop(columns=["train_seed_sort"])
 
         # Deduplicate records that have identical algorithm, scenario, train_seed, and episode_id
         initial_len = len(df)

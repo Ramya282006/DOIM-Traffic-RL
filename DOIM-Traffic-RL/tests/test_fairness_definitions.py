@@ -102,3 +102,121 @@ def test_metric_heterogeneity_isolation():
     # Fixed_Time has variance 387.94, not disparity
     assert ft_row["fairness_variance_mean"] == pytest.approx(387.94)
     assert np.isnan(ft_row.get("fairness_disparity_mean", np.nan))
+
+
+def test_delay_variance_below_one_classified_as_variance(tmp_path):
+    """
+    Critical regression test: Verifies that delay variance values below 1.0
+    (e.g., Var(d) = 0.01 s^2) are NEVER erroneously classified as Delay Disparity
+    due to numerical thresholding (raw_fairness <= 1.0).
+    Explicit metric identity must route it to fairness_variance.
+    """
+    run_dir = tmp_path / "variance_low_run"
+    run_dir.mkdir()
+
+    # Step CSV with 1 row
+    (run_dir / "metrics_step.csv").write_text(
+        "step,simulation_time,reward,raw_waiting,raw_queue,raw_co2,raw_throughput,raw_fairness\n"
+        "0,1.0,-0.1,0.2,0,500,1,0.01\n",
+        encoding="utf-8",
+    )
+    # Summary JSON with explicit delay_variance identity
+    import json
+    summary_data = {
+        "algorithm": "FW_PPO",
+        "scenario": "test_scen",
+        "train_seed": 42,
+        "eval_seed": 1042,
+        "total_steps": 1,
+        "average_fairness": 0.01,
+        "fairness_metric_name": "delay_variance",
+        "fairness_metric_unit": "s^2",
+    }
+    (run_dir / "summary.json").write_text(json.dumps(summary_data), encoding="utf-8")
+
+    analyzer = StatisticalAnalyzer(runs_root=tmp_path)
+    df = analyzer.load_completed_runs(reject_incomplete=False)
+
+    assert len(df) == 1
+    row = df.iloc[0]
+    assert row["fairness_metric_name"] == "delay_variance"
+    assert row["fairness_metric_unit"] == "s^2"
+    assert row["fairness_variance"] == pytest.approx(0.01)
+    assert np.isnan(row["fairness_disparity"])
+    assert bool(row["fairness_eligible"]) is True
+
+
+def test_delay_disparity_near_upper_bound(tmp_path):
+    """
+    Verifies that high delay disparity near the theoretical upper bound (e.g., 0.95)
+    is correctly classified as Delay Disparity and not confused with variance.
+    """
+    run_dir = tmp_path / "disparity_high_run"
+    run_dir.mkdir()
+
+    (run_dir / "metrics_step.csv").write_text(
+        "step,simulation_time,reward,raw_waiting,raw_queue,raw_co2,raw_throughput,raw_fairness\n"
+        "0,1.0,-0.5,100.0,5,10000,0,0.95\n",
+        encoding="utf-8",
+    )
+    import json
+    summary_data = {
+        "algorithm": "IA_MOPPO",
+        "scenario": "test_scen",
+        "train_seed": 42,
+        "eval_seed": 1042,
+        "total_steps": 1,
+        "average_fairness": 0.95,
+        "fairness_metric_name": "delay_disparity",
+        "fairness_metric_unit": "dimensionless",
+    }
+    (run_dir / "summary.json").write_text(json.dumps(summary_data), encoding="utf-8")
+
+    analyzer = StatisticalAnalyzer(runs_root=tmp_path)
+    df = analyzer.load_completed_runs(reject_incomplete=False)
+
+    assert len(df) == 1
+    row = df.iloc[0]
+    assert row["fairness_metric_name"] == "delay_disparity"
+    assert row["fairness_metric_unit"] == "dimensionless"
+    assert row["fairness_disparity"] == pytest.approx(0.95)
+    assert np.isnan(row["fairness_variance"])
+    assert bool(row["fairness_eligible"]) is True
+
+
+def test_unidentifiable_metric_classified_unknown_ineligible(tmp_path):
+    """
+    Verifies that a run lacking explicit fairness metric identity metadata
+    is classified as UNKNOWN / ineligible rather than guessing based on numerical values.
+    """
+    run_dir = tmp_path / "unknown_metric_run"
+    run_dir.mkdir()
+
+    (run_dir / "metrics_step.csv").write_text(
+        "step,simulation_time,reward,raw_waiting,raw_queue,raw_co2,raw_throughput,raw_fairness\n"
+        "0,1.0,-0.2,10.0,1,2000,1,0.5\n",
+        encoding="utf-8",
+    )
+    import json
+    # No fairness_metric_name or unit provided
+    summary_data = {
+        "algorithm": "Fixed_Time",
+        "scenario": "test_scen",
+        "train_seed": 42,
+        "eval_seed": 1042,
+        "total_steps": 1,
+        "average_fairness": 0.5,
+    }
+    (run_dir / "summary.json").write_text(json.dumps(summary_data), encoding="utf-8")
+
+    analyzer = StatisticalAnalyzer(runs_root=tmp_path)
+    df = analyzer.load_completed_runs(reject_incomplete=False)
+
+    assert len(df) == 1
+    row = df.iloc[0]
+    assert row["fairness_metric_name"] == "UNKNOWN"
+    assert row["fairness_metric_unit"] == "UNKNOWN"
+    assert np.isnan(row["fairness_disparity"])
+    assert np.isnan(row["fairness_variance"])
+    assert bool(row["fairness_eligible"]) is False
+

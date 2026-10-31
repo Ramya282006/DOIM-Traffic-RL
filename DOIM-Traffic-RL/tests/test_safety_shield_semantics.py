@@ -141,3 +141,142 @@ def test_multi_stage_clearance_transition():
     safe_act, target, _ = shield.filter_action(np.array([0]), [2])
     # Should enter next green phase (Phase 3)
     assert target[0] == 3
+
+
+def test_extract_conflicts_from_real_sumo_network():
+    """
+    Verifies that movement conflicts are dynamically extracted from actual SUMO network
+    junction request foes bitmasks rather than manually hardcoded test pairs.
+    """
+    from environment.safety_shield import extract_tls_conflicts_from_net
+
+    grid_net = Path("environment/network/research_3x3/grid.net.xml")
+    if not grid_net.exists():
+        pytest.skip(f"Network file not found: {grid_net}")
+
+    conflicts = extract_tls_conflicts_from_net(grid_net)
+    assert len(conflicts) >= 5
+    assert "B1" in conflicts
+    assert len(conflicts["B1"]) > 0
+    # Every conflict pair must be a 2-tuple of distinct integers (idx1, idx2)
+    for idx1, idx2 in conflicts["B1"]:
+        assert idx1 < idx2
+        assert idx1 >= 0
+        assert idx2 < 20
+
+    # Also test intersection.net.xml
+    inter_net = Path("environment/network/intersection.net.xml")
+    if inter_net.exists():
+        inter_conflicts = extract_tls_conflicts_from_net(inter_net)
+        assert "J0" in inter_conflicts
+        # Straight N (link 2) and straight E (link 6) must conflict
+        assert (2, 6) in inter_conflicts["J0"]
+
+
+def test_mixed_green_yellow_signal_state_classification():
+    """
+    Verifies that mixed green/yellow signal states (e.g., A1's 'yyyyrrrrGyyy' and C1's 'Gyyyyyyyrrrr')
+    are properly classified as mixed_clearance, treated as clearance phases by the state machine,
+    and verified by transition clearance logic.
+    """
+    from environment.safety_shield import extract_tls_programs_from_net
+
+    grid_net = Path("environment/network/research_3x3/grid.net.xml")
+    if not grid_net.exists():
+        pytest.skip(f"Network file not found: {grid_net}")
+
+    programs = extract_tls_programs_from_net(grid_net)
+    assert "A1" in programs
+
+    # Program for A1 has mixed green/yellow in phase 1 ('yyyyrrrrGyyy') and phase 3 ('rrrryyyyGrrr')
+    a1_phases = programs["A1"]
+    state_a1 = SignalPhaseState(tls_id="A1", num_phases=len(a1_phases), program_phases=a1_phases)
+
+    assert state_a1.phase_types[1] == "mixed_clearance"
+    assert state_a1.phase_types[3] == "mixed_clearance"
+    assert 1 in state_a1.clearance_phases
+    assert 3 in state_a1.clearance_phases
+    assert 0 in state_a1.green_phases
+    assert 2 in state_a1.green_phases
+
+    # Transition from phase 0 ('GGggrrrrGGGg') to phase 2 ('rrrrGGGgGrrr') through clearance phase 1 ('yyyyrrrrGyyy')
+    is_valid, violations = verify_transition_clearance(
+        from_state=a1_phases[0]["state"],
+        to_state=a1_phases[2]["state"],
+        clearance_states=[a1_phases[1]["state"]],
+    )
+    assert is_valid is True, f"Clearance violations in real A1 transition: {violations}"
+
+
+def test_multiple_tls_programs_handling(tmp_path):
+    """
+    Verifies that multiple programs for a single TLS (e.g., programID '0' and programID '1')
+    are correctly handled without silent overwriting, honoring preferred_program_id.
+    """
+    multi_prog_xml = tmp_path / "multi_program.net.xml"
+    multi_prog_xml.write_text(
+        '<net version="1.16">\n'
+        '  <tlLogic id="TLS_MULTI" type="static" programID="0" offset="0">\n'
+        '    <phase duration="40" state="GGGG"/>\n'
+        '    <phase duration="4" state="yyyy"/>\n'
+        '  </tlLogic>\n'
+        '  <tlLogic id="TLS_MULTI" type="static" programID="1" offset="0">\n'
+        '    <phase duration="60" state="rrrr"/>\n'
+        '    <phase duration="5" state="GGGG"/>\n'
+        '  </tlLogic>\n'
+        '</net>\n',
+        encoding="utf-8",
+    )
+
+    prog_0 = extract_tls_programs_from_net(multi_prog_xml, preferred_program_id="0")
+    assert prog_0["TLS_MULTI"][0]["state"] == "GGGG"
+    assert prog_0["TLS_MULTI"][0]["duration"] == 40.0
+
+    prog_1 = extract_tls_programs_from_net(multi_prog_xml, preferred_program_id="1")
+    assert prog_1["TLS_MULTI"][0]["state"] == "rrrr"
+    assert prog_1["TLS_MULTI"][0]["duration"] == 60.0
+
+
+def test_actual_sumo_environment_safety_shield_integration():
+    """
+    Live SUMO integration test: Executes actual simulation steps with DOIMTrafficEnv
+    under an adversarial policy requesting phase switches on every single step.
+    Verifies that:
+      1. Min green is strictly enforced (interventions > 0).
+      2. No illegal yellow phase jumps occur.
+      3. The safety shield operates properly in the live simulation loop.
+    """
+    from environment.sumo_env import DOIMTrafficEnv
+    from environment.sumo_locator import find_sumo_binary
+
+    if not find_sumo_binary():
+        pytest.skip("SUMO binary not found in PATH or environment.")
+
+    sumo_cfg = "scenarios/directional_shift/north_south_surge.sumocfg"
+    if not Path(sumo_cfg).exists():
+        pytest.skip(f"Config not found: {sumo_cfg}")
+
+    env = DOIMTrafficEnv(
+        sumo_config=sumo_cfg,
+        enforce_safety_shield=True,
+        max_steps=20,
+    )
+
+    try:
+        obs, info = env.reset(seed=42)
+        total_interventions = 0
+
+        # Adversarial policy: requests phase switch (action=1) at every single step!
+        for step in range(15):
+            adversarial_action = np.ones(5, dtype=np.int64)
+            obs, reward, terminated, truncated, next_info = env.step(adversarial_action)
+            step_interventions = next_info.get("shield_interventions", 0)
+            total_interventions += step_interventions
+            if terminated or truncated:
+                break
+
+        # Since min_green is 10s, requesting a switch at every step MUST trigger shield interventions
+        assert total_interventions > 0, "Safety shield failed to intervene against rapid adversarial switching!"
+    finally:
+        env.close()
+

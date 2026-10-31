@@ -127,7 +127,7 @@ def multi_scenario_synthetic_dataset(tmp_path: Path):
             "average_waiting": r["waiting"],
             "average_queue": r["queue"],
             "average_fairness": 0.15,
-            "total_steps": 100 if r["status"] == "COMPLETED" else 0,
+            "total_steps": 1 if r["status"] == "COMPLETED" else 0,
         }
         with open(run_folder / "summary.json", "w", encoding="utf-8") as f:
             json.dump(summary, f)

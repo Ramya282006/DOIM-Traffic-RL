@@ -105,7 +105,7 @@ def run_fixed_time_experiment(
     env = DOIMTrafficEnv(
         sumo_config=config.simulation.sumo_config,
         enforce_safety_shield=config.safety_and_constraints.enforce_safety_shield,
-        max_steps=1800,
+        max_steps=total_timesteps,
     )
 
     controller = FixedTimeController(cycle_time=cycle_time, num_controllable_tls=5)
@@ -137,8 +137,8 @@ def run_fixed_time_experiment(
         )
 
         if done:
-            obs, info = env.reset(seed=actual_eval_seed + step + 1)
-            controller.reset()
+            # Terminate immediately: do not silently chain multiple shorter episodes into one run
+            break
 
     env.close()
     summary = run.close(status="COMPLETED")

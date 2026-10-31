@@ -557,7 +557,7 @@ def train_interaction_aware_ppo(
 
     # Optional deterministic evaluation
     if eval_episodes > 0:
-        actual_eval_seed = eval_seed if eval_seed is not None else seed + 10000
+        actual_eval_seed = eval_seed if eval_seed is not None else seed + 1000
         print(f"\n[EVALUATION] Launching {eval_episodes} deterministic evaluation episodes with seed {actual_eval_seed}...")
         evaluate_interaction_aware_ppo(
             agent_or_checkpoint=agent,
@@ -566,6 +566,7 @@ def train_interaction_aware_ppo(
             eval_seed=actual_eval_seed,
             train_seed=seed,
             n_episodes=eval_episodes,
+            max_steps_per_episode=1800,
             output_root=output_root,
             ablation_mode=ablation_mode,
             enforce_safety_shield=enforce_safety_shield,

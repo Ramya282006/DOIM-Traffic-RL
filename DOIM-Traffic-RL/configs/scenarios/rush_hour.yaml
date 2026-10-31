@@ -1,0 +1,7 @@
+scenario:
+  name: "rush_hour"
+  sumocfg: "scenarios/rush_hour/rush_hour.sumocfg"
+  episode_horizon_seconds: 1800
+  demand_type: "heavy_congestion"
+  description: "High-density commute demand approaching network capacity across all corridors."
+  expected_inflow_veh_per_hour: 3000

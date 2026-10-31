@@ -10,6 +10,8 @@ import numpy as np
 import traci
 import shutil
 
+from environment.sumo_locator import find_sumo_binary
+from environment.safety_shield import TrafficSafetyShield
 from environment.traffic_signal_controller import (
     TrafficSignalController,
 )
@@ -21,25 +23,20 @@ class DOIMTrafficEnv(gym.Env):
         "render_modes": ["human"]
     }
 
-    def __init__(self, sumo_config):
+    def __init__(self, sumo_config, enforce_safety_shield=True, max_steps=1800):
 
         super().__init__()
 
         self.sumo_config = sumo_config
+        self.enforce_safety_shield = bool(enforce_safety_shield)
+        self.max_steps = int(max_steps)
+        self.safety_shield = None
 
         # --------------------------------------------------
-        # Find SUMO
+        # Find SUMO robustly
         # --------------------------------------------------
 
-        self.sumo_binary = shutil.which(
-            "sumo"
-        )
-
-        if self.sumo_binary is None:
-
-            raise RuntimeError(
-                "SUMO was not found in PATH."
-            )
+        self.sumo_binary = find_sumo_binary(prefer_gui=False)
 
         # --------------------------------------------------
         # Traffic signal controller
@@ -177,6 +174,23 @@ class DOIMTrafficEnv(gym.Env):
             )
 
         # --------------------------------------------------
+        # Initialize Safety Shield
+        # --------------------------------------------------
+
+        if self.enforce_safety_shield:
+            phase_counts = {}
+            for tid in self.controllable_tls:
+                logics = traci.trafficlight.getAllProgramLogics(tid)
+                phase_counts[tid] = len(logics[0].phases) if logics else 4
+            self.safety_shield = TrafficSafetyShield(
+                controllable_tls_ids=self.controllable_tls,
+                tls_phase_counts=phase_counts,
+                min_green=10,
+                max_green=60,
+                yellow_duration=3,
+            )
+
+        # --------------------------------------------------
         # Initial observation
         # --------------------------------------------------
 
@@ -185,50 +199,43 @@ class DOIMTrafficEnv(gym.Env):
         )
 
         vehicle_count = traci.vehicle.getIDCount()
-
-        info = {
-            "time": self.current_time,
-
-            "vehicle_count": int(
-                vehicle_count
-            ),
-
-            "controllable_tls":
-                self.controllable_tls,
-
-            "current_phases":
-                self.signal_controller.get_current_phases(),
-
-            "raw_objectives":
-                self.latest_doim_result[
-                    "raw_objectives"
-                ],
-
-            "normalized_objectives":
-                self.latest_doim_result[
-                    "normalized_objectives"
-                ],
-
-            "doim_weights":
-                self.latest_doim_result[
-                    "weights"
-                ],
-
-            "objective_contributions":
-                self.reward_engine.get_contributions(
-                    self.latest_doim_result[
-                        "normalized_objectives"
-                    ],
-                    self.latest_doim_result[
-                        "weights"
-                    ],
-                ),
-        }
+        info = self._build_info(vehicle_count, interventions=0)
 
         return (
             observation,
             info,
         )
+
+    def _build_info(self, vehicle_count, interventions=0):
+        feature_matrix = self.latest_doim_result.get("feature_matrix", np.zeros((9, 5), dtype=np.float32))
+        interaction_matrix = self.latest_doim_result.get("interaction_matrix", np.zeros((5, 5), dtype=np.float32))
+        
+        # Raw state: extract features of controllable intersections
+        tls_id_list = sorted(self.doim_processor.tls_ids) if self.doim_processor else []
+        controllable_idx = [tls_id_list.index(t) for t in self.controllable_tls if t in tls_id_list]
+        if controllable_idx and len(feature_matrix) > max(controllable_idx):
+            raw_state = feature_matrix[controllable_idx].flatten()
+        else:
+            raw_state = np.zeros(25, dtype=np.float32)
+
+        return {
+            "time": self.current_time,
+            "shield_interventions": interventions,
+            "vehicle_count": int(vehicle_count),
+            "controllable_tls": self.controllable_tls,
+            "current_phases": self.signal_controller.get_current_phases(),
+            "raw_objectives": self.latest_doim_result["raw_objectives"],
+            "normalized_objectives": self.latest_doim_result["normalized_objectives"],
+            "doim_weights": self.latest_doim_result["weights"],
+            "feature_matrix": feature_matrix,
+            "node_features": feature_matrix,
+            "interaction_matrix": interaction_matrix,
+            "raw_state": raw_state,
+            "objective_contributions": self.reward_engine.get_contributions(
+                self.latest_doim_result["normalized_objectives"],
+                self.latest_doim_result["weights"],
+            ),
+        }
 
     # ======================================================
     # STEP
@@ -267,12 +274,23 @@ class DOIMTrafficEnv(gym.Env):
             )
 
         # --------------------------------------------------
-        # Apply traffic signal action
+        # Apply traffic signal action with Safety Shield
         # --------------------------------------------------
 
-        self.signal_controller.apply_action(
-            action
-        )
+        interventions = 0
+        current_phases = self.signal_controller.get_current_phases()
+
+        if self.enforce_safety_shield and self.safety_shield is not None:
+            safe_action, target_phases, interventions = self.safety_shield.filter_action(
+                action, current_phases
+            )
+            for tid, target_phase in zip(self.controllable_tls, target_phases):
+                if target_phase is not None:
+                    traci.trafficlight.setPhase(tid, target_phase)
+        else:
+            self.signal_controller.apply_action(
+                action
+            )
 
         # --------------------------------------------------
         # Advance SUMO
@@ -335,51 +353,13 @@ class DOIMTrafficEnv(gym.Env):
         )
 
         terminated = simulation_end
-
-        truncated = False
+        truncated = (self.current_time >= self.max_steps)
 
         # --------------------------------------------------
         # Information
         # --------------------------------------------------
 
-        info = {
-            "time": self.current_time,
-
-            "vehicle_count": int(
-                vehicle_count
-            ),
-
-            "controllable_tls":
-                self.controllable_tls,
-
-            "current_phases":
-                self.signal_controller.get_current_phases(),
-
-            "raw_objectives":
-                self.latest_doim_result[
-                    "raw_objectives"
-                ],
-
-            "normalized_objectives":
-                self.latest_doim_result[
-                    "normalized_objectives"
-                ],
-
-            "doim_weights":
-                self.latest_doim_result[
-                    "weights"
-                ],
-
-            "objective_contributions":
-                self.reward_engine.get_contributions(
-                    self.latest_doim_result[
-                        "normalized_objectives"
-                    ],
-                    self.latest_doim_result[
-                        "weights"
-                    ],
-                ),
-        }
+        info = self._build_info(vehicle_count, interventions=interventions)
 
         return (
             observation,

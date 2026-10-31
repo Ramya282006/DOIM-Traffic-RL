@@ -10,6 +10,9 @@ import traci
 import shutil
 
 
+from environment.sumo_locator import find_sumo_binary
+
+
 class FixedWeightTrafficEnv(gym.Env):
 
     metadata = {
@@ -26,15 +29,10 @@ class FixedWeightTrafficEnv(gym.Env):
         self.sumo_config = sumo_config
 
         # --------------------------------------------------
-        # Find SUMO
+        # Find SUMO robustly
         # --------------------------------------------------
 
-        self.sumo_binary = shutil.which("sumo")
-
-        if self.sumo_binary is None:
-            raise RuntimeError(
-                "SUMO was not found in PATH."
-            )
+        self.sumo_binary = find_sumo_binary(prefer_gui=False)
 
         # --------------------------------------------------
         # Fixed objective weights
@@ -117,6 +115,8 @@ class FixedWeightTrafficEnv(gym.Env):
             self.sumo_config,
             "--start",
             "--quit-on-end",
+            "--seed",
+            str(seed if seed is not None else 42),
         ]
 
         traci.start(command)

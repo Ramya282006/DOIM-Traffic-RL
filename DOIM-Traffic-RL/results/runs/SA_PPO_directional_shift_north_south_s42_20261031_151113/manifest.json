@@ -1,0 +1,39 @@
+{
+  "run_id": "SA_PPO_directional_shift_north_south_s42_20261031_151113",
+  "experiment_name": "SA_PPO_directional_shift_north_south",
+  "algorithm": "SA_PPO",
+  "scenario": "directional_shift_north_south",
+  "train_seed": 42,
+  "eval_seed": 42,
+  "start_time": "2026-10-31T09:41:13.690840+00:00",
+  "end_time": "2026-10-31T09:41:25.127011+00:00",
+  "status": "COMPLETED",
+  "git_sha": "fd264346a9f3f5c7a6859c045561b9650b7dc922",
+  "config_hash": "9455f65fd0b9e130",
+  "model_checkpoint_sha256": "1f061959f692fe1661b1c9cf624bf909063817e42a7441b7968ed038b3e737cd",
+  "total_steps": 128,
+  "summary_metrics": {
+    "run_id": "SA_PPO_directional_shift_north_south_s42_20261031_151113",
+    "algorithm": "SA_PPO",
+    "scenario": "directional_shift_north_south",
+    "seed": 42,
+    "total_steps": 128,
+    "total_reward": -58.69988404993366,
+    "average_reward": -0.4585928441401067,
+    "average_waiting": 39.4765625,
+    "max_waiting": 244.0,
+    "average_queue": 2.015625,
+    "max_queue": 11.0,
+    "average_co2": 54577.65853595734,
+    "total_throughput": 5.0,
+    "average_fairness": 605.0590395927429,
+    "total_shield_interventions": 288,
+    "average_weights": [
+      0.12208177575087283,
+      0.029046045231929232,
+      0.8150121660890557,
+      0.032043941675819275,
+      0.001816070356842846
+    ]
+  }
+}

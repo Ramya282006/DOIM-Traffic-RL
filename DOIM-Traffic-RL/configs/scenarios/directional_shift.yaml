@@ -1,0 +1,7 @@
+scenario:
+  name: "directional_shift"
+  sumocfg: "scenarios/directional_shift/north_south_surge.sumocfg"
+  episode_horizon_seconds: 1800
+  demand_type: "asymmetric_corridor_surge"
+  description: "Asymmetric North-South directional surge creating severe cross-street competition with East-West corridors."
+  expected_inflow_veh_per_hour: 2200

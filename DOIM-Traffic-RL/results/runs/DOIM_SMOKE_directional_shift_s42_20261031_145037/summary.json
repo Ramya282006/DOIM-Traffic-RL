@@ -1,0 +1,24 @@
+{
+  "run_id": "DOIM_SMOKE_directional_shift_s42_20261031_145037",
+  "algorithm": "DOIM_SMOKE",
+  "scenario": "directional_shift",
+  "seed": 42,
+  "total_steps": 30,
+  "total_reward": -5.286128103733063,
+  "average_reward": -0.17620427012443543,
+  "average_waiting": 0.0,
+  "max_waiting": 0.0,
+  "average_queue": 0.0,
+  "max_queue": 0.0,
+  "average_co2": 16763.60057373047,
+  "total_throughput": 0.0,
+  "average_fairness": 0.0,
+  "total_shield_interventions": 0,
+  "average_weights": [
+    0.188417952756087,
+    0.18276827186346054,
+    0.21766299058993657,
+    0.1460707227389018,
+    0.265080056587855
+  ]
+}

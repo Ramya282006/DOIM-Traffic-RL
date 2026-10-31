@@ -1,0 +1,39 @@
+{
+  "run_id": "FW_PPO_north_south_surge_s42_20261031_151818",
+  "experiment_name": "FW_PPO_north_south_surge",
+  "algorithm": "FW_PPO",
+  "scenario": "north_south_surge",
+  "train_seed": 42,
+  "eval_seed": 42,
+  "start_time": "2026-10-31T09:48:18.814932+00:00",
+  "end_time": "2026-10-31T09:48:27.603103+00:00",
+  "status": "COMPLETED",
+  "git_sha": "fd264346a9f3f5c7a6859c045561b9650b7dc922",
+  "config_hash": "7888a45453a99435",
+  "model_checkpoint_sha256": "00548bcdccc9012b92c9f74bb8ebe460b5886005656fbb8ff2f147e6fd7f3893",
+  "total_steps": 128,
+  "summary_metrics": {
+    "run_id": "FW_PPO_north_south_surge_s42_20261031_151818",
+    "algorithm": "FW_PPO",
+    "scenario": "north_south_surge",
+    "seed": 42,
+    "total_steps": 128,
+    "total_reward": -46.925927579402924,
+    "average_reward": -0.36660880921408534,
+    "average_waiting": 58.3125,
+    "max_waiting": 285.0,
+    "average_queue": 2.53125,
+    "max_queue": 13.0,
+    "average_co2": 54698.91688251495,
+    "total_throughput": 4.0,
+    "average_fairness": 465.09664249420166,
+    "total_shield_interventions": 183,
+    "average_weights": [
+      0.20000000298023224,
+      0.20000000298023224,
+      0.20000000298023224,
+      0.20000000298023224,
+      0.20000000298023224
+    ]
+  }
+}

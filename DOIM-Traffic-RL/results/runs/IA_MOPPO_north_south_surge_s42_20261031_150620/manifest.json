@@ -1,0 +1,16 @@
+{
+  "run_id": "IA_MOPPO_north_south_surge_s42_20261031_150620",
+  "experiment_name": "ia_moppo_training",
+  "algorithm": "IA_MOPPO",
+  "scenario": "north_south_surge",
+  "train_seed": 42,
+  "eval_seed": 42,
+  "start_time": "2026-10-31T09:36:20.451415+00:00",
+  "end_time": null,
+  "status": "INITIALIZED",
+  "git_sha": "fd264346a9f3f5c7a6859c045561b9650b7dc922",
+  "config_hash": "258b73a76e884c81",
+  "model_checkpoint_sha256": null,
+  "total_steps": 0,
+  "summary_metrics": {}
+}

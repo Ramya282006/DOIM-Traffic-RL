@@ -1,0 +1,24 @@
+{
+  "run_id": "Fixed_Time_north_south_surge_s123_20261031_151903",
+  "algorithm": "Fixed_Time",
+  "scenario": "north_south_surge",
+  "seed": 123,
+  "total_steps": 128,
+  "total_reward": -43.27512554824352,
+  "average_reward": -0.3380869183456525,
+  "average_waiting": 50.5703125,
+  "max_waiting": 173.0,
+  "average_queue": 1.9296875,
+  "max_queue": 9.0,
+  "average_co2": 55699.84684467316,
+  "total_throughput": 4.0,
+  "average_fairness": 362.25301146507263,
+  "total_shield_interventions": 0,
+  "average_weights": [
+    0.20000000298023224,
+    0.20000000298023224,
+    0.20000000298023224,
+    0.20000000298023224,
+    0.20000000298023224
+  ]
+}

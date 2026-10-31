@@ -1,0 +1,44 @@
+{
+  "git_commit": "6882d3c6d1f118f1b501910fa55f7d9f3eac711f",
+  "python_version": "3.11.9 (tags/v3.11.9:de54cf5, Apr  2 2024, 10:12:12) [MSC v.1938 64 bit (AMD64)]",
+  "torch_version": "2.15.0+cpu",
+  "manifest_audit": {
+    "total_run_directories": 49,
+    "valid_manifests": 0,
+    "invalid_manifests": 49,
+    "sample_failure_reasons": {
+      "DOIM_no_interaction_north_south_surge_s123_20261031_151928": "Missing required schema field: 'experiment_id'",
+      "DOIM_no_interaction_north_south_surge_s2024_20261031_170430": "Missing required schema field: 'experiment_id'",
+      "DOIM_no_interaction_north_south_surge_s42_20261031_151836": "Missing required schema field: 'experiment_id'",
+      "DOIM_no_interaction_north_south_surge_s456_20261031_170214": "Missing required schema field: 'experiment_id'",
+      "DOIM_no_interaction_north_south_surge_s789_20261031_170326": "Missing required schema field: 'experiment_id'",
+      "DOIM_no_interaction_rush_hour_s42_20261031_170647": "Missing required schema field: 'experiment_id'",
+      "DOIM_rolling_pearson_north_south_surge_s123_20261031_151937": "Missing required schema field: 'experiment_id'",
+      "DOIM_rolling_pearson_north_south_surge_s2024_20261031_170441": "Missing required schema field: 'experiment_id'",
+      "DOIM_rolling_pearson_north_south_surge_s42_20261031_151845": "Missing required schema field: 'experiment_id'",
+      "DOIM_rolling_pearson_north_south_surge_s456_20261031_170229": "Missing required schema field: 'experiment_id'"
+    }
+  },
+  "traceability_audit": {
+    "traceable_runs_count": 44,
+    "mismatched_runs_count": 0,
+    "mismatches": []
+  },
+  "checkpoint_restore_test": {
+    "checkpoint_file_exists": true,
+    "checkpoint_size_bytes": 461119,
+    "weights_exact_match": true,
+    "actions_deterministic_match": true,
+    "values_deterministic_match": true,
+    "simplex_weights_match": true
+  },
+  "seed_decoupling_test": {
+    "train_seed": 42,
+    "derived_eval_seeds": [
+      1297353400,
+      522071662
+    ],
+    "seeds_are_distinct": true
+  },
+  "metric_units_audit": {}
+}

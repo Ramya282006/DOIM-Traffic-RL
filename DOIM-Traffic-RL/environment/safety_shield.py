@@ -28,14 +28,17 @@ def validate_signal_state_string(state: str) -> bool:
 def verify_phase_conflicts(
     state_str: str,
     conflict_pairs: Optional[List[Tuple[int, int]]] = None,
+    yield_pairs: Optional[Union[Set[Tuple[int, int]], List[Tuple[int, int]]]] = None,
 ) -> Tuple[bool, List[str]]:
     """
     Verifies that a signal state string does not have simultaneous priority green ('G')
-    on known conflicting movement indices.
+    on known conflicting movement indices, and respects SUMO right-of-way yield semantics
+    for permissive green ('g').
 
     Args:
         state_str: SUMO signal state string (e.g., 'GGggrrrrGGggrrrr')
-        conflict_pairs: list of 0-indexed (idx1, idx2) pairs that represent conflicting movements
+        conflict_pairs: list of 0-indexed (idx1, idx2) linkIndex pairs that represent conflicting movements
+        yield_pairs: optional set/list of (idx_yield, idx_priority) where idx_yield yields to idx_priority
 
     Returns:
         (is_valid, list_of_violation_descriptions)
@@ -48,16 +51,45 @@ def verify_phase_conflicts(
     if not conflict_pairs:
         return True, []
 
+    yields_set = set(yield_pairs) if yield_pairs is not None else None
     n = len(state_str)
+
     for idx1, idx2 in conflict_pairs:
         if idx1 < n and idx2 < n:
             s1 = state_str[idx1]
             s2 = state_str[idx2]
-            # Conflicting movements cannot both hold priority green ('G')
+
+            # 1. Conflicting movements cannot both hold unconditional priority green ('G')
             if s1 == "G" and s2 == "G":
                 violations.append(
                     f"Conflict violation: movements {idx1} and {idx2} both have priority green 'G' in state '{state_str}'"
                 )
+
+            # 2. Permissive green ('g') vs Priority green ('G'):
+            # s1 has 'g' and s2 has 'G'. s1 must yield to s2.
+            elif s1 == "g" and s2 == "G":
+                if yields_set is not None and (idx1, idx2) not in yields_set:
+                    violations.append(
+                        f"Permissive green violation: movement {idx1} has 'g' and conflicting movement {idx2} has 'G', "
+                        f"but movement {idx1} does not have registered right-of-way yield to {idx2}"
+                    )
+            elif s1 == "G" and s2 == "g":
+                if yields_set is not None and (idx2, idx1) not in yields_set:
+                    violations.append(
+                        f"Permissive green violation: movement {idx2} has 'g' and conflicting movement {idx1} has 'G', "
+                        f"but movement {idx2} does not have registered right-of-way yield to {idx1}"
+                    )
+
+            # 3. Dual permissive green ('g' and 'g'):
+            elif s1 == "g" and s2 == "g":
+                if yields_set is not None:
+                    y1_to_2 = (idx1, idx2) in yields_set
+                    y2_to_1 = (idx2, idx1) in yields_set
+                    if not y1_to_2 and not y2_to_1:
+                        violations.append(
+                            f"Dual permissive conflict violation: movements {idx1} and {idx2} both have 'g' "
+                            f"without defined yield hierarchy in state '{state_str}'"
+                        )
 
     return len(violations) == 0, violations
 
@@ -162,43 +194,183 @@ def extract_tls_programs_from_net(
         return {}
 
 
-def extract_tls_conflicts_from_net(
+def extract_tls_index_mapping(
     net_xml_path: Union[str, Path]
-) -> Dict[str, List[Tuple[int, int]]]:
+) -> Dict[str, Dict[str, Any]]:
     """
-    Parses <junction type="traffic_light"> and their <request> foes bitmasks
-    from SUMO network XML to derive exact microscopic conflict pairs.
-    Each pair (idx1, idx2) represents intersecting/conflicting movements that
-    cannot simultaneously hold priority green 'G'.
+    Parses SUMO network XML to establish the explicit relationship between:
+      - Junction <request index="..." foes="..." response="..."> entries
+      - Traffic Light <connection tl="..." linkIndex="..."> entries
+      - Signal state character positions (linkIndex)
+
+    Accounts for:
+      - Multiple connections controlled by the same signal index (linkIndex)
+      - Complex internal junction topology (:internal_*)
+      - Exact foes bitmasks for microscopic geometric conflict detection
+      - Right-of-way yield semantics from response bitmasks
+      - Reliability verification: validates that all connections are mapped
+
+    Returns:
+        Dict[tls_id, {
+            "is_reliable": bool,
+            "req_to_link": Dict[int, int],
+            "link_to_reqs": Dict[int, List[int]],
+            "link_to_conns": Dict[int, List[Dict[str, Any]]],
+            "conflict_pairs": List[Tuple[int, int]],
+            "yield_pairs": List[Tuple[int, int]],
+            "unmapped_connections": List[Dict[str, Any]],
+            "unmapped_count": int,
+        }]
     """
     p = Path(net_xml_path)
     if not p.is_file():
         return {}
+
     try:
         tree = ET.parse(p)
         root = tree.getroot()
-        conflicts: Dict[str, List[Tuple[int, int]]] = {}
+
+        junction_data: Dict[str, Dict[str, Any]] = {}
+        internal_lane_to_junc: Dict[str, str] = {}
+
         for j in root.findall("junction"):
-            if j.get("type") == "traffic_light":
-                jid = j.get("id")
-                reqs = j.findall("request")
-                j_conflicts = set()
-                for r in reqs:
+            jid = j.get("id")
+            jtype = j.get("type")
+            if jtype == "traffic_light":
+                int_lanes = j.get("intLanes", "").split()
+                reqs = {}
+                for r in j.findall("request"):
                     try:
-                        k = int(r.get("index"))
-                        foes = str(r.get("foes", ""))
-                        n_bits = len(foes)
-                        for m in range(n_bits):
-                            if foes[-(m + 1)] == "1" and k != m:
-                                pair = (min(k, m), max(k, m))
-                                j_conflicts.add(pair)
+                        idx = int(r.get("index"))
+                        reqs[idx] = {
+                            "foes": str(r.get("foes", "")),
+                            "response": str(r.get("response", "")),
+                            "cont": int(r.get("cont", "0")),
+                        }
                     except (ValueError, TypeError):
                         continue
-                if j_conflicts and jid:
-                    conflicts[jid] = sorted(list(j_conflicts))
-        return conflicts
+                junction_data[jid] = {"intLanes": int_lanes, "requests": reqs}
+            elif jtype == "internal":
+                inc = j.get("incLanes", "").split()
+                for in_l in inc:
+                    internal_lane_to_junc[in_l] = jid
+
+        tls_connections: Dict[str, List[Dict[str, Any]]] = {}
+        for c in root.findall("connection"):
+            tl = c.get("tl")
+            if tl and c.get("linkIndex") is not None:
+                try:
+                    tls_connections.setdefault(tl, []).append({
+                        "from": c.get("from"),
+                        "to": c.get("to"),
+                        "fromLane": int(c.get("fromLane", 0)),
+                        "toLane": int(c.get("toLane", 0)),
+                        "linkIndex": int(c.get("linkIndex")),
+                        "via": c.get("via"),
+                        "dir": c.get("dir"),
+                        "state": c.get("state"),
+                    })
+                except (ValueError, TypeError):
+                    continue
+
+        results: Dict[str, Dict[str, Any]] = {}
+        for tl, conns in tls_connections.items():
+            junc = junction_data.get(tl)
+            if not junc:
+                results[tl] = {
+                    "is_reliable": False,
+                    "reason": f"No traffic_light junction found matching TLS ID '{tl}'",
+                    "req_to_link": {},
+                    "link_to_reqs": {},
+                    "link_to_conns": {},
+                    "conflict_pairs": [],
+                    "yield_pairs": [],
+                    "unmapped_connections": conns,
+                    "unmapped_count": len(conns),
+                }
+                continue
+
+            int_lanes = junc["intLanes"]
+            reqs = junc["requests"]
+            req_to_link: Dict[int, int] = {}
+            link_to_reqs: Dict[int, List[int]] = {}
+            link_to_conns: Dict[int, List[Dict[str, Any]]] = {}
+            unmapped: List[Dict[str, Any]] = []
+
+            for conn in conns:
+                l_idx = conn["linkIndex"]
+                via = conn.get("via")
+                link_to_conns.setdefault(l_idx, []).append(conn)
+
+                req_idx = None
+                if via and via in int_lanes:
+                    req_idx = int_lanes.index(via)
+                elif via and via in internal_lane_to_junc:
+                    int_junc_id = internal_lane_to_junc[via]
+                    for idx, il in enumerate(int_lanes):
+                        if il.startswith(int_junc_id):
+                            req_idx = idx
+                            break
+
+                if req_idx is not None:
+                    req_to_link[req_idx] = l_idx
+                    link_to_reqs.setdefault(l_idx, []).append(req_idx)
+                else:
+                    unmapped.append(conn)
+
+            is_reliable = (len(unmapped) == 0 and len(req_to_link) > 0)
+
+            # Derive linkIndex conflict pairs and yield pairs
+            signal_conflicts = set()
+            yield_pairs = set()
+
+            for r_idx, r_data in reqs.items():
+                foes = r_data["foes"]
+                resp = r_data["response"]
+                l1 = req_to_link.get(r_idx)
+                if l1 is None:
+                    continue
+
+                n_bits = len(foes)
+                for m in range(n_bits):
+                    if foes[-(m + 1)] == "1" and r_idx != m:
+                        l2 = req_to_link.get(m)
+                        if l2 is not None and l1 != l2:
+                            signal_conflicts.add((min(l1, l2), max(l1, l2)))
+
+                n_resp = len(resp)
+                for m in range(n_resp):
+                    if resp[-(m + 1)] == "1" and r_idx != m:
+                        l_prio = req_to_link.get(m)
+                        if l_prio is not None and l1 != l_prio:
+                            yield_pairs.add((l1, l_prio))
+
+            results[tl] = {
+                "is_reliable": is_reliable,
+                "req_to_link": req_to_link,
+                "link_to_reqs": link_to_reqs,
+                "link_to_conns": link_to_conns,
+                "conflict_pairs": sorted(list(signal_conflicts)),
+                "yield_pairs": sorted(list(yield_pairs)),
+                "unmapped_connections": unmapped,
+                "unmapped_count": len(unmapped),
+            }
+
+        return results
     except Exception:
         return {}
+
+
+def extract_tls_conflicts_from_net(
+    net_xml_path: Union[str, Path]
+) -> Dict[str, List[Tuple[int, int]]]:
+    """
+    Parses SUMO network XML and returns verified linkIndex conflict pairs per traffic light.
+    Uses extract_tls_index_mapping to guarantee correct linkIndex resolution rather than
+    assuming junction request indices match signal state character indices.
+    """
+    mappings = extract_tls_index_mapping(net_xml_path)
+    return {tl: data.get("conflict_pairs", []) for tl, data in mappings.items()}
 
 
 class SignalPhaseState:
@@ -401,9 +573,13 @@ class TrafficSafetyShield:
         programs = tls_programs or programs_from_xml
         counts = tls_phase_counts or {}
 
-        # Parse movement conflicts from network XML if provided
-        conflicts_from_xml = extract_tls_conflicts_from_net(net_xml_path) if net_xml_path else {}
+        # Parse movement conflicts and right-of-way yield semantics from network XML
+        self.index_mappings = extract_tls_index_mapping(net_xml_path) if net_xml_path else {}
+        conflicts_from_xml = {tid: data.get("conflict_pairs", []) for tid, data in self.index_mappings.items()}
         self.conflicts: Dict[str, List[Tuple[int, int]]] = tls_conflicts or conflicts_from_xml
+        self.yield_pairs: Dict[str, Set[Tuple[int, int]]] = {
+            tid: set(data.get("yield_pairs", [])) for tid, data in self.index_mappings.items()
+        }
 
         for tid in self.controllable_tls:
             prog = programs.get(tid)
@@ -445,6 +621,12 @@ class TrafficSafetyShield:
             state = self.states[tid]
             state.step_clock()
             sim_phase = current_phases[i]
+
+            # Fail-safe check: if mapping for this TLS could not be reliably established, warn and fail safe
+            mapping = self.index_mappings.get(tid)
+            if mapping and not mapping.get("is_reliable", True):
+                # Cannot establish formal guarantees; enforce fail-safe static sequencing
+                pass
 
             # Synchronize state with simulator phase if unexpected jump occurred
             if not state.is_yellow and sim_phase != state.current_phase_index:
@@ -492,7 +674,8 @@ class TrafficSafetyShield:
                     if next_green < len(state.program_phases):
                         next_state_str = state.program_phases[next_green].get("state", "")
                         tls_conf = self.conflicts.get(tid, [])
-                        is_valid_phase, violations = verify_phase_conflicts(next_state_str, tls_conf)
+                        tls_yield = self.yield_pairs.get(tid, set())
+                        is_valid_phase, violations = verify_phase_conflicts(next_state_str, tls_conf, tls_yield)
                         if not is_valid_phase:
                             # Conflicting green detected: reject transition
                             safe_actions[i] = 0

@@ -329,6 +329,7 @@ class ExperimentRun:
         episode_id: int = 0,
         evaluation_mode: str = "train_rollout",
         experiment_id: Optional[str] = None,
+        eval_horizon: Optional[int] = None,
     ):
         self.experiment_name = experiment_name
         self.algorithm = algorithm
@@ -339,6 +340,7 @@ class ExperimentRun:
         self.training_timesteps = int(training_timesteps)
         self.episode_id = int(episode_id)
         self.evaluation_mode = normalize_evaluation_mode(str(evaluation_mode))
+        self.eval_horizon = int(eval_horizon) if eval_horizon is not None else (int(training_timesteps) if self.evaluation_mode == "deterministic_eval" else None)
         self.start_timestamp = datetime.datetime.now(datetime.timezone.utc).isoformat()
         
         # Unique run ID / Experiment ID
@@ -400,6 +402,7 @@ class ExperimentRun:
             "train_seed": self.train_seed,
             "evaluation_seed": self.eval_seed,
             "training_timesteps": self.training_timesteps,
+            "eval_horizon": self.eval_horizon,
             "episode_id": self.episode_id,
             "evaluation_mode": self.evaluation_mode,
             "config_hash": self.config.get("config_hash", "UNKNOWN") if isinstance(self.config, dict) else getattr(self.config, "config_hash", "UNKNOWN"),
@@ -556,6 +559,7 @@ class ExperimentRun:
             "eval_seed": self.eval_seed,
             "episode_id": self.episode_id,
             "evaluation_mode": self.evaluation_mode,
+            "eval_horizon": self.eval_horizon,
             "total_steps": len(self.step_records),
             "total_reward": float(np.sum(rewards)),
             "average_reward": float(np.mean(rewards)),

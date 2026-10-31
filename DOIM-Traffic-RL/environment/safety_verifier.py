@@ -22,45 +22,17 @@ def extract_junction_conflicts_from_net(
 ) -> Dict[str, List[Tuple[int, int]]]:
     """
     Parses SUMO network XML and extracts the exact microscopic conflict matrix
-    for each controllable traffic light from junction <request foes="..."> definitions.
-
-    In SUMO net XML, for junction link i with length N foes bitmask:
-      foes[N - 1 - k] == '1' indicates link k conflicts geometrically with link i.
+    for each controllable traffic light, correctly mapping junction requests to TLS linkIndex.
     """
+    from environment.safety_shield import extract_tls_index_mapping
+
     p = Path(net_xml_path)
     if not p.exists():
         return {}
 
-    tree = ET.parse(p)
-    root = tree.getroot()
-
     target_tls = set(controllable_tls_ids or ["A1", "B0", "B1", "B2", "C1"])
-    conflicts_by_tls: Dict[str, List[Tuple[int, int]]] = {}
-
-    for junc in root.findall("junction"):
-        jid = junc.get("id")
-        if jid not in target_tls:
-            continue
-
-        requests = junc.findall("request")
-        n_links = len(requests)
-        foe_pairs: List[Tuple[int, int]] = []
-
-        req_dict = {int(r.get("index")): r.get("foes", "") for r in requests}
-
-        for i in range(n_links):
-            foes_str = req_dict.get(i, "")
-            n = len(foes_str)
-            for k in range(n_links):
-                if i != k and n > k:
-                    # In SUMO net format, foes bit is read from right: foes[n - 1 - k]
-                    if foes_str[n - 1 - k] == "1":
-                        if (k, i) not in foe_pairs:
-                            foe_pairs.append((i, k))
-
-        conflicts_by_tls[jid] = foe_pairs
-
-    return conflicts_by_tls
+    mapping = extract_tls_index_mapping(p)
+    return {tid: data.get("conflict_pairs", []) for tid, data in mapping.items() if tid in target_tls}
 
 
 class SignalSafetyVerifier:
@@ -82,13 +54,16 @@ class SignalSafetyVerifier:
         self.max_green = int(max_green)
         self.yellow_duration = int(yellow_duration)
 
-        # Parse microscopic network conflict matrices
+        # Parse microscopic network conflict and yield matrices
         self.conflicts_by_tls: Dict[str, List[Tuple[int, int]]] = {}
+        self.yield_pairs_by_tls: Dict[str, Set[Tuple[int, int]]] = {}
         if net_xml_path is not None:
-            self.conflicts_by_tls = extract_junction_conflicts_from_net(
-                net_xml_path=net_xml_path,
-                controllable_tls_ids=self.controllable_tls,
-            )
+            from environment.safety_shield import extract_tls_index_mapping
+            mapping = extract_tls_index_mapping(net_xml_path)
+            for tid in self.controllable_tls:
+                if tid in mapping:
+                    self.conflicts_by_tls[tid] = mapping[tid].get("conflict_pairs", [])
+                    self.yield_pairs_by_tls[tid] = set(mapping[tid].get("yield_pairs", []))
 
         self.reset()
 
@@ -100,25 +75,25 @@ class SignalSafetyVerifier:
 
     def verify_signal_string(self, tls_id: str, state_str: str, sim_time: float = 0.0) -> List[Dict]:
         """
-        Verifies that no conflicting movements both display priority green ('G') simultaneously.
+        Verifies that no conflicting movements display invalid priority green ('G') or
+        unregistered permissive green ('g') simultaneously.
         """
+        from environment.safety_shield import verify_phase_conflicts
+
         violations = []
         conflicts = self.conflicts_by_tls.get(tls_id, [])
+        yields = self.yield_pairs_by_tls.get(tls_id, set())
 
-        for i, k in conflicts:
-            if i < len(state_str) and k < len(state_str):
-                # Major Green collision check
-                if state_str[i] == "G" and state_str[k] == "G":
-                    viol = {
-                        "type": "CONFLICTING_MAJOR_GREENS",
-                        "time": sim_time,
-                        "tls": tls_id,
-                        "link_i": i,
-                        "link_k": k,
-                        "state_str": state_str,
-                        "description": f"Conflicting links {i} and {k} both display priority Green ('G')",
-                    }
-                    violations.append(viol)
+        is_valid, descriptions = verify_phase_conflicts(state_str, conflicts, yields)
+        for desc in descriptions:
+            v_type = "CONFLICTING_MAJOR_GREENS" if "priority green 'G'" in desc else "CONFLICTING_GREENS"
+            violations.append({
+                "type": v_type,
+                "time": sim_time,
+                "tls": tls_id,
+                "state_str": state_str,
+                "description": desc,
+            })
 
         return violations
 

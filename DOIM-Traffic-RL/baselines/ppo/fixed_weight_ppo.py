@@ -240,6 +240,8 @@ def train_fixed_weight_ppo(
     total_timesteps: int = 1000,
     seed: int = 42,
     eval_episodes: int = 0,
+    eval_horizon: int = 1800,
+    eval_seed: Optional[int] = None,
     output_root: str = "results/runs",
 ) -> ExperimentRun:
     """
@@ -383,15 +385,17 @@ def train_fixed_weight_ppo(
 
     # Decoupled frozen deterministic evaluation loop if requested
     if eval_episodes > 0:
-        print("\n--- LAUNCHING FROZEN DETERMINISTIC EVALUATION (FW-PPO) ---")
+        actual_eval_seed = eval_seed if eval_seed is not None else seed + 1000
+        print(f"\n--- LAUNCHING FROZEN DETERMINISTIC EVALUATION (FW-PPO) (Horizon: {eval_horizon}s) ---")
         evaluate_fixed_weight_ppo(
             agent_or_checkpoint=agent,
             config_path=config_path,
             scenario_override=scenario_override,
             n_episodes=eval_episodes,
-            eval_seed=seed + 1000,
+            eval_seed=actual_eval_seed,
             train_seed=seed,
-            max_steps_per_episode=int(getattr(config.simulation, "max_steps_per_episode", 1800) or 1800),
+            eval_horizon=eval_horizon,
+            max_steps_per_episode=eval_horizon,
             output_root=output_root,
         )
 
@@ -405,7 +409,8 @@ def evaluate_fixed_weight_ppo(
     n_episodes: int = 1,
     eval_seed: int = 1042,
     train_seed: int = 42,
-    max_steps_per_episode: int = 1800,
+    eval_horizon: int = 1800,
+    max_steps_per_episode: Optional[int] = None,
     enforce_safety_shield: bool = True,
     output_root: str = "results/runs",
 ) -> List[ExperimentRun]:
@@ -428,6 +433,7 @@ def evaluate_fixed_weight_ppo(
 
     agent.network.eval()
     eval_runs = []
+    effective_horizon = int(max_steps_per_episode) if max_steps_per_episode is not None else int(eval_horizon)
 
     for ep in range(n_episodes):
         current_eval_seed = eval_seed + ep
@@ -437,6 +443,7 @@ def evaluate_fixed_weight_ppo(
             config=config,
             train_seed=train_seed,
             eval_seed=current_eval_seed,
+            eval_horizon=effective_horizon,
             scenario=scenario_name,
             output_root=output_root,
             training_timesteps=config.policy.total_timesteps,
@@ -447,7 +454,7 @@ def evaluate_fixed_weight_ppo(
         env = DOIMTrafficEnv(
             sumo_config=config.simulation.sumo_config,
             enforce_safety_shield=enforce_safety_shield,
-            max_steps=max_steps_per_episode,
+            max_steps=effective_horizon,
         )
 
         obs, info = env.reset(seed=current_eval_seed)
@@ -459,7 +466,7 @@ def evaluate_fixed_weight_ppo(
 
         step = 0
         done = False
-        while not done and step < max_steps_per_episode:
+        while not done and step < effective_horizon:
             with torch.no_grad():
                 action, value, log_prob = agent.act(
                     spatial_history=spatial_history,

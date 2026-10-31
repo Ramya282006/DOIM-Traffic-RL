@@ -35,10 +35,13 @@ def run_experiment_matrix(
     checkpoint_interval: int = 2500,
     output_root: str = "results/runs",
 ):
+    total_algos = 6 if include_ablations else 4
+    total_runs = total_algos * len(seeds) * len(scenarios)
     print("=" * 80)
-    print("STARTING DOIM-TRAFFIC-RL COMPREHENSIVE EXPERIMENT MATRIX")
-    print(f"Training Timesteps per run: {timesteps} | Seeds: {seeds} | Scenarios: {scenarios}")
-    print(f"Evaluation Episodes: {eval_episodes} (Horizon: {eval_horizon}s) | Checkpoint Interval: {checkpoint_interval}")
+    print("STARTING DOIM-TRAFFIC-RL EXPERIMENT MATRIX")
+    print(f"Configurations: {total_algos} ({'4 Primary + 2 Ablations' if include_ablations else '4 Primary Baseline Comparison'})")
+    print(f"Total Runs: {total_runs} (Seeds: {seeds} | Scenarios: {scenarios})")
+    print(f"Training Timesteps per run: {timesteps} | Eval Episodes: {eval_episodes} (Horizon: {eval_horizon}s)")
     print("=" * 80)
 
     start_time = time.time()
@@ -56,6 +59,7 @@ def run_experiment_matrix(
                 output_root=output_root,
                 checkpoint_interval=checkpoint_interval,
                 eval_episodes=eval_episodes,
+                eval_horizon=eval_horizon,
             )
 
             # 2. Fixed-Time Baseline (Rule-based non-learning controller)
@@ -74,6 +78,7 @@ def run_experiment_matrix(
                     n_episodes=eval_episodes,
                     eval_seed=seed + 1000,
                     train_seed=seed,
+                    eval_horizon=eval_horizon,
                     max_steps_per_episode=eval_horizon,
                     output_root=output_root,
                 )
@@ -85,6 +90,7 @@ def run_experiment_matrix(
                 total_timesteps=timesteps,
                 seed=seed,
                 eval_episodes=eval_episodes,
+                eval_horizon=eval_horizon,
                 output_root=output_root,
             )
 
@@ -95,6 +101,7 @@ def run_experiment_matrix(
                 total_timesteps=timesteps,
                 seed=seed,
                 eval_episodes=eval_episodes,
+                eval_horizon=eval_horizon,
                 output_root=output_root,
             )
 
@@ -109,6 +116,7 @@ def run_experiment_matrix(
                     output_root=output_root,
                     checkpoint_interval=checkpoint_interval,
                     eval_episodes=eval_episodes,
+                    eval_horizon=eval_horizon,
                 )
 
                 # 6. Ablation 2: Legacy Rolling Pearson Correlation
@@ -121,6 +129,7 @@ def run_experiment_matrix(
                     output_root=output_root,
                     checkpoint_interval=checkpoint_interval,
                     eval_episodes=eval_episodes,
+                    eval_horizon=eval_horizon,
                 )
 
     elapsed = time.time() - start_time

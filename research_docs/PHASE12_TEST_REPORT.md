@@ -1,15 +1,17 @@
 # PHASE 12: AUTOMATED TEST SUITE AND VERIFICATION REPORT
 
-**Project:** DOIM-Traffic-RL  
-**Research Title:** Learning Dynamic Objective Interaction Manifolds for Adaptive Multi-Objective Deep Reinforcement Learning in Real-Time Traffic Systems  
-**Evaluation Date:** October 31, 2026  
-**Operating System:** Microsoft Windows 11 Home (x86_64)  
-**Python Runtime:** Python 3.11.9  
-**PyTorch Version:** 2.15.0+cpu  
-**SUMO Version:** Eclipse SUMO v1.28.0 (via `eclipse-sumo` wheel)  
-**Pytest Version:** 9.2.0 (Pluggy 1.7.0)  
-**Execution Virtual Environment:** `.venv_clean` (Created cleanly via `py -3.11 -m venv .venv_clean`)  
-**Working Branch:** `ramya` (Pull Request #5)  
+**Project:** DOIM-Traffic-RL
+**Research Title:** Learning Dynamic Objective Interaction Manifolds for Adaptive Multi-Objective Deep Reinforcement Learning in Real-Time Traffic Systems
+**Evaluation Date:** October 31, 2026
+**Operating System:** Microsoft Windows 11 Home (x86_64)
+**Python Runtime:** Python 3.11.9
+**PyTorch Version:** 2.15.0+cpu
+**SUMO Version:** Eclipse SUMO v1.28.0 (via `eclipse-sumo` wheel)
+**Pytest Version:** 9.2.0 (Pluggy 1.7.0)
+**Execution Virtual Environment:** `.venv_clean` (Created cleanly via `py -3.11 -m venv .venv_clean`)
+**Working Branch:** `ramya` (Pull Request #5)
+**Base Commit on main:** `db720af5644536c4cbf08446c1922c8b977d1db5`
+**Latest Source Commit:** `554f2ed20b6665bec1c41f06b6164ce0ac67597a` (PR #5 Head)
 
 ---
 
@@ -18,16 +20,16 @@
 The full automated test suite was executed in the clean virtual environment without code-signing or host security modifications:
 
 ```powershell
-.venv_clean\Scripts\pytest.exe -v
+.\.venv_clean\Scripts\python.exe -m pytest tests/ -v
 ```
 
 ### Overall Execution Statistics:
-- **Total Test Cases Collected:** 89
-- **Passed:** 88 ($98.88\%$)
-- **Skipped:** 1 ($1.12\%$) — `tests/test_ppo_smoke.py::test_ppo_smoke` (gracefully skipped due to absent optional external package `stable_baselines3`)
+- **Total Test Cases Collected:** 95
+- **Passed:** 94 ($98.95\%$)
+- **Skipped:** 1 ($1.05\%$) — `tests/test_ppo_smoke.py::test_ppo_smoke` (gracefully skipped due to absent optional external package `stable_baselines3`)
 - **Failed:** 0 ($0.00\%$)
 - **Errors:** 0 ($0.00\%$)
-- **Execution Wall-Clock Time:** 25.96 seconds
+- **Execution Wall-Clock Time:** 36.45 seconds
 
 ---
 
@@ -37,11 +39,11 @@ In strict accordance with scientific audit standards, all testing activities are
 
 | Category | Count | Scope & Verification Nature |
 | :--- | :---: | :--- |
-| **Tests Added (Phase 12 Corrections)** | 34 | Targeted regression tests added in Phase 12 covering fairness identity, deterministic evaluation schemas, manifest audit, and SUMO network conflict extraction. |
-| **Tests Executed** | 88 | Genuinely executed in Python runtime against active simulation and model code. |
+| **Tests Added (Phase 12 Corrections)** | 40 | Targeted regression tests added in Phase 12 covering fairness identity, deterministic evaluation schemas, manifest audit, non-default evaluation horizon propagation, and microscopic SUMO network conflict/yield mapping. |
+| **Tests Executed** | 94 | Genuinely executed in Python runtime against active simulation and model code. |
 | **Tests Skipped** | 1 | Optional third-party baseline test (`tests/test_ppo_smoke.py`). |
-| **Tests Independently Reproduced** | 88 | Executed in a fresh, clean virtual environment (`.venv_clean`) with bitwise determinism. |
-| **SUMO Integration Tests** | 4 | Live TraCI / SUMO simulation tests (`test_environment_initialization_guarded`, `test_adversarial_safety_shield_sumo_trace`, `test_actual_sumo_environment_safety_shield_integration`, `test_extract_programs_from_real_sumo_network`). |
+| **Tests Independently Reproduced** | 94 | Executed in a fresh, clean virtual environment (`.venv_clean`) with bitwise determinism. |
+| **SUMO Integration Tests** | 6 | Live TraCI / SUMO simulation tests (`test_environment_initialization_guarded`, `test_adversarial_safety_shield_sumo_trace`, `test_actual_sumo_environment_safety_shield_integration`, `test_extract_programs_from_real_sumo_network`, `test_extract_tls_index_mapping_research_grid_all_five_controllable`, `test_active_tls_program_consistency_with_traci`). |
 | **Actual Training Experiments** | 0 | No long-horizon training runs (5k, 10k, 50k steps) were executed during Phase 12 remediation. Only 128-step diagnostic pipeline checks have been run. |
 
 ---
@@ -61,16 +63,22 @@ In strict accordance with scientific audit standards, all testing activities are
 | `test_deterministic_evaluation.py` | `test_deterministic_evaluation_reproducibility` | PASSED | Bitwise identical action trajectories with fixed seed |
 | `test_deterministic_evaluation.py` | `test_trained_baseline_parameters_frozen_during_evaluation` | PASSED | Neural parameters frozen (`eval()`, `torch.no_grad()`) |
 | `test_deterministic_evaluation.py` | `test_compatible_evaluation_artifact_schemas_across_all_four_controllers` | PASSED | Evaluation summary JSON schemas identical across all 4 algorithms |
+| `test_deterministic_evaluation.py` | `test_evaluation_horizon_propagation_non_default_value` | PASSED | Explicit propagation and recording of non-default horizon (900s) across all 4 algorithms |
 | `test_safety_shield_semantics.py` | `test_signal_state_string_validation` | PASSED | Validates standard SUMO signal characters |
 | `test_safety_shield_semantics.py` | `test_movement_conflict_verification` | PASSED | Conflicting 'G' states detected via connection conflicts |
 | `test_safety_shield_semantics.py` | `test_transition_clearance_verification` | PASSED | Clearance transitions require intermediate yellow |
 | `test_safety_shield_semantics.py` | `test_extract_programs_from_real_sumo_network` | PASSED | XML program extraction from `grid.net.xml` |
 | `test_safety_shield_semantics.py` | `test_single_phase_junction_stability` | PASSED | Single-phase perimeter nodes reject phase switching |
 | `test_safety_shield_semantics.py` | `test_multi_stage_clearance_transition` | PASSED | Yellow $\to$ All-Red $\to$ Green progression |
-| `test_safety_shield_semantics.py` | `test_network_connection_conflicts_from_net_file` | PASSED | Microscopic `<request foes="...">` junction conflicts |
-| `test_safety_shield_semantics.py` | `test_mixed_green_yellow_clearance_classification` | PASSED | Selective clearance (e.g. `yyyyrrrrGyyy`) identified as `mixed_clearance` |
-| `test_safety_shield_semantics.py` | `test_multi_program_tls_resolution` | PASSED | Active `programID` resolution |
+| `test_safety_shield_semantics.py` | `test_extract_conflicts_from_real_sumo_network` | PASSED | Microscopic `<request foes="...">` junction conflicts |
+| `test_safety_shield_semantics.py` | `test_mixed_green_yellow_signal_state_classification` | PASSED | Selective clearance (e.g. `yyyyrrrrGyyy`) identified as `mixed_clearance` |
+| `test_safety_shield_semantics.py` | `test_multiple_tls_programs_handling` | PASSED | Active `programID` resolution |
 | `test_safety_shield_semantics.py` | `test_actual_sumo_environment_safety_shield_integration` | PASSED | Live TraCI environment safety shield step filtering |
+| `test_safety_shield_semantics.py` | `test_extract_tls_index_mapping_research_grid_all_five_controllable` | PASSED | Explicit request-to-signal index mapping on all 5 research grid junctions |
+| `test_safety_shield_semantics.py` | `test_multiple_connections_sharing_link_index` | PASSED | Multi-connection aggregation under shared `linkIndex` head |
+| `test_safety_shield_semantics.py` | `test_priority_green_and_permissive_green_yield_semantics` | PASSED | Priority green 'G' collisions vs permissive green 'g' right-of-way yields |
+| `test_safety_shield_semantics.py` | `test_active_tls_program_consistency_with_traci` | PASSED | Live TraCI active program consistency and link count parity |
+| `test_safety_shield_semantics.py` | `test_fail_safe_behavior_on_unreliable_or_unmapped_tls` | PASSED | Graceful fail-safe handling on unmapped or unreliable junctions |
 | `test_manifest_migration_and_classification.py` | `test_classify_canonical_valid` | PASSED | Canonical modern manifest validation |
 | `test_manifest_migration_and_classification.py` | `test_classify_historical_legacy_valid` | PASSED | Legacy migration without invented defaults |
 | `test_manifest_migration_and_classification.py` | `test_classify_incomplete_initialized_run` | PASSED | `INITIALIZED` status run rejection |
@@ -111,7 +119,7 @@ In strict accordance with scientific audit standards, all testing activities are
 
 Exact command executed in reproducible environment:
 ```powershell
-& "d:\DOIM-Traffic-RL\DOIM-Traffic-RL\.venv_clean\Scripts\pytest.exe" -v
+.\.venv_clean\Scripts\python.exe -m pytest tests/ -v
 ```
 
 Execution terminal output summary:
@@ -120,10 +128,32 @@ Execution terminal output summary:
 platform win32 -- Python 3.11.9, pytest-9.2.0, pluggy-1.7.0
 rootdir: D:\DOIM-Traffic-RL\DOIM-Traffic-RL
 configfile: pytest.ini
-testpaths: tests
-collected 89 items
+collected 95 items
 
-================= 88 passed, 1 skipped, 8 warnings in 25.96s ==================
+tests\test_actual_training_gradient_flow.py .                            [  1%]
+tests\test_checkpoint_and_eval.py ..                                     [  3%]
+tests\test_deterministic_evaluation.py .....                             [  8%]
+tests\test_doim_architecture.py ......                                   [ 14%]
+tests\test_environment.py ..                                             [ 16%]
+tests\test_experiment_schema.py ....                                     [ 21%]
+tests\test_fairness_and_objectives.py ....                               [ 25%]
+tests\test_fairness_definitions.py .....                                 [ 30%]
+tests\test_ia_moppo_integration.py .....                                 [ 35%]
+tests\test_manifest_migration_and_classification.py .....                [ 41%]
+tests\test_manuscript_consistency.py .....                               [ 46%]
+tests\test_objective_interaction_theory.py ......                        [ 52%]
+tests\test_phase1_infrastructure.py ......                               [ 58%]
+tests\test_ppo_smoke.py s                                                [ 60%]
+tests\test_runner_interface.py ..                                        [ 62%]
+tests\test_safety_shield.py ...                                          [ 65%]
+tests\test_safety_shield_semantics.py ...............                    [ 81%]
+tests\test_safety_transitions_trace.py .                                 [ 82%]
+tests\test_scenario_isolation_synthetic.py .                             [ 83%]
+tests\test_scenario_specific_statistics.py ......                        [ 89%]
+tests\test_scoil_validation.py ....                                      [ 93%]
+tests\test_traffic_safety.py ......                                      [100%]
+
+================= 94 passed, 1 skipped, 8 warnings in 36.45s ==================
 ```
 
-All 88 active tests passed with zero failures and zero errors.
+All 94 active tests passed with zero failures and zero errors.

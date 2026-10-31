@@ -245,3 +245,75 @@ def test_compatible_evaluation_artifact_schemas_across_all_four_controllers(tmp_
             headers = next(reader)
             assert headers == expected_csv_headers, f"CSV headers mismatch for {algo}"
 
+
+def test_evaluation_horizon_propagation_non_default_value(tmp_path):
+    """
+    Verifies that passing a non-default evaluation horizon (e.g., 900 seconds)
+    is explicitly propagated to and recorded by all 4 algorithms (Fixed_Time,
+    FW_PPO, SA_PPO, IA_MOPPO) in both manifest.json and summary.json,
+    rather than silently using the default 1800 seconds.
+    """
+    import json
+    from common.experiment import ExperimentRun
+    from baselines.fixed_time.fixed_time_controller import run_fixed_time_experiment
+
+    non_default_horizon = 900
+    train_seed = 42
+    eval_seed = 1042
+    scenario = "north_south_surge"
+    controllers = ["Fixed_Time", "FW_PPO", "SA_PPO", "IA_MOPPO"]
+
+    for idx, algo in enumerate(controllers):
+        current_eval_seed = eval_seed + idx
+        run = ExperimentRun(
+            experiment_name=f"HORIZON_{algo}_test",
+            algorithm=algo,
+            config={"config_hash": "test_hash_horizon", "simulation": {"scenario_name": scenario}},
+            train_seed=train_seed,
+            eval_seed=current_eval_seed,
+            scenario=scenario,
+            output_root=str(tmp_path),
+            training_timesteps=1800,
+            episode_id=0,
+            evaluation_mode="deterministic_eval",
+            eval_horizon=non_default_horizon,
+        )
+
+        # Log a dummy step
+        run.log_step(
+            step=0,
+            sim_time=1.0,
+            reward=-1.0,
+            raw_objs=np.array([10.0, 1.0, 1000.0, 1.0, 0.05]),
+            norm_objs=np.array([0.1, 0.1, 0.1, 0.1, 0.1]),
+            weights=np.full(5, 0.2, dtype=np.float32),
+            actions=[0, 0, 0, 0, 0],
+            shield_interventions=0,
+        )
+        summary = run.close(status="COMPLETED")
+
+        # Read back written manifest and summary
+        m_file = run.run_dir / "manifest.json"
+        s_file = run.run_dir / "summary.json"
+
+        assert m_file.exists(), f"Missing manifest for {algo}"
+        assert s_file.exists(), f"Missing summary for {algo}"
+
+        m_data = json.loads(m_file.read_text(encoding="utf-8"))
+        s_data = json.loads(s_file.read_text(encoding="utf-8"))
+
+        # Verify that 900 was recorded, NOT 1800
+        assert m_data["eval_horizon"] == non_default_horizon, (
+            f"Algorithm {algo} manifest recorded {m_data['eval_horizon']} instead of {non_default_horizon}"
+        )
+        assert s_data["eval_horizon"] == non_default_horizon, (
+            f"Algorithm {algo} summary recorded {s_data['eval_horizon']} instead of {non_default_horizon}"
+        )
+        assert m_data["evaluation_seed"] == current_eval_seed
+        assert s_data["eval_seed"] == current_eval_seed
+        assert m_data["algorithm"] == algo
+        assert s_data["algorithm"] == algo
+        assert m_data["scenario"] == scenario
+        assert s_data["scenario"] == scenario
+        assert m_data["episode_id"] == 0
+        assert s_data["episode_id"] == 0

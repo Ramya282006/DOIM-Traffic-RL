@@ -76,6 +76,7 @@ def run_fixed_time_experiment(
     eval_seed: Optional[int] = None,
     episode_id: int = 0,
     evaluation_mode: str = "deterministic_eval",
+    eval_horizon: Optional[int] = None,
     output_root: str = "results/runs",
 ) -> ExperimentRun:
     """
@@ -97,6 +98,7 @@ def run_fixed_time_experiment(
         eval_seed=actual_eval_seed,
         episode_id=episode_id,
         evaluation_mode=evaluation_mode,
+        eval_horizon=eval_horizon,
         scenario=config.simulation.scenario_name,
         output_root=output_root,
         training_timesteps=total_timesteps,
@@ -159,7 +161,8 @@ def evaluate_fixed_time(
     eval_seed: int = 1042,
     train_seed: int = 42,
     cycle_time: int = 30,
-    max_steps_per_episode: int = 1800,
+    eval_horizon: int = 1800,
+    max_steps_per_episode: Optional[int] = None,
     output_root: str = "results/runs",
 ) -> List[ExperimentRun]:
     """
@@ -167,17 +170,20 @@ def evaluate_fixed_time(
     Guarantees baseline evaluation symmetry with identical evaluation seeds and horizons.
     """
     eval_runs = []
+    effective_horizon = int(max_steps_per_episode) if max_steps_per_episode is not None else int(eval_horizon)
+
     for ep in range(n_episodes):
         current_eval_seed = eval_seed + ep
         run = run_fixed_time_experiment(
             config_path=config_path,
             scenario_override=scenario_override,
-            total_timesteps=max_steps_per_episode,
+            total_timesteps=effective_horizon,
             cycle_time=cycle_time,
             seed=train_seed,
             eval_seed=current_eval_seed,
             episode_id=ep,
             evaluation_mode="deterministic_eval",
+            eval_horizon=effective_horizon,
             output_root=output_root,
         )
         eval_runs.append(run)

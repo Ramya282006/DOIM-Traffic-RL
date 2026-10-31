@@ -225,6 +225,18 @@ class StatisticalAnalyzer:
                     data["fairness_variance"] = np.nan
                     data["fairness_eligible"] = False
 
+                # Primary algorithm vs ablation identification
+                algo_str = str(data.get("algorithm", ""))
+                is_ablation = bool(
+                    data.get("ablation_mode") is not None
+                    or (migrated_manifest and migrated_manifest.get("ablation_mode") is not None)
+                    or algo_str.startswith("DOIM_no_")
+                    or algo_str.startswith("DOIM_rolling_")
+                    or "ablation" in algo_str.lower()
+                )
+                data["is_ablation"] = is_ablation
+                data["configuration_type"] = "Ablation" if is_ablation else "Primary Algorithm"
+
                 records.append(data)
             except Exception as e:
                 self.rejected_runs.append({
@@ -341,10 +353,14 @@ class StatisticalAnalyzer:
         for (scenario, algo), group in df.groupby(["scenario", "algorithm"]):
             n_independent_seeds = int(group["train_seed"].nunique())
             n_eval_episodes = len(group)
+            is_ablation = bool(group["is_ablation"].iloc[0]) if "is_ablation" in group.columns else False
+            config_type = "Ablation" if is_ablation else "Primary Algorithm"
 
             row = {
                 "scenario": scenario,
                 "algorithm": algo,
+                "configuration_type": config_type,
+                "is_ablation": is_ablation,
                 "n_independent_seeds": n_independent_seeds,
                 "n_evaluation_episodes": n_eval_episodes,
             }
@@ -524,6 +540,23 @@ class StatisticalAnalyzer:
                 f.write(f"# Benchmark Comparison: Scenario `{scenario_name}`\n\n")
                 f.write(_to_md_safe(scen_group))
                 f.write("\n")
+
+        # Export isolated primary vs ablation tables if ablations exist
+        if "is_ablation" in agg_df.columns:
+            primary_df = agg_df[agg_df["is_ablation"] == False].reset_index(drop=True)
+            ablation_df = agg_df[agg_df["is_ablation"] == True].reset_index(drop=True)
+            if not primary_df.empty:
+                primary_df.to_csv(out_path / "primary_benchmark_comparison.csv", index=False)
+                with open(out_path / "primary_benchmark_comparison.md", "w", encoding="utf-8") as f:
+                    f.write("# Primary Benchmark Comparison Table (Excluding Ablations)\n\n")
+                    f.write(_to_md_safe(primary_df))
+                    f.write("\n")
+            if not ablation_df.empty:
+                ablation_df.to_csv(out_path / "ablation_study_comparison.csv", index=False)
+                with open(out_path / "ablation_study_comparison.md", "w", encoding="utf-8") as f:
+                    f.write("# Ablation Study Comparison Table\n\n")
+                    f.write(_to_md_safe(ablation_df))
+                    f.write("\n")
 
         print(f"Summary tables successfully exported to: {out_path} (including rejected runs audit)")
 

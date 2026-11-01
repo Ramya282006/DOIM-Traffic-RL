@@ -11,7 +11,7 @@ import traci
 import shutil
 
 from environment.sumo_locator import find_sumo_binary
-from environment.safety_shield import TrafficSafetyShield
+from environment.safety_shield import TrafficSafetyShield, find_net_file_from_sumocfg
 from environment.traffic_signal_controller import (
     TrafficSignalController,
 )
@@ -179,13 +179,32 @@ class DOIMTrafficEnv(gym.Env):
 
         if self.enforce_safety_shield:
             phase_counts = {}
+            tls_programs = {}
+            net_xml_path = find_net_file_from_sumocfg(self.sumo_config)
             for tid in self.controllable_tls:
+                active_pid = str(traci.trafficlight.getProgram(tid))
                 logics = traci.trafficlight.getAllProgramLogics(tid)
-                phase_counts[tid] = len(logics[0].phases) if logics else 4
+                chosen_logic = None
+                for l in logics:
+                    if getattr(l, "subID", None) == active_pid or getattr(l, "programID", None) == active_pid:
+                        chosen_logic = l
+                        break
+                if chosen_logic is None and logics:
+                    chosen_logic = logics[0]
+
+                if chosen_logic:
+                    phase_counts[tid] = len(chosen_logic.phases)
+                    tls_programs[tid] = [
+                        {"duration": p.duration, "state": p.state} for p in chosen_logic.phases
+                    ]
+                else:
+                    phase_counts[tid] = 4
                 traci.trafficlight.setPhaseDuration(tid, 999999)
             self.safety_shield = TrafficSafetyShield(
                 controllable_tls_ids=self.controllable_tls,
                 tls_phase_counts=phase_counts,
+                tls_programs=tls_programs,
+                net_xml_path=net_xml_path,
                 min_green=10,
                 max_green=60,
                 yellow_duration=3,

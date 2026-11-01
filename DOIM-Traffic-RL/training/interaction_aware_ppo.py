@@ -407,6 +407,7 @@ def train_interaction_aware_ppo(
     enforce_safety_shield: bool = True,
     checkpoint_interval: int = 2500,
     eval_episodes: int = 0,
+    eval_horizon: int = 1800,
     eval_seed: Optional[int] = None,
 ) -> ExperimentRun:
     """
@@ -557,8 +558,8 @@ def train_interaction_aware_ppo(
 
     # Optional deterministic evaluation
     if eval_episodes > 0:
-        actual_eval_seed = eval_seed if eval_seed is not None else seed + 10000
-        print(f"\n[EVALUATION] Launching {eval_episodes} deterministic evaluation episodes with seed {actual_eval_seed}...")
+        actual_eval_seed = eval_seed if eval_seed is not None else seed + 1000
+        print(f"\n[EVALUATION] Launching {eval_episodes} deterministic evaluation episodes with seed {actual_eval_seed} (Horizon: {eval_horizon}s)...")
         evaluate_interaction_aware_ppo(
             agent_or_checkpoint=agent,
             config_path=config_path,
@@ -566,6 +567,8 @@ def train_interaction_aware_ppo(
             eval_seed=actual_eval_seed,
             train_seed=seed,
             n_episodes=eval_episodes,
+            eval_horizon=eval_horizon,
+            max_steps_per_episode=eval_horizon,
             output_root=output_root,
             ablation_mode=ablation_mode,
             enforce_safety_shield=enforce_safety_shield,
@@ -581,7 +584,8 @@ def evaluate_interaction_aware_ppo(
     eval_seed: int = 1042,
     train_seed: int = 42,
     n_episodes: int = 1,
-    max_steps_per_episode: int = 1800,
+    eval_horizon: int = 1800,
+    max_steps_per_episode: Optional[int] = None,
     output_root: str = "results/runs",
     ablation_mode: Optional[str] = None,
     enforce_safety_shield: bool = True,
@@ -608,6 +612,7 @@ def evaluate_interaction_aware_ppo(
     agent.interaction_learner.eval()
 
     eval_runs = []
+    effective_horizon = int(max_steps_per_episode) if max_steps_per_episode is not None else int(eval_horizon)
 
     for ep in range(n_episodes):
         current_eval_seed = eval_seed + ep
@@ -619,17 +624,18 @@ def evaluate_interaction_aware_ppo(
             config=config,
             train_seed=train_seed,
             eval_seed=current_eval_seed,
+            eval_horizon=effective_horizon,
             scenario=scenario_name,
             output_root=output_root,
             training_timesteps=config.policy.total_timesteps,
             episode_id=ep,
-            evaluation_mode="deterministic_evaluation",
+            evaluation_mode="deterministic_eval",
         )
 
         env = DOIMTrafficEnv(
             sumo_config=config.simulation.sumo_config,
             enforce_safety_shield=shield_enabled,
-            max_steps=max_steps_per_episode,
+            max_steps=effective_horizon,
         )
 
         obs, info = env.reset(seed=current_eval_seed)
@@ -639,7 +645,7 @@ def evaluate_interaction_aware_ppo(
 
         step = 0
         done = False
-        while not done and step < max_steps_per_episode:
+        while not done and step < effective_horizon:
             obj_vec = torch.tensor(info["normalized_objectives"], dtype=torch.float32).unsqueeze(0)
 
             with torch.no_grad():

@@ -30,14 +30,18 @@ def run_experiment_matrix(
     seeds: List[int] = [42],
     include_ablations: bool = True,
     scenarios: List[str] = ["scenarios/directional_shift/north_south_surge.sumocfg"],
-    eval_episodes: int = 0,
+    eval_episodes: int = 1,
+    eval_horizon: int = 1800,
     checkpoint_interval: int = 2500,
     output_root: str = "results/runs",
 ):
+    total_algos = 6 if include_ablations else 4
+    total_runs = total_algos * len(seeds) * len(scenarios)
     print("=" * 80)
-    print("STARTING DOIM-TRAFFIC-RL COMPREHENSIVE EXPERIMENT MATRIX")
-    print(f"Training Timesteps per run: {timesteps} | Seeds: {seeds} | Scenarios: {scenarios}")
-    print(f"Evaluation Episodes: {eval_episodes} | Checkpoint Interval: {checkpoint_interval}")
+    print("STARTING DOIM-TRAFFIC-RL EXPERIMENT MATRIX")
+    print(f"Configurations: {total_algos} ({'4 Primary + 2 Ablations' if include_ablations else '4 Primary Baseline Comparison'})")
+    print(f"Total Runs: {total_runs} (Seeds: {seeds} | Scenarios: {scenarios})")
+    print(f"Training Timesteps per run: {timesteps} | Eval Episodes: {eval_episodes} (Horizon: {eval_horizon}s)")
     print("=" * 80)
 
     start_time = time.time()
@@ -55,9 +59,10 @@ def run_experiment_matrix(
                 output_root=output_root,
                 checkpoint_interval=checkpoint_interval,
                 eval_episodes=eval_episodes,
+                eval_horizon=eval_horizon,
             )
 
-            # 2. Fixed-Time Baseline
+            # 2. Fixed-Time Baseline (Rule-based non-learning controller)
             print("--- Running Fixed-Time Baseline ---")
             run_fixed_time_experiment(
                 scenario_override=scenario,
@@ -65,6 +70,18 @@ def run_experiment_matrix(
                 seed=seed,
                 output_root=output_root,
             )
+            if eval_episodes > 0:
+                from baselines.fixed_time.fixed_time_controller import evaluate_fixed_time
+                print("--- Evaluating Fixed-Time Baseline Deterministically ---")
+                evaluate_fixed_time(
+                    scenario_override=scenario,
+                    n_episodes=eval_episodes,
+                    eval_seed=seed + 1000,
+                    train_seed=seed,
+                    eval_horizon=eval_horizon,
+                    max_steps_per_episode=eval_horizon,
+                    output_root=output_root,
+                )
 
             # 3. Fixed-Weight PPO Baseline
             print("--- Running Fixed-Weight PPO Baseline ---")
@@ -72,6 +89,8 @@ def run_experiment_matrix(
                 scenario_override=scenario,
                 total_timesteps=timesteps,
                 seed=seed,
+                eval_episodes=eval_episodes,
+                eval_horizon=eval_horizon,
                 output_root=output_root,
             )
 
@@ -81,6 +100,8 @@ def run_experiment_matrix(
                 scenario_override=scenario,
                 total_timesteps=timesteps,
                 seed=seed,
+                eval_episodes=eval_episodes,
+                eval_horizon=eval_horizon,
                 output_root=output_root,
             )
 
@@ -95,6 +116,7 @@ def run_experiment_matrix(
                     output_root=output_root,
                     checkpoint_interval=checkpoint_interval,
                     eval_episodes=eval_episodes,
+                    eval_horizon=eval_horizon,
                 )
 
                 # 6. Ablation 2: Legacy Rolling Pearson Correlation
@@ -107,6 +129,7 @@ def run_experiment_matrix(
                     output_root=output_root,
                     checkpoint_interval=checkpoint_interval,
                     eval_episodes=eval_episodes,
+                    eval_horizon=eval_horizon,
                 )
 
     elapsed = time.time() - start_time
@@ -114,7 +137,7 @@ def run_experiment_matrix(
     print(f"ALL EXPERIMENTS COMPLETED IN {elapsed:.1f}s! RUNNING STATISTICAL ANALYSIS...")
     print("=" * 80)
 
-    analyzer = StatisticalAnalyzer(runs_dir=output_root)
+    analyzer = StatisticalAnalyzer(runs_root=output_root)
     analyzer.export_summary_tables()
 
     plotter = PublicationPlotGenerator()
@@ -130,7 +153,8 @@ if __name__ == "__main__":
     parser.add_argument("--timesteps", type=int, default=128, help="Budget: 128 (smoke), 5000 (pilot), 10000 (intermediate), 50000 (main)")
     parser.add_argument("--seeds", nargs="+", type=int, default=[42], help="List of independent training seeds")
     parser.add_argument("--scenarios", nargs="+", type=str, default=["scenarios/directional_shift/north_south_surge.sumocfg"], help="List of scenario sumocfg paths")
-    parser.add_argument("--eval_episodes", type=int, default=0, help="Number of frozen deterministic evaluation episodes per model")
+    parser.add_argument("--eval_episodes", type=int, default=1, help="Number of frozen deterministic evaluation episodes per model (default: 1)")
+    parser.add_argument("--eval_horizon", type=int, default=1800, help="Evaluation horizon in seconds per episode (default: 1800)")
     parser.add_argument("--checkpoint_interval", type=int, default=2500, help="Periodic checkpoint save interval")
     parser.add_argument("--output_root", type=str, default="results/runs", help="Root directory for experiment logs")
     parser.add_argument("--no_ablations", action="store_true", help="Skip ablations")
@@ -142,6 +166,8 @@ if __name__ == "__main__":
         scenarios=args.scenarios,
         include_ablations=not args.no_ablations,
         eval_episodes=args.eval_episodes,
+        eval_horizon=args.eval_horizon,
         checkpoint_interval=args.checkpoint_interval,
         output_root=args.output_root,
     )
+

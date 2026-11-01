@@ -12,7 +12,11 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 
-from common.experiment import validate_experiment_manifest
+from common.experiment import (
+    validate_experiment_manifest,
+    classify_experiment_manifest,
+    ManifestStatus,
+)
 
 
 class StatisticalAnalyzer:
@@ -21,16 +25,34 @@ class StatisticalAnalyzer:
     rigorous statistical testing and aggregation adhering to IEEE T-ITS standards.
     """
 
-    def __init__(self, runs_root: Union[str, Path] = "results/runs"):
-        self.runs_root = Path(runs_root)
+    def __init__(
+        self,
+        runs_root: Union[str, Path] = "results/runs",
+        runs_dir: Optional[Union[str, Path]] = None,
+        **kwargs,
+    ):
+        target = runs_dir if runs_dir is not None else runs_root
+        self.runs_root = Path(target)
+        self.rejected_runs: List[Dict[str, Any]] = []
+        self.legacy_runs: List[str] = []
+        self.valid_runs: List[str] = []
+
+    def load_completed_runs(self, reject_incomplete: bool = True) -> pd.DataFrame:
+        """Alias for load_run_summaries."""
+        return self.load_run_summaries(reject_incomplete=reject_incomplete)
 
     def load_run_summaries(self, reject_incomplete: bool = True) -> pd.DataFrame:
         """
         Scans all subdirectories in results/runs, validates manifest and CSV integrity,
         and aggregates run records. Rejects incomplete, failed, or corrupted runs.
+        Maintains an audit trail of rejected runs with explicit rejection reasons.
         Sorts records by timestamp before deduplicating.
         """
         records = []
+        self.rejected_runs = []
+        self.legacy_runs = []
+        self.valid_runs = []
+
         if not self.runs_root.exists():
             return pd.DataFrame()
 
@@ -41,17 +63,53 @@ class StatisticalAnalyzer:
             manifest_path = run_dir / "manifest.json"
             metrics_path = run_dir / "metrics_step.csv"
 
-            if not summary_path.is_file():
-                continue
+            # Check manifest and classify
+            status, reason, migrated_manifest = classify_experiment_manifest(manifest_path, allow_legacy=True)
 
-            # Strict completion verification
-            if reject_incomplete:
-                if manifest_path.is_file():
-                    is_valid, msg = validate_experiment_manifest(manifest_path)
-                    if not is_valid:
-                        # Skip incomplete/failed runs
-                        continue
-                if not metrics_path.is_file() or metrics_path.stat().st_size == 0:
+            if status in (ManifestStatus.INCOMPLETE, ManifestStatus.INVALID):
+                self.rejected_runs.append({
+                    "run_dir": str(run_dir.name),
+                    "status": status,
+                    "reason": reason,
+                })
+                if reject_incomplete:
+                    continue
+            elif status == ManifestStatus.LEGACY_VALID:
+                self.legacy_runs.append(str(run_dir.name))
+            elif status == ManifestStatus.VALID:
+                self.valid_runs.append(str(run_dir.name))
+
+            # Verify metrics CSV file and count recorded steps
+            if not metrics_path.is_file() or metrics_path.stat().st_size == 0:
+                self.rejected_runs.append({
+                    "run_dir": str(run_dir.name),
+                    "status": "INCOMPLETE_CSV",
+                    "reason": "Missing or empty metrics_step.csv",
+                })
+                if reject_incomplete:
+                    continue
+
+            try:
+                with open(metrics_path, "r", encoding="utf-8") as f_csv:
+                    # Count non-header non-empty rows
+                    csv_lines = [line.strip() for line in f_csv if line.strip()]
+                    csv_step_count = max(0, len(csv_lines) - 1)
+            except Exception as e:
+                self.rejected_runs.append({
+                    "run_dir": str(run_dir.name),
+                    "status": "CORRUPT_CSV",
+                    "reason": f"Failed to read metrics_step.csv: {e}",
+                })
+                if reject_incomplete:
+                    continue
+
+            if not summary_path.is_file():
+                self.rejected_runs.append({
+                    "run_dir": str(run_dir.name),
+                    "status": "MISSING_SUMMARY",
+                    "reason": "summary.json file does not exist",
+                })
+                if reject_incomplete:
                     continue
 
             try:
@@ -59,18 +117,133 @@ class StatisticalAnalyzer:
                     data = json.load(f)
 
                 data["run_dir"] = str(run_dir)
-                # Seed extraction
-                seed_val = data.get("train_seed", data.get("seed", 42))
-                data["train_seed"] = int(seed_val)
-                data["eval_seed"] = int(data.get("eval_seed", data.get("evaluation_seed", seed_val)))
-                data["episode_id"] = int(data.get("episode_id", 0))
-                data["evaluation_mode"] = str(data.get("evaluation_mode", "train_rollout"))
-                data["scenario"] = str(data.get("scenario", "unknown_scenario"))
-                data["algorithm"] = str(data.get("algorithm", "unknown_algo"))
+
+                # Cross-Artifact Consistency Checks (Summary vs Manifest vs Metrics CSV)
+                inconsistencies = []
+
+                # 1. Step count consistency
+                sum_steps = data.get("total_steps")
+                if sum_steps is not None and int(sum_steps) != csv_step_count:
+                    inconsistencies.append(
+                        f"Step count mismatch: summary says {sum_steps} steps, but metrics_step.csv has {csv_step_count} rows"
+                    )
+
+                # 2. Manifest vs Summary identity consistency
+                if migrated_manifest:
+                    man_algo = migrated_manifest.get("algorithm")
+                    sum_algo = data.get("algorithm")
+                    if sum_algo and man_algo and sum_algo != man_algo:
+                        inconsistencies.append(f"Algorithm mismatch: summary='{sum_algo}' vs manifest='{man_algo}'")
+
+                    man_scen = migrated_manifest.get("scenario")
+                    sum_scen = data.get("scenario")
+                    if sum_scen and man_scen and sum_scen != man_scen:
+                        inconsistencies.append(f"Scenario mismatch: summary='{sum_scen}' vs manifest='{man_scen}'")
+
+                    sum_train = data.get("train_seed", data.get("seed"))
+                    man_train = migrated_manifest.get("train_seed")
+                    if sum_train is not None and man_train is not None and int(sum_train) != int(man_train):
+                        inconsistencies.append(f"Train seed mismatch: summary={sum_train} vs manifest={man_train}")
+
+                    sum_eval = data.get("eval_seed")
+                    man_eval = migrated_manifest.get("evaluation_seed", migrated_manifest.get("eval_seed"))
+                    if sum_eval is not None and man_eval is not None and int(sum_eval) != int(man_eval):
+                        inconsistencies.append(f"Eval seed mismatch: summary={sum_eval} vs manifest={man_eval}")
+
+                    sum_mode = data.get("evaluation_mode")
+                    man_mode = migrated_manifest.get("evaluation_mode")
+                    if sum_mode and man_mode and man_mode != "UNKNOWN" and sum_mode != man_mode:
+                        inconsistencies.append(f"Evaluation mode mismatch: summary='{sum_mode}' vs manifest='{man_mode}'")
+
+                if inconsistencies:
+                    self.rejected_runs.append({
+                        "run_dir": str(run_dir.name),
+                        "status": "DATA_INCONSISTENCY",
+                        "reason": "; ".join(inconsistencies),
+                    })
+                    if reject_incomplete:
+                        continue
+
+                # Seed & provenance extraction without invented defaults
+                sum_train = data.get("train_seed", data.get("seed"))
+                man_train = migrated_manifest.get("train_seed") if migrated_manifest else None
+                train_seed = int(sum_train) if sum_train is not None else (int(man_train) if man_train is not None else None)
+                data["train_seed"] = train_seed
+
+                sum_eval = data.get("eval_seed")
+                man_eval = migrated_manifest.get("evaluation_seed", migrated_manifest.get("eval_seed")) if migrated_manifest else None
+                eval_seed = int(sum_eval) if sum_eval is not None else (int(man_eval) if man_eval is not None else None)
+                data["eval_seed"] = eval_seed
+
+                data["episode_id"] = int(data.get("episode_id", migrated_manifest.get("episode_id", 0) if migrated_manifest else 0))
+
+                sum_mode = data.get("evaluation_mode")
+                man_mode = migrated_manifest.get("evaluation_mode") if migrated_manifest else None
+                data["evaluation_mode"] = str(sum_mode or man_mode or "UNKNOWN")
+                data["scenario"] = str(data.get("scenario", migrated_manifest.get("scenario", "unknown_scenario") if migrated_manifest else "unknown_scenario"))
+                data["algorithm"] = str(data.get("algorithm", migrated_manifest.get("algorithm", "unknown_algo") if migrated_manifest else "unknown_algo"))
                 data["start_time"] = str(data.get("start_time", run_dir.name))
+                data["reproducibility_eligible"] = bool(migrated_manifest.get("reproducibility_eligible", False) if migrated_manifest else False)
+
+                # Fairness metric identification strictly via explicit metadata (NO numerical thresholding!)
+                raw_fairness = float(data.get("average_fairness", 0.0))
+                metric_name = data.get("fairness_metric_name")
+                if not metric_name and migrated_manifest:
+                    metric_name = migrated_manifest.get("summary_metrics", {}).get("fairness_metric_name")
+
+                # Also inspect config_snapshot.yaml if available
+                if not metric_name:
+                    cfg_path = run_dir / "config_snapshot.yaml"
+                    if cfg_path.is_file():
+                        try:
+                            import yaml
+                            with open(cfg_path, "r", encoding="utf-8") as cf:
+                                loaded_cfg = yaml.safe_load(cf)
+                                if isinstance(loaded_cfg, dict):
+                                    metric_name = loaded_cfg.get("objectives", {}).get("fairness_metric")
+                        except Exception:
+                            pass
+
+                metric_name_str = str(metric_name).lower() if metric_name else ""
+                if metric_name_str in ("delay_disparity", "jain_index", "jain_index_or_delay_disparity", "intersection_fairness_disparity", "vehicle_fairness_disparity"):
+                    data["fairness_metric_name"] = "delay_disparity"
+                    data["fairness_metric_unit"] = "dimensionless"
+                    data["fairness_disparity"] = raw_fairness
+                    data["fairness_variance"] = np.nan
+                    data["fairness_eligible"] = True
+                elif metric_name_str in ("delay_variance", "variance", "delay_var"):
+                    data["fairness_metric_name"] = "delay_variance"
+                    data["fairness_metric_unit"] = "s^2"
+                    data["fairness_disparity"] = np.nan
+                    data["fairness_variance"] = raw_fairness
+                    data["fairness_eligible"] = True
+                else:
+                    # Unidentifiable / ambiguous fairness metric: classify as UNKNOWN / ineligible rather than guessing!
+                    data["fairness_metric_name"] = "UNKNOWN"
+                    data["fairness_metric_unit"] = "UNKNOWN"
+                    data["fairness_disparity"] = np.nan
+                    data["fairness_variance"] = np.nan
+                    data["fairness_eligible"] = False
+
+                # Primary algorithm vs ablation identification
+                algo_str = str(data.get("algorithm", ""))
+                is_ablation = bool(
+                    data.get("ablation_mode") is not None
+                    or (migrated_manifest and migrated_manifest.get("ablation_mode") is not None)
+                    or algo_str.startswith("DOIM_no_")
+                    or algo_str.startswith("DOIM_rolling_")
+                    or "ablation" in algo_str.lower()
+                )
+                data["is_ablation"] = is_ablation
+                data["configuration_type"] = "Ablation" if is_ablation else "Primary Algorithm"
 
                 records.append(data)
             except Exception as e:
+                self.rejected_runs.append({
+                    "run_dir": str(run_dir.name),
+                    "status": "PARSE_ERROR",
+                    "reason": f"Failed to load summary.json: {e}",
+                })
                 print(f"Warning: Failed to load summary from {run_dir}: {e}")
 
         df = pd.DataFrame(records)
@@ -78,7 +251,9 @@ class StatisticalAnalyzer:
             return df
 
         # Sort explicitly by start_time / run_dir before deduplication
-        df = df.sort_values(by=["algorithm", "scenario", "train_seed", "episode_id", "start_time"])
+        df["train_seed_sort"] = df["train_seed"].fillna(-1)
+        df = df.sort_values(by=["algorithm", "scenario", "train_seed_sort", "episode_id", "start_time"])
+        df = df.drop(columns=["train_seed_sort"])
 
         # Deduplicate records that have identical algorithm, scenario, train_seed, and episode_id
         initial_len = len(df)
@@ -167,7 +342,8 @@ class StatisticalAnalyzer:
             "max_queue",
             "average_co2",
             "total_throughput",
-            "average_fairness",
+            "fairness_disparity",
+            "fairness_variance",
             "average_reward",
             "total_shield_interventions",
         ]
@@ -177,10 +353,14 @@ class StatisticalAnalyzer:
         for (scenario, algo), group in df.groupby(["scenario", "algorithm"]):
             n_independent_seeds = int(group["train_seed"].nunique())
             n_eval_episodes = len(group)
+            is_ablation = bool(group["is_ablation"].iloc[0]) if "is_ablation" in group.columns else False
+            config_type = "Ablation" if is_ablation else "Primary Algorithm"
 
             row = {
                 "scenario": scenario,
                 "algorithm": algo,
+                "configuration_type": config_type,
+                "is_ablation": is_ablation,
                 "n_independent_seeds": n_independent_seeds,
                 "n_evaluation_episodes": n_eval_episodes,
             }
@@ -312,27 +492,73 @@ class StatisticalAnalyzer:
     def export_summary_tables(self, output_dir: Union[str, Path] = "results/tables"):
         """
         Exports clean markdown and CSV comparison tables separated strictly by scenario.
+        Also exports rejected_runs.json documenting all rejected runs and reasons.
         """
         out_path = Path(output_dir)
         out_path.mkdir(parents=True, exist_ok=True)
 
         df = self.load_run_summaries()
+
+        # Export rejected runs audit trail
+        rejected_path = out_path / "rejected_runs.json"
+        with open(rejected_path, "w", encoding="utf-8") as f:
+            json.dump({
+                "rejected_count": len(self.rejected_runs),
+                "legacy_valid_count": len(self.legacy_runs),
+                "canonical_valid_count": len(self.valid_runs),
+                "rejected_runs": self.rejected_runs,
+            }, f, indent=2)
+
         if df.empty:
-            print("No run summaries found to export.")
+            print("No valid run summaries found to export.")
             return
 
         agg_df = self.aggregate_by_scenario_and_algorithm(df)
         csv_path = out_path / "benchmark_comparison.csv"
         agg_df.to_csv(csv_path, index=False)
 
+        def _to_md_safe(d):
+            try:
+                return d.to_markdown(index=False)
+            except Exception:
+                return d.to_string()
+
         # Generate markdown table for paper documentation
         md_path = out_path / "benchmark_comparison.md"
         with open(md_path, "w", encoding="utf-8") as f:
             f.write("# Benchmark Comparison Table (Scenario-Specific Aggregation)\n\n")
-            f.write(agg_df.to_markdown(index=False) if hasattr(agg_df, "to_markdown") else agg_df.to_string())
+            f.write(_to_md_safe(agg_df))
             f.write("\n")
 
-        print(f"Summary tables successfully exported to: {out_path}")
+        # Export per-scenario isolated tables
+        for scenario_name, scen_group in agg_df.groupby("scenario"):
+            scen_slug = scenario_name.replace("/", "_").replace(".sumocfg", "")
+            scen_csv = out_path / f"{scen_slug}_benchmark_comparison.csv"
+            scen_md = out_path / f"{scen_slug}_benchmark_comparison.md"
+            scen_group.to_csv(scen_csv, index=False)
+            with open(scen_md, "w", encoding="utf-8") as f:
+                f.write(f"# Benchmark Comparison: Scenario `{scenario_name}`\n\n")
+                f.write(_to_md_safe(scen_group))
+                f.write("\n")
+
+        # Export isolated primary vs ablation tables if ablations exist
+        if "is_ablation" in agg_df.columns:
+            primary_df = agg_df[agg_df["is_ablation"] == False].reset_index(drop=True)
+            ablation_df = agg_df[agg_df["is_ablation"] == True].reset_index(drop=True)
+            if not primary_df.empty:
+                primary_df.to_csv(out_path / "primary_benchmark_comparison.csv", index=False)
+                with open(out_path / "primary_benchmark_comparison.md", "w", encoding="utf-8") as f:
+                    f.write("# Primary Benchmark Comparison Table (Excluding Ablations)\n\n")
+                    f.write(_to_md_safe(primary_df))
+                    f.write("\n")
+            if not ablation_df.empty:
+                ablation_df.to_csv(out_path / "ablation_study_comparison.csv", index=False)
+                with open(out_path / "ablation_study_comparison.md", "w", encoding="utf-8") as f:
+                    f.write("# Ablation Study Comparison Table\n\n")
+                    f.write(_to_md_safe(ablation_df))
+                    f.write("\n")
+
+        print(f"Summary tables successfully exported to: {out_path} (including rejected runs audit)")
 
 
 if __name__ == "__main__":

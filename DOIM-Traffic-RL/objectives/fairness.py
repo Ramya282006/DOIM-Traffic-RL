@@ -1,6 +1,9 @@
 """
 DOIM-Traffic-RL: Rigorous Approach-Level Delay Fairness Metrics
-Implements Jain's Fairness Index, Gini disparity, and corridor-level delay equity.
+Implements mathematically rigorous equity metrics across competing arterial corridors:
+  - Primary Metric: Approach Delay Disparity (1.0 - Jain's Fairness Index in [0, 1], dimensionless, lower is better)
+  - Secondary Metric: Delay Variance (in seconds squared s^2, lower is better)
+  - Gini disparity coefficient in [0, 1]
 """
 
 from typing import Dict, List, Optional
@@ -13,6 +16,21 @@ class CorridorFairnessCalculator:
       - North-South incoming approaches
       - East-West incoming approaches
       - Turn movements
+
+    METRIC DEFINITIONS:
+    1. Primary Metric: Delay Disparity
+       - Formula: D(x) = 1.0 - J(x) = 1.0 - [ (∑ x_i)^2 / (K * ∑ x_i^2) ]
+       - Domain: Dimensionless, bounded in [0.0, 1.0 - 1/K] ⊂ [0.0, 1.0]
+       - Interpretation: 0.0 represents absolute equity (all approaches experience identical delay).
+                         Values close to 1.0 indicate severe starvation of one or more corridors.
+       - Direction of Improvement: Lower is better (minimization objective).
+
+    2. Secondary Metric: Delay Variance
+       - Formula: Var(x) = (1/K) * ∑ (x_i - x̄)^2
+       - Domain: Seconds squared (s^2), bounded in [0.0, ∞)
+       - Interpretation: Classical spread of waiting times around the mean.
+       - Direction of Improvement: Lower is better (minimization objective).
+       - Note: Must NEVER be mathematically averaged or conflated with dimensionless Delay Disparity.
     """
 
     def __init__(self, num_corridors: int = 4):
@@ -28,15 +46,15 @@ class CorridorFairnessCalculator:
         arr = np.asarray(delays, dtype=np.float64)
         if len(arr) == 0:
             return 1.0
-        # If all delays are zero, service is perfectly equal
+        # If all delays are zero or negligible, service is perfectly equal
         if np.all(arr <= 1e-6):
             return 1.0
-            
+
         sum_x = np.sum(arr)
         sum_sq = np.sum(arr ** 2)
         if sum_sq <= 1e-8:
             return 1.0
-            
+
         k = len(arr)
         jain = (sum_x ** 2) / (k * sum_sq)
         return float(np.clip(jain, 1.0 / k, 1.0))
@@ -44,28 +62,46 @@ class CorridorFairnessCalculator:
     @staticmethod
     def compute_delay_disparity(delays: List[float]) -> float:
         """
-        Computes generic delay disparity penalty in [0, 1]:
+        Primary Fairness Metric: Delay Disparity in [0, 1].
             Disparity = 1.0 - JainIndex
         0.0 = perfect equity (desirable).
         1.0 = maximum starvation / inequity (undesirable).
+        Direction: Minimization (lower is better).
+        Unit: Dimensionless.
         """
         jain = CorridorFairnessCalculator.compute_jain_index(delays)
         return float(1.0 - jain)
 
     @staticmethod
+    def compute_delay_variance(delays: List[float], ddof: int = 0) -> float:
+        """
+        Secondary Fairness Metric: Delay Variance in seconds squared (s^2).
+            Var = (1 / (N - ddof)) * ∑ (x_i - mean)^2
+        Direction: Minimization (lower is better).
+        Unit: s^2 (seconds squared).
+        """
+        arr = np.asarray(delays, dtype=np.float64)
+        if len(arr) <= ddof:
+            return 0.0
+        return float(np.var(arr, ddof=ddof))
+
+    @staticmethod
     def compute_intersection_fairness(intersection_delays: List[float]) -> Dict[str, float]:
         """
         Computes intersection-level equity metrics:
-          - Jain's Fairness Index
-          - Disparity penalty (1.0 - Jain)
-          - Gini coefficient
+          - Jain's Fairness Index (dimensionless in [1/K, 1])
+          - Disparity penalty (1.0 - Jain in [0, 1])
+          - Delay variance (in s^2)
+          - Gini coefficient (dimensionless in [0, 1])
         """
         jain = CorridorFairnessCalculator.compute_jain_index(intersection_delays)
         disparity = float(1.0 - jain)
+        variance = CorridorFairnessCalculator.compute_delay_variance(intersection_delays)
         gini = CorridorFairnessCalculator.compute_gini_coefficient(intersection_delays)
         return {
             "jain_index": float(jain),
             "disparity": disparity,
+            "variance_s2": variance,
             "gini": float(gini),
         }
 

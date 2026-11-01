@@ -489,3 +489,466 @@ def test_fail_safe_behavior_on_unreliable_or_unmapped_tls():
     safe_actions, targets, interv = shield.filter_action(np.array([0]), [0])
     assert safe_actions[0] == 1, "Max green must trigger fail-safe clearance transition"
     assert targets[0] == 1  # phase 1 (yellow clearance)
+
+
+
+def test_four_phase_program_derivation_and_verification():
+    """
+    Verifies dynamic derivation of 4-phase program in SignalSafetyVerifier.
+    Ensures correct phase classification, sequence validation, and min/max green enforcement.
+    """
+    from environment.safety_verifier import SignalSafetyVerifier
+
+    prog_4p = [
+        {"duration": 30.0, "state": "GGGG"},  # 0: Green
+        {"duration": 3.0, "state": "yyyy"},   # 1: Yellow
+        {"duration": 30.0, "state": "GGGG"},  # 2: Green
+        {"duration": 3.0, "state": "yyyy"},   # 3: Yellow
+    ]
+
+    verifier = SignalSafetyVerifier(
+        controllable_tls_ids=["TLS_4P"],
+        tls_programs={"TLS_4P": prog_4p},
+        net_xml_path=None,
+        min_green=10,
+        max_green=30,
+    )
+
+    assert verifier.is_verifiable["TLS_4P"] is True
+    assert verifier.num_phases["TLS_4P"] == 4
+    assert verifier.green_phases["TLS_4P"] == {0, 2}
+    assert verifier.clearance_phases["TLS_4P"] == {1, 3}
+    assert verifier.terminal_clearance_phases["TLS_4P"] == {1, 3}
+    assert verifier.legal_successors["TLS_4P"] == {0: {1}, 1: {2}, 2: {3}, 3: {0}}
+
+    # Legal sequence through 4-phase cycle
+    t = 0
+    # Phase 0 for 15s (>= min_green 10s)
+    for _ in range(15):
+        viols = verifier.record_step(sim_time=t, current_phases={"TLS_4P": 0})
+        assert len(viols) == 0
+        t += 1
+
+    # Transition to phase 1 (Yellow)
+    viols = verifier.record_step(sim_time=t, current_phases={"TLS_4P": 1})
+    assert len(viols) == 0
+    t += 1
+
+    # Transition to phase 2 (Green)
+    viols = verifier.record_step(sim_time=t, current_phases={"TLS_4P": 2})
+    assert len(viols) == 0
+    t += 1
+
+    # Transition to phase 3 (Yellow) after 12s
+    for _ in range(11):
+        viols = verifier.record_step(sim_time=t, current_phases={"TLS_4P": 2})
+        assert len(viols) == 0
+        t += 1
+    viols = verifier.record_step(sim_time=t, current_phases={"TLS_4P": 3})
+    assert len(viols) == 0
+    t += 1
+
+    # Transition to phase 0 (Green)
+    viols = verifier.record_step(sim_time=t, current_phases={"TLS_4P": 0})
+    assert len(viols) == 0
+
+
+def test_six_phase_multi_stage_clearance_program():
+    """
+    Verifies dynamic derivation and verification of a 6-phase program with multi-stage clearance:
+    Phase 0 (Green) -> Phase 1 (Yellow) -> Phase 2 (All-Red) ->
+    Phase 3 (Green) -> Phase 4 (Yellow) -> Phase 5 (All-Red) -> Phase 0.
+    """
+    from environment.safety_verifier import SignalSafetyVerifier
+
+    prog_6p = [
+        {"duration": 30.0, "state": "GGGGrrrr"},  # 0: Green Phase 1
+        {"duration": 3.0, "state": "yyyyrrrr"},   # 1: Yellow Clearance 1
+        {"duration": 1.0, "state": "rrrrrrrr"},   # 2: All-Red Clearance 1
+        {"duration": 30.0, "state": "rrrrGGGG"},  # 3: Green Phase 2
+        {"duration": 3.0, "state": "rrrryyyy"},   # 4: Yellow Clearance 2
+        {"duration": 1.0, "state": "rrrrrrrr"},   # 5: All-Red Clearance 2
+    ]
+
+    verifier = SignalSafetyVerifier(
+        controllable_tls_ids=["TLS_6P"],
+        tls_programs={"TLS_6P": prog_6p},
+        net_xml_path=None,
+        min_green=10,
+        max_green=60,
+    )
+
+    assert verifier.num_phases["TLS_6P"] == 6
+    assert verifier.green_phases["TLS_6P"] == {0, 3}
+    assert verifier.clearance_phases["TLS_6P"] == {1, 2, 4, 5}
+    assert verifier.all_red_phases["TLS_6P"] == {2, 5}
+    assert verifier.terminal_clearance_phases["TLS_6P"] == {2, 5}
+
+    # Verify full legal progression through multi-stage clearance
+    t = 0
+    for _ in range(12):
+        assert len(verifier.record_step(t, {"TLS_6P": 0})) == 0
+        t += 1
+    # 0 -> 1 (Yellow)
+    assert len(verifier.record_step(t, {"TLS_6P": 1})) == 0
+    t += 1
+    # 1 -> 2 (All-Red)
+    assert len(verifier.record_step(t, {"TLS_6P": 2})) == 0
+    t += 1
+    # 2 -> 3 (Green)
+    assert len(verifier.record_step(t, {"TLS_6P": 3})) == 0
+    t += 1
+
+    # Verify error detection: jumping from yellow phase 1 directly to green phase 3 (skipping all-red phase 2)
+    v2 = SignalSafetyVerifier(
+        controllable_tls_ids=["TLS_6P"],
+        tls_programs={"TLS_6P": prog_6p},
+        net_xml_path=None,
+        min_green=10,
+    )
+    for s in range(12):
+        v2.record_step(s, {"TLS_6P": 0})
+    v2.record_step(12, {"TLS_6P": 1})
+    # Phase 1 is intermediate clearance; legal successor is {2}. Jumping to 3 must be flagged!
+    viols = v2.record_step(13, {"TLS_6P": 3})
+    assert any(v["type"] == "ILLEGAL_PHASE_SEQUENCE" for v in viols)
+
+    # Verify direct green-to-green jump without clearance (0 -> 3)
+    v3 = SignalSafetyVerifier(
+        controllable_tls_ids=["TLS_6P"],
+        tls_programs={"TLS_6P": prog_6p},
+        net_xml_path=None,
+        min_green=10,
+    )
+    for s in range(12):
+        v3.record_step(s, {"TLS_6P": 0})
+    viols = v3.record_step(12, {"TLS_6P": 3})
+    assert any(v["type"] == "DIRECT_GREEN_JUMP_NO_YELLOW" for v in viols)
+    assert any(v["type"] == "ILLEGAL_PHASE_SEQUENCE" for v in viols)
+
+
+def test_eight_phase_program_with_protected_turns():
+    """
+    Verifies support for 8-phase dual-ring controller programs (4 green movements + 4 clearances).
+    """
+    from environment.safety_verifier import SignalSafetyVerifier
+
+    prog_8p = [
+        {"duration": 15.0, "state": "GGggrrrrrrrr"},  # 0: Phase 1 Green
+        {"duration": 3.0, "state": "yyyyrrrrrrrr"},   # 1: Phase 1 Yellow
+        {"duration": 25.0, "state": "rrrrGGggrrrr"},  # 2: Phase 2 Green
+        {"duration": 3.0, "state": "rrrryyyyrrrr"},   # 3: Phase 2 Yellow
+        {"duration": 15.0, "state": "rrrrrrrrGGgg"},  # 4: Phase 3 Green
+        {"duration": 3.0, "state": "rrrrrrrryyyy"},   # 5: Phase 3 Yellow
+        {"duration": 25.0, "state": "GGrrrrrrrrGG"},  # 6: Phase 4 Green
+        {"duration": 3.0, "state": "yyrrrrrrrryy"},   # 7: Phase 4 Yellow
+    ]
+
+    verifier = SignalSafetyVerifier(
+        controllable_tls_ids=["TLS_8P"],
+        tls_programs={"TLS_8P": prog_8p},
+        net_xml_path=None,
+        min_green=10,
+        max_green=30,
+    )
+
+    assert verifier.num_phases["TLS_8P"] == 8
+    assert verifier.green_phases["TLS_8P"] == {0, 2, 4, 6}
+    assert verifier.clearance_phases["TLS_8P"] == {1, 3, 5, 7}
+    assert verifier.terminal_clearance_phases["TLS_8P"] == {1, 3, 5, 7}
+
+    # Verify full cycle execution
+    t = 0
+    for p in range(8):
+        dur = 12 if p % 2 == 0 else 2
+        for _ in range(dur):
+            viols = verifier.record_step(t, {"TLS_8P": p})
+            assert len(viols) == 0
+            t += 1
+
+    # Verify max green violation on phase 2 (staying 35s > 30s)
+    v2 = SignalSafetyVerifier(
+        controllable_tls_ids=["TLS_8P"],
+        tls_programs={"TLS_8P": prog_8p},
+        net_xml_path=None,
+        max_green=30,
+    )
+    v2.record_step(0, {"TLS_8P": 2})
+    had_max_green_viol = False
+    for s in range(1, 35):
+        viols = v2.record_step(s, {"TLS_8P": 2})
+        if any(v["type"] == "MAX_GREEN_EXCEEDED" for v in viols):
+            had_max_green_viol = True
+            break
+    assert had_max_green_viol, "Expected MAX_GREEN_EXCEEDED when phase 2 exceeded 30s"
+
+
+def test_explicit_non_cyclic_next_transitions():
+    """
+    Verifies support for explicit non-cyclic 'next' transition attributes.
+    Tests that:
+    1. SignalSafetyVerifier recognizes non-cyclic successors.
+    2. TrafficSafetyShield routes to alternative green reachable through configured transition sequence.
+    """
+    from environment.safety_verifier import SignalSafetyVerifier
+    from environment.safety_shield import TrafficSafetyShield
+
+    # Program with explicit next attributes:
+    # Phase 0 can branch to Yellow 1 (leading to Green 2) OR Yellow 3 (leading to Green 4)
+    prog_non_cyclic = [
+        {"duration": 30.0, "state": "GGGG", "next": "1 3"},  # 0: Green
+        {"duration": 3.0, "state": "yyyy", "next": "2"},    # 1: Yellow branch A
+        {"duration": 30.0, "state": "GGGG", "next": "5"},    # 2: Green branch A (adversarial conflict)
+        {"duration": 3.0, "state": "yyyy", "next": "4"},    # 3: Yellow branch B
+        {"duration": 30.0, "state": "GGGG", "next": "5"},    # 4: Green branch B (safe alternative)
+        {"duration": 3.0, "state": "yyyy", "next": "0"},    # 5: Return Yellow
+    ]
+
+    verifier = SignalSafetyVerifier(
+        controllable_tls_ids=["TLS_NC"],
+        tls_programs={"TLS_NC": prog_non_cyclic},
+        net_xml_path=None,
+    )
+
+    assert verifier.legal_successors["TLS_NC"][0] == {1, 3}
+    assert verifier.legal_successors["TLS_NC"][1] == {2}
+    assert verifier.legal_successors["TLS_NC"][3] == {4}
+
+    # Transition from 0 to 1 is legal
+    verifier.record_step(0, {"TLS_NC": 0})
+    for s in range(1, 12):
+        verifier.record_step(s, {"TLS_NC": 0})
+    viols = verifier.record_step(12, {"TLS_NC": 1})
+    assert len(viols) == 0
+
+    # Reset and verify transition from 0 to 3 is also legal
+    v2 = SignalSafetyVerifier(
+        controllable_tls_ids=["TLS_NC"],
+        tls_programs={"TLS_NC": prog_non_cyclic},
+        net_xml_path=None,
+    )
+    v2.record_step(0, {"TLS_NC": 0})
+    for s in range(1, 12):
+        v2.record_step(s, {"TLS_NC": 0})
+    viols = v2.record_step(12, {"TLS_NC": 3})
+    assert len(viols) == 0
+
+    # Transition from 0 directly to 4 without yellow is illegal
+    v3 = SignalSafetyVerifier(
+        controllable_tls_ids=["TLS_NC"],
+        tls_programs={"TLS_NC": prog_non_cyclic},
+        net_xml_path=None,
+    )
+    for s in range(12):
+        v3.record_step(s, {"TLS_NC": 0})
+    viols = v3.record_step(12, {"TLS_NC": 4})
+    assert any(v["type"] == "DIRECT_GREEN_JUMP_NO_YELLOW" for v in viols)
+
+    # Test TrafficSafetyShield fallback routing via configured non-cyclic branch
+    # Movement conflicts: link 0 and link 1 conflict.
+    # Phase 2 has priority green 'G' on both links (conflicting!)
+    # Phase 4 has permissive 'g' or conflict-free states.
+    prog_nc_shield = [
+        {"duration": 30.0, "state": "GGgg", "next": "1 3"},  # 0: Green
+        {"duration": 3.0, "state": "yygg", "next": "2"},    # 1: Yellow branch A
+        {"duration": 30.0, "state": "GGGG", "next": "5"},    # 2: Green branch A (both 0 and 1 have 'G' -> CONFLICT!)
+        {"duration": 3.0, "state": "ggyy", "next": "4"},    # 3: Yellow branch B
+        {"duration": 30.0, "state": "rrGG", "next": "5"},    # 4: Green branch B (links 0 and 1 are red -> CONFLICT FREE!)
+        {"duration": 3.0, "state": "yyyy", "next": "0"},    # 5: Return Yellow
+    ]
+
+    shield = TrafficSafetyShield(
+        controllable_tls_ids=["TLS_NC"],
+        tls_programs={"TLS_NC": prog_nc_shield},
+        tls_conflicts={"TLS_NC": [(0, 1)]},
+        min_green=5,
+        max_green=20,
+        yellow_duration=3,
+    )
+
+    # Advance until max_green
+    for _ in range(19):
+        shield.filter_action(np.array([0]), [0])
+
+    # Max green triggered on phase 0. Nominal next is phase 2 (conflicting).
+    # Shield must route to alternative green phase 4 via configured branch 3!
+    safe_act, targets, interv = shield.filter_action(np.array([0]), [0])
+    assert safe_act[0] == 1
+    # Must execute yellow clearance branch 3
+    assert targets[0] == 3
+    assert "MAX_GREEN_FALLBACK_ALT_GREEN" in shield.states["TLS_NC"].last_intervention_reason
+
+    # Step through yellow duration (3s)
+    shield.filter_action(np.array([0]), [3])
+    shield.filter_action(np.array([0]), [3])
+    safe_act, targets, _ = shield.filter_action(np.array([0]), [3])
+    # Must enter alternative green phase 4
+    assert targets[0] == 4
+
+
+def test_missing_or_ambiguous_tls_program_mapping():
+    """
+    Verifies that unknown or missing TLS program mappings are explicitly marked
+    unverifiable and rejected, rather than falsely validated using hardcoded 4-phase cycles.
+    """
+    from environment.safety_verifier import SignalSafetyVerifier
+
+    verifier = SignalSafetyVerifier(
+        controllable_tls_ids=["TLS_MISSING"],
+        tls_programs=None,
+        net_xml_path=None,
+    )
+
+    # Must NOT silently populate 4-phase defaults
+    assert verifier.is_verifiable["TLS_MISSING"] is False
+    assert "TLS_MISSING" in verifier.unverifiable_tls
+    assert verifier.num_phases["TLS_MISSING"] == 0
+    assert verifier.green_phases["TLS_MISSING"] == set()
+    assert verifier.clearance_phases["TLS_MISSING"] == set()
+
+    # Step evaluation must immediately flag UNVERIFIABLE_TLS_PROGRAM
+    viols = verifier.record_step(sim_time=0.0, current_phases={"TLS_MISSING": 0})
+    assert len(viols) > 0
+    assert any(v["type"] == "UNVERIFIABLE_TLS_PROGRAM" for v in viols)
+
+    summary = verifier.get_summary()
+    assert summary["verified_safe"] is False
+    assert "TLS_MISSING" in summary["unverifiable_tls"]
+    assert summary["unverifiable_program_violations"] >= 1
+
+
+def test_forced_max_green_when_normal_successor_conflicting():
+    """
+    Verifies that when forced max green occurs and the normal successor green phase has
+    movement conflicts, the safety shield prevents indefinite green deadlock.
+    """
+    from environment.safety_shield import TrafficSafetyShield
+
+    # 4-phase program with All-Red phase reachable along clearance:
+    # 0 (Green) -> 1 (Yellow) -> 2 (All-Red) -> 3 (Green conflicting)
+    prog = [
+        {"duration": 30.0, "state": "GGrr"},  # 0: Green
+        {"duration": 3.0, "state": "yyrr"},   # 1: Yellow
+        {"duration": 1.0, "state": "rrrr"},   # 2: All-Red clearance
+        {"duration": 30.0, "state": "GGGG"},  # 3: Green (conflicting: link 0 and 1 conflict)
+    ]
+
+    shield = TrafficSafetyShield(
+        controllable_tls_ids=["TLS_MG"],
+        tls_programs={"TLS_MG": prog},
+        tls_conflicts={"TLS_MG": [(0, 1)]},
+        min_green=5,
+        max_green=20,
+        yellow_duration=3,
+        all_red_duration=1,
+    )
+
+    # Advance to max_green (20s)
+    for _ in range(19):
+        shield.filter_action(np.array([0]), [0])
+
+    # At max green: phase 3 is conflicting. Shield must NOT deadlock in phase 0!
+    safe_act, targets, interv = shield.filter_action(np.array([0]), [0])
+    assert safe_act[0] == 1, "Must trigger forced switch, not deadlock in current green"
+    assert targets[0] == 1, "Must execute yellow clearance stage 1 first"
+    assert "MAX_GREEN_FALLBACK_ALL_RED" in shield.states["TLS_MG"].last_intervention_reason
+
+    # Complete yellow duration (3s)
+    shield.filter_action(np.array([0]), [1])
+    shield.filter_action(np.array([0]), [1])
+    safe_act, targets, _ = shield.filter_action(np.array([0]), [1])
+
+    # Must enter reachable all-red phase 2 and lock in fail-safe hold
+    assert targets[0] == 2
+    state = shield.states["TLS_MG"]
+    assert state.is_fail_safe_locked is True
+    assert state.fail_safe_hold_phase == 2
+
+
+def test_all_red_fallback_reachability_and_fail_safe():
+    """
+    Verifies that:
+    1. An all-red phase is only selected if it is REACHABLE along the configured clearance sequence.
+    2. An arbitrary all-red phase from an unrelated stage is NOT selected.
+    3. If no reachable safe fallback exists, shield enters documented fail-safe state and reports cannot safely progress.
+    """
+    from environment.safety_shield import TrafficSafetyShield
+
+    # Case A: Program where all-red phase is unreachable from phase 0:
+    # Phase 0 -> Yellow 1 -> Green 2 (conflicting).
+    # All-red phase 4 belongs to the clearance of Phase 3 (unrelated movement)!
+    prog_unreachable_red = [
+        {"duration": 30.0, "state": "GGrr", "next": "1"},  # 0: Green A
+        {"duration": 3.0, "state": "yyrr", "next": "2"},   # 1: Yellow A
+        {"duration": 30.0, "state": "GGGG", "next": "3"},  # 2: Green B (conflicting!)
+        {"duration": 3.0, "state": "rryy", "next": "4"},   # 3: Yellow B
+        {"duration": 1.0, "state": "rrrr", "next": "0"},   # 4: All-red (belongs to Yellow B, NOT reachable from Yellow A!)
+    ]
+
+    shield = TrafficSafetyShield(
+        controllable_tls_ids=["TLS_UR"],
+        tls_programs={"TLS_UR": prog_unreachable_red},
+        tls_conflicts={"TLS_UR": [(0, 1)]},
+        min_green=5,
+        max_green=20,
+        yellow_duration=3,
+    )
+
+    state = shield.states["TLS_UR"]
+    # All-red phase 4 is NOT reachable from phase 0 clearance
+    assert state.reachable_all_red_phases.get(0, []) == []
+
+    # Step until max_green
+    for _ in range(19):
+        shield.filter_action(np.array([0]), [0])
+
+    # At max green: normal successor 2 is conflicting. No all-red is reachable from phase 0.
+    # Shield must NOT arbitrarily jump to all-red phase 4!
+    # It must enter documented fail-safe state: cannot_safely_progress = True
+    safe_act, targets, interv = shield.filter_action(np.array([0]), [0])
+    assert safe_act[0] == 0
+    assert state.is_fail_safe_locked is True
+    assert state.cannot_safely_progress is True
+    assert "NO_VERIFIED_SAFE_TRANSITION" in state.fail_safe_reason
+
+
+def test_clearance_phase_not_treated_as_permanent_safe_state():
+    """
+    Verifies that a yellow clearance phase is NEVER used as a permanent hold state.
+    When normal successor is conflicting and no reachable all-red phase exists,
+    the shield must NOT lock into yellow clearance as a permanent state.
+    """
+    from environment.safety_shield import TrafficSafetyShield
+
+    # Standard 4-phase program with NO all-red phase:
+    # 0 (Green) -> 1 (Yellow) -> 2 (Green conflicting) -> 3 (Yellow)
+    prog_no_all_red = [
+        {"duration": 30.0, "state": "GGrr"},  # 0: Green
+        {"duration": 3.0, "state": "yyrr"},   # 1: Yellow clearance
+        {"duration": 30.0, "state": "GGGG"},  # 2: Green (conflicting: link 0 and 1 conflict)
+        {"duration": 3.0, "state": "rryy"},   # 3: Yellow clearance
+    ]
+
+    shield = TrafficSafetyShield(
+        controllable_tls_ids=["TLS_NO_RED"],
+        tls_programs={"TLS_NO_RED": prog_no_all_red},
+        tls_conflicts={"TLS_NO_RED": [(0, 1)]},
+        min_green=5,
+        max_green=20,
+        yellow_duration=3,
+    )
+
+    # Advance to max green
+    for _ in range(19):
+        shield.filter_action(np.array([0]), [0])
+
+    state = shield.states["TLS_NO_RED"]
+
+    # At max green: successor is conflicting, no all-red exists.
+    # Shield must NOT set fail_safe_hold_phase to yellow phase 1!
+    safe_act, targets, interv = shield.filter_action(np.array([0]), [0])
+    assert state.fail_safe_hold_phase is not 1, "Yellow clearance must NOT be used as a permanent hold state!"
+    assert state.fail_safe_hold_phase is None
+    assert state.is_fail_safe_locked is True
+    assert state.cannot_safely_progress is True
+    assert "NO_VERIFIED_SAFE_TRANSITION" in state.fail_safe_reason

@@ -158,7 +158,8 @@ def extract_tls_programs_from_net(
 ) -> Dict[str, List[Dict[str, Any]]]:
     """
     Parses <tlLogic> tags from SUMO network XML and returns phase programs per TLS.
-    Properly handles multiple programs per traffic light by selecting matching programID.
+    Properly handles multiple programs per traffic light by selecting matching programID,
+    and extracts declared explicit 'next' attributes if specified.
     """
     p = Path(net_xml_path)
     if not p.is_file():
@@ -172,10 +173,14 @@ def extract_tls_programs_from_net(
             pid = str(tl.get("programID", "0"))
             phases = []
             for ph in tl.findall("phase"):
-                phases.append({
+                p_entry: Dict[str, Any] = {
                     "duration": float(ph.get("duration", 30)),
                     "state": ph.get("state", ""),
-                })
+                }
+                next_attr = ph.get("next")
+                if next_attr is not None:
+                    p_entry["next"] = next_attr
+                phases.append(p_entry)
             if phases and tid:
                 programs_by_tl.setdefault(tid, {})[pid] = phases
 
@@ -378,7 +383,8 @@ class SignalPhaseState:
     Maintains the temporal state and legal phase timing for a single controllable traffic light.
     Dynamically maps phase transitions based on microscopic SUMO signal definitions.
     Supports single-phase junctions, multi-phase systems, mixed green/yellow signals,
-    and multi-stage clearance intervals (e.g., yellow followed by all-red).
+    multi-stage clearance intervals (e.g., yellow followed by all-red), and explicit
+    non-cyclic transitions.
     """
 
     def __init__(
@@ -409,20 +415,38 @@ class SignalPhaseState:
         self.total_interventions = 0
         self.total_phase_switches = 0
 
-        # Phase metadata
+        # Phase metadata & transition graph
         self.program_phases = list(program_phases) if program_phases else []
         self.phase_types: Dict[int, str] = {}
         self.green_phases: List[int] = []
         self.clearance_phases: List[int] = []
-        # Dynamic transition map: green_phase_idx -> (List[(clearance_phase_idx, duration)], next_green_phase_idx)
+        self.all_red_phases: List[int] = []
+        self.successors: Dict[int, List[int]] = {}
+
+        # Transition paths:
+        # transition_map: green_phase_idx -> (List[(clearance_phase_idx, duration)], nominal_next_green_idx)
         self.transition_map: Dict[int, Tuple[List[Tuple[int, int]], int]] = {}
+        # all_clearance_paths: green_phase_idx -> List[(List[(clearance_phase_idx, duration)], destination_green_idx)]
+        self.all_clearance_paths: Dict[int, List[Tuple[List[Tuple[int, int]], int]]] = {}
+        # reachable_all_red_phases: green_phase_idx -> List[(List[(clearance_phase_idx, duration)], all_red_phase_idx)]
+        self.reachable_all_red_phases: Dict[int, List[Tuple[List[Tuple[int, int]], int]]] = {}
+
+        # Fail-safe state tracking
+        self.is_fail_safe_locked: bool = False
+        self.fail_safe_hold_phase: Optional[int] = None
+        self.fail_safe_reason: Optional[str] = None
+        self.cannot_safely_progress: bool = False
+        self.pending_fail_safe_lock: bool = False
+        self.last_intervention_reason: Optional[str] = None
+        self.intervention_history: List[Dict[str, Any]] = []
 
         self._init_program_transitions(self.program_phases)
 
     def _init_program_transitions(self, program_phases: List[Dict[str, Any]]) -> None:
         """
         Derives valid clearance and green phase transition graphs from program phases.
-        Correctly classifies mixed green/yellow states, yellow clearance, and all-red clearance.
+        Supports explicit non-cyclic 'next' attributes, multi-stage clearance sequences,
+        and derives all reachable green and all-red fallback transitions.
         """
         if program_phases and len(program_phases) >= 1:
             n = len(program_phases)
@@ -444,45 +468,98 @@ class SignalPhaseState:
                 elif is_all_red:
                     self.phase_types[idx] = "all_red_clearance"
                     self.clearance_phases.append(idx)
-                else:
+                    self.all_red_phases.append(idx)
+                elif has_green:
                     self.phase_types[idx] = "green"
                     self.green_phases.append(idx)
+                else:
+                    self.phase_types[idx] = "clearance"
+                    self.clearance_phases.append(idx)
+
+                # Parse declared successors (explicit 'next' attribute or default cyclic (idx + 1) % n)
+                if "next" in p and p["next"] is not None:
+                    next_val = p["next"]
+                    if isinstance(next_val, str):
+                        self.successors[idx] = [int(x) for x in next_val.split()]
+                    elif isinstance(next_val, (list, tuple, set)):
+                        self.successors[idx] = [int(x) for x in next_val]
+                    else:
+                        self.successors[idx] = [int(next_val)]
+                else:
+                    self.successors[idx] = [(idx + 1) % n]
 
             # Case A: Exactly 1 phase (e.g., perimeter un-signalized green node A0, A2, C0, C2)
             if len(self.green_phases) <= 1 and len(self.clearance_phases) == 0:
                 self.transition_map = {}
+                self.all_clearance_paths = {}
+                self.reachable_all_red_phases = {}
                 return
 
             # Case B: Multi-phase program with green and clearance phases
             if self.green_phases and self.clearance_phases:
                 for g_idx in self.green_phases:
-                    # Collect intermediate clearance stages between g_idx and the next green phase
-                    stages: List[Tuple[int, int]] = []
-                    next_green_cand = None
-                    for offset in range(1, n):
-                        cand = (g_idx + offset) % n
-                        if cand in self.clearance_phases and next_green_cand is None:
-                            dur = int(round(float(program_phases[cand].get("duration", self.default_yellow_duration))))
-                            stages.append((cand, max(1, dur)))
-                        elif cand in self.green_phases:
-                            next_green_cand = cand
-                            break
+                    self.all_clearance_paths[g_idx] = []
+                    self.reachable_all_red_phases[g_idx] = []
 
-                    if not stages:
-                        # If no explicit clearance in between, synthesize default yellow clearance
+                    # Explore directed paths through clearance phases starting from g_idx
+                    start_succs = self.successors.get(g_idx, [])
+                    for s in start_succs:
+                        if s in self.clearance_phases:
+                            queue = [[s]]
+                            visited_paths = set()
+                            while queue:
+                                curr_path = queue.pop(0)
+                                path_tuple = tuple(curr_path)
+                                if path_tuple in visited_paths:
+                                    continue
+                                visited_paths.add(path_tuple)
+
+                                last_c = curr_path[-1]
+                                next_cands = self.successors.get(last_c, [])
+
+                                for cand in next_cands:
+                                    if cand in self.green_phases and cand != g_idx:
+                                        durations = [
+                                            max(1, int(round(float(program_phases[cp].get("duration", self.default_yellow_duration)))))
+                                            for cp in curr_path
+                                        ]
+                                        stages = list(zip(curr_path, durations))
+                                        self.all_clearance_paths[g_idx].append((stages, cand))
+                                    elif cand in self.clearance_phases and cand not in curr_path:
+                                        queue.append(curr_path + [cand])
+
+                    # Check for reachable all-red phases along clearance paths starting from g_idx
+                    for stages, dest_g in self.all_clearance_paths[g_idx]:
+                        for s_idx, (cp, dur) in enumerate(stages):
+                            if cp in self.all_red_phases:
+                                stages_before_red = stages[:s_idx]
+                                entry = (stages_before_red, cp)
+                                if entry not in self.reachable_all_red_phases[g_idx]:
+                                    self.reachable_all_red_phases[g_idx].append(entry)
+
+                    # Also check if g_idx directly has an all-red successor in clearance phases
+                    for s in start_succs:
+                        if s in self.all_red_phases:
+                            entry = ([], s)
+                            if entry not in self.reachable_all_red_phases[g_idx]:
+                                self.reachable_all_red_phases[g_idx].append(entry)
+
+                    # Primary transition map: select the first discovered path or cyclic path
+                    if self.all_clearance_paths[g_idx]:
+                        self.transition_map[g_idx] = self.all_clearance_paths[g_idx][0]
+                    else:
                         fallback_c = (g_idx + 1) % n
-                        stages = [(fallback_c, self.default_yellow_duration)]
-                    
-                    next_green = next_green_cand if next_green_cand is not None else (stages[-1][0] + 1) % n
-                    self.transition_map[g_idx] = (stages, next_green)
+                        fallback_g = (g_idx + 2) % n if n >= 3 else g_idx
+                        self.transition_map[g_idx] = ([(fallback_c, self.default_yellow_duration)], fallback_g)
                 return
 
             # Case C: Multiple green phases without defined clearance phases
             if len(self.green_phases) >= 2 and not self.clearance_phases:
                 for idx, g_idx in enumerate(self.green_phases):
                     next_g = self.green_phases[(idx + 1) % len(self.green_phases)]
-                    # Insert virtual clearance
                     self.transition_map[g_idx] = ([(g_idx, self.default_yellow_duration)], next_g)
+                    self.all_clearance_paths[g_idx] = [self.transition_map[g_idx]]
+                    self.reachable_all_red_phases[g_idx] = []
                 return
 
         # Fallback to standard cyclic transition model if no program provided
@@ -490,6 +567,8 @@ class SignalPhaseState:
         if n <= 1:
             self.green_phases = [0]
             self.transition_map = {}
+            self.all_clearance_paths = {}
+            self.reachable_all_red_phases = {}
             return
 
         if n % 2 == 0 and n >= 4:
@@ -499,13 +578,24 @@ class SignalPhaseState:
                 clearance = (k + 1) % n
                 next_green = (k + 2) % n
                 self.clearance_phases.append(clearance)
-                self.transition_map[k] = ([(clearance, self.default_yellow_duration)], next_green)
+                self.successors[k] = [clearance]
+                self.successors[clearance] = [next_green]
+                stages = [(clearance, self.default_yellow_duration)]
+                self.transition_map[k] = (stages, next_green)
+                self.all_clearance_paths[k] = [(stages, next_green)]
+                self.reachable_all_red_phases[k] = []
         else:
             for k in range(n):
                 self.green_phases.append(k)
                 clearance = (k + 1) % n
                 next_green = (k + 1) % n
-                self.transition_map[k] = ([(clearance, self.default_yellow_duration)], next_green)
+                self.clearance_phases.append(clearance)
+                self.successors[k] = [clearance]
+                self.successors[clearance] = [next_green]
+                stages = [(clearance, self.default_yellow_duration)]
+                self.transition_map[k] = (stages, next_green)
+                self.all_clearance_paths[k] = [(stages, next_green)]
+                self.reachable_all_red_phases[k] = []
 
     def get_clearance_stages(self, current_phase: int) -> Tuple[List[Tuple[int, int]], int]:
         """
@@ -528,7 +618,9 @@ class SignalPhaseState:
             self.clearance_timer += 1
 
     def can_switch_phase(self) -> bool:
-        """Phase can only be switched if not currently in clearance, min green has elapsed, and switches are possible."""
+        """Phase can only be switched if not currently in clearance or fail-safe lock, min green has elapsed, and switches are possible."""
+        if self.is_fail_safe_locked:
+            return False
         if self.is_yellow:
             return False
         if len(self.green_phases) <= 1:
@@ -537,6 +629,8 @@ class SignalPhaseState:
 
     def is_max_green_exceeded(self) -> bool:
         """True if current green phase has exceeded maximum duration."""
+        if self.is_fail_safe_locked:
+            return False
         if self.is_yellow:
             return False
         if len(self.green_phases) <= 1:
@@ -622,7 +716,16 @@ class TrafficSafetyShield:
             state.step_clock()
             sim_phase = current_phases[i]
 
-            # Fail-safe check: if mapping for this TLS could not be reliably established, enforce fail-safe
+            # Fail-safe check 1: if state is locked into fail-safe, maintain hold and reject switch
+            if state.is_fail_safe_locked:
+                safe_actions[i] = 0
+                state.total_interventions += 1
+                step_interventions += 1
+                if state.fail_safe_hold_phase is not None:
+                    target_phases[i] = state.fail_safe_hold_phase
+                continue
+
+            # Fail-safe check 2: if mapping for this TLS could not be reliably established, enforce fail-safe
             mapping = self.index_mappings.get(tid)
             is_unreliable_mapping = bool(mapping and not mapping.get("is_reliable", True))
 
@@ -634,24 +737,39 @@ class TrafficSafetyShield:
             # 1. Handle in-progress clearance (yellow/all-red) transition stages
             if state.is_yellow:
                 safe_actions[i] = 0
-                current_stage_dur = state.current_clearance_stages[state.clearance_stage_idx][1]
-                if state.clearance_timer >= current_stage_dur:
-                    # Current clearance stage elapsed: check if another clearance stage remains
-                    if state.clearance_stage_idx + 1 < len(state.current_clearance_stages):
-                        state.clearance_stage_idx += 1
-                        state.clearance_timer = 0
-                        next_stage_phase = state.current_clearance_stages[state.clearance_stage_idx][0]
-                        target_phases[i] = next_stage_phase
-                    else:
-                        # All clearance stages complete -> enter next green phase
-                        state.is_yellow = False
-                        state.current_phase_index = state.pending_next_green_phase
-                        state.time_in_current_phase = 0
-                        state.clearance_timer = 0
-                        state.clearance_stage_idx = 0
-                        state.current_clearance_stages = []
-                        state.pending_next_green_phase = None
-                        target_phases[i] = state.current_phase_index
+                if state.current_clearance_stages:
+                    current_stage_dur = state.current_clearance_stages[state.clearance_stage_idx][1]
+                    if state.clearance_timer >= current_stage_dur:
+                        # Current clearance stage elapsed: check if another clearance stage remains
+                        if state.clearance_stage_idx + 1 < len(state.current_clearance_stages):
+                            state.clearance_stage_idx += 1
+                            state.clearance_timer = 0
+                            next_stage_phase = state.current_clearance_stages[state.clearance_stage_idx][0]
+                            target_phases[i] = next_stage_phase
+                        else:
+                            # All clearance stages complete -> enter next destination phase
+                            state.is_yellow = False
+                            state.current_phase_index = state.pending_next_green_phase
+                            state.time_in_current_phase = 0
+                            state.clearance_timer = 0
+                            state.clearance_stage_idx = 0
+                            state.current_clearance_stages = []
+                            target_phases[i] = state.current_phase_index
+                            if state.pending_fail_safe_lock:
+                                state.is_fail_safe_locked = True
+                                state.fail_safe_hold_phase = state.current_phase_index
+                                state.pending_fail_safe_lock = False
+                            state.pending_next_green_phase = None
+                else:
+                    state.is_yellow = False
+                    state.current_phase_index = state.pending_next_green_phase
+                    state.time_in_current_phase = 0
+                    target_phases[i] = state.current_phase_index
+                    if state.pending_fail_safe_lock:
+                        state.is_fail_safe_locked = True
+                        state.fail_safe_hold_phase = state.current_phase_index
+                        state.pending_fail_safe_lock = False
+                    state.pending_next_green_phase = None
                 continue
 
             # 2. Check if agent requests phase change or max green is exceeded
@@ -664,42 +782,138 @@ class TrafficSafetyShield:
                     safe_actions[i] = 0
                     state.total_interventions += 1
                     step_interventions += 1
+                    reason = f"REJECTED_UNRELIABLE_MAPPING: TLS {tid} topology is unmapped or ambiguous"
+                    state.last_intervention_reason = reason
                     continue
                 elif state.can_switch_phase() or force_max_green:
                     # Legal transition: derive clearance stages and destination green
                     curr = state.current_phase_index
-                    stages, next_green = state.get_clearance_stages(curr)
+                    stages, nominal_next = state.get_clearance_stages(curr)
                     if not stages:
                         # No clearance defined (e.g. 1-phase or immediate): safe action is 0
                         safe_actions[i] = 0
                         continue
 
-                    # Verify next green phase does not violate network-derived movement conflicts
-                    if next_green < len(state.program_phases):
-                        next_state_str = state.program_phases[next_green].get("state", "")
+                    # Verify nominal next green phase does not violate network-derived movement conflicts
+                    is_valid_phase = True
+                    violations = []
+                    if nominal_next < len(state.program_phases):
+                        next_state_str = state.program_phases[nominal_next].get("state", "")
                         tls_conf = self.conflicts.get(tid, [])
                         tls_yield = self.yield_pairs.get(tid, set())
                         is_valid_phase, violations = verify_phase_conflicts(next_state_str, tls_conf, tls_yield)
-                        if not is_valid_phase:
-                            # Conflicting green detected: reject transition
+
+                    if not is_valid_phase:
+                        if not force_max_green:
+                            # Voluntary switch requested by agent: safely reject and stay in current green
                             safe_actions[i] = 0
                             state.total_interventions += 1
                             step_interventions += 1
+                            reason = f"REJECTED_UNSAFE_SWITCH: next_green {nominal_next} has conflicts on TLS {tid}"
+                            state.last_intervention_reason = reason
                             continue
+                        else:
+                            # FORCED MAX GREEN: Cannot stay in current green indefinitely!
+                            # Verify valid reachable fallbacks through configured SUMO transition sequences
+                            destination_phase = None
+                            destination_stages = None
+                            fallback_reason = None
 
-                    state.is_yellow = True
-                    state.clearance_timer = 0
-                    state.clearance_stage_idx = 0
-                    state.current_clearance_stages = stages
-                    state.pending_next_green_phase = next_green
-                    state.total_phase_switches += 1
-                    target_phases[i] = stages[0][0]
-                    safe_actions[i] = 1
+                            # Option A: Check alternative green phases reachable via valid configured clearance paths
+                            all_paths = state.all_clearance_paths.get(curr, [])
+                            for alt_stages, alt_green in all_paths:
+                                if alt_green != nominal_next and alt_green < len(state.program_phases):
+                                    cand_str = state.program_phases[alt_green].get("state", "")
+                                    cand_valid, _ = verify_phase_conflicts(
+                                        cand_str, self.conflicts.get(tid, []), self.yield_pairs.get(tid, set())
+                                    )
+                                    if cand_valid:
+                                        destination_phase = alt_green
+                                        destination_stages = alt_stages
+                                        fallback_reason = (
+                                            f"MAX_GREEN_FALLBACK_ALT_GREEN: nominal next_green {nominal_next} conflicting; "
+                                            f"routed to valid reachable green phase {alt_green} via configured clearance on TLS {tid}"
+                                        )
+                                        break
+
+                            # Option B: Check if an all-red phase is reachable along configured clearance sequence
+                            if destination_phase is None:
+                                reachable_reds = state.reachable_all_red_phases.get(curr, [])
+                                if reachable_reds:
+                                    red_stages, red_phase = reachable_reds[0]
+                                    destination_phase = red_phase
+                                    destination_stages = red_stages
+                                    fallback_reason = (
+                                        f"MAX_GREEN_FALLBACK_ALL_RED: nominal next_green {nominal_next} conflicting; "
+                                        f"routed to reachable all-red phase {red_phase} in fail-safe hold on TLS {tid}"
+                                    )
+                                    state.pending_fail_safe_lock = True
+                                    state.fail_safe_reason = fallback_reason
+
+                            # Option C: No verified safe transition exists in configured SUMO program
+                            if destination_phase is None:
+                                # Enter explicitly documented fail-safe error state
+                                # Report that the controller cannot safely progress
+                                # Do NOT silently leave conflicting green active indefinitely
+                                # Do NOT use yellow clearance as a permanent hold state
+                                state.is_fail_safe_locked = True
+                                state.cannot_safely_progress = True
+                                fail_reason = (
+                                    f"NO_VERIFIED_SAFE_TRANSITION: TLS {tid} max green exceeded on phase {curr}; "
+                                    f"successor {nominal_next} is conflicting, and no reachable alternative green or "
+                                    f"all-red clearance transition exists in SUMO program. Controller cannot safely progress."
+                                )
+                                state.fail_safe_reason = fail_reason
+                                state.last_intervention_reason = fail_reason
+                                state.intervention_history.append({
+                                    "step_time": state.time_in_current_phase,
+                                    "reason": fail_reason,
+                                })
+                                state.total_interventions += 1
+                                step_interventions += 1
+                                safe_actions[i] = 0
+                                continue
+
+                            # Reachable fallback found (Option A or Option B):
+                            # Record intervention and transition through mandatory clearance stages
+                            state.last_intervention_reason = fallback_reason
+                            state.intervention_history.append({
+                                "step_time": state.time_in_current_phase,
+                                "reason": fallback_reason,
+                            })
+                            state.total_interventions += 1
+                            step_interventions += 1
+                            stages = destination_stages
+                    else:
+                        destination_phase = nominal_next
+
+                    # Mandatory clearance intervals (yellow / all-red) MUST be executed
+                    # Fallback cannot bypass yellow or other required clearance intervals
+                    if stages:
+                        state.is_yellow = True
+                        state.clearance_timer = 0
+                        state.clearance_stage_idx = 0
+                        state.current_clearance_stages = stages
+                        state.pending_next_green_phase = destination_phase
+                        state.total_phase_switches += 1
+                        target_phases[i] = stages[0][0]
+                        safe_actions[i] = 1
+                    else:
+                        state.current_phase_index = destination_phase
+                        state.time_in_current_phase = 0
+                        state.total_phase_switches += 1
+                        target_phases[i] = destination_phase
+                        safe_actions[i] = 1
+                        if state.pending_fail_safe_lock:
+                            state.is_fail_safe_locked = True
+                            state.fail_safe_hold_phase = destination_phase
+                            state.pending_fail_safe_lock = False
                 else:
                     # VIOLATION PREVENTED: Rejected switch because min green has not elapsed or TLS cannot switch!
                     safe_actions[i] = 0
                     state.total_interventions += 1
                     step_interventions += 1
+                    state.last_intervention_reason = f"REJECTED_MIN_GREEN: min green duration {state.min_green}s not elapsed"
 
         return safe_actions, target_phases, step_interventions
 

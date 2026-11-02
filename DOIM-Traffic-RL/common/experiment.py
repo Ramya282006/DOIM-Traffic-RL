@@ -60,6 +60,28 @@ def normalize_evaluation_mode(mode: str) -> str:
     return EVALUATION_MODE_ALIASES.get(m, m)
 
 
+def get_actual_sumo_version() -> str:
+    """Queries actual runtime SUMO or eclipse-sumo package version dynamically."""
+    try:
+        import traci
+        if hasattr(traci, "isLoaded") and traci.isLoaded():
+            ver = traci.getVersion()
+            return str(ver[1] if isinstance(ver, (list, tuple)) and len(ver) > 1 else ver)
+    except Exception:
+        pass
+    try:
+        import importlib.metadata
+        return str(importlib.metadata.version("eclipse-sumo"))
+    except Exception:
+        pass
+    try:
+        import importlib.metadata
+        return str(importlib.metadata.version("traci"))
+    except Exception:
+        pass
+    return "UNAVAILABLE"
+
+
 def get_environment_info() -> Dict[str, str]:
     """Captures runtime environment provenance (Python, PyTorch, SUMO, platform)."""
     import platform
@@ -73,11 +95,8 @@ def get_environment_info() -> Dict[str, str]:
         env_info["torch_version"] = str(torch.__version__)
     except Exception:
         env_info["torch_version"] = "UNAVAILABLE"
-    try:
-        import traci
-        env_info["sumo_version"] = "1.28.0"
-    except Exception:
-        env_info["sumo_version"] = "UNAVAILABLE"
+
+    env_info["sumo_version"] = get_actual_sumo_version()
     return env_info
 
 

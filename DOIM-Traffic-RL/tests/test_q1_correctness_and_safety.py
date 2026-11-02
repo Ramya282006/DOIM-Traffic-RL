@@ -462,3 +462,131 @@ class TestAuthoritativePipelineAndExclusion:
         assert df.iloc[0]["algorithm"] == "IA_MOPPO"
         rejected_statuses = [r["status"] for r in analyzer.rejected_runs]
         assert "SAFETY_FAULTED" in rejected_statuses
+
+
+# ==============================================================================
+# Additional Q1 Algorithmic Correctness Tests
+# ==============================================================================
+
+
+class TestGAECorrectness:
+    """Verifies Generalized Advantage Estimation mathematics under truncation vs termination."""
+
+    def test_absorbing_termination_has_zero_future_value(self):
+        """When terminated=True, delta_t = R_t - V(s_t), advantage does not bootstrap future value."""
+        buf = RolloutBuffer(buffer_size=3)
+        dummy_hist = torch.zeros(10, 9, 5)
+        dummy_obj = torch.zeros(5)
+        dummy_int = torch.zeros(5, 5)
+        dummy_raw = torch.zeros(25)
+        dummy_act = np.zeros(5, dtype=np.int64)
+
+        # Transition 0: non-terminal
+        buf.add(
+            node_hist=dummy_hist, obj_vec=dummy_obj, int_mat=dummy_int, raw_state=dummy_raw,
+            action=dummy_act, reward=1.0, value=2.0, log_prob=-0.5, done=False,
+            next_obj_vec=dummy_obj, weights=dummy_obj, terminated=False, truncated=False, bootstrap_value=0.0
+        )
+        # Transition 1: absorbing termination (e.g. collision or crash)
+        buf.add(
+            node_hist=dummy_hist, obj_vec=dummy_obj, int_mat=dummy_int, raw_state=dummy_raw,
+            action=dummy_act, reward=5.0, value=3.0, log_prob=-0.5, done=True,
+            next_obj_vec=dummy_obj, weights=dummy_obj, terminated=True, truncated=False, bootstrap_value=999.0
+        )
+
+        returns, advantages = buf.compute_returns_and_advantages(last_value=10.0, gamma=0.9, gae_lambda=1.0)
+
+        raw_adv_1 = 2.0
+        raw_adv_0 = 3.5
+        mean_adv = (raw_adv_0 + raw_adv_1) / 2.0
+        std_adv = np.std([raw_adv_0, raw_adv_1]) + 1e-8
+        expected_norm_adv_1 = (raw_adv_1 - mean_adv) / std_adv
+
+        assert np.isclose(advantages[1].item(), expected_norm_adv_1, atol=1e-5)
+        assert np.isclose(returns[1].item(), 5.0, atol=1e-5)
+        assert np.isclose(returns[0].item(), 5.5, atol=1e-5)
+
+    def test_truncation_bootstraps_value_and_prevents_bleeding(self):
+        """When truncated=True, delta_t = R_t + gamma * V(s_{t+1}) - V(s_t), and resets advantage accumulation."""
+        buf = RolloutBuffer(buffer_size=3)
+        dummy_hist = torch.zeros(10, 9, 5)
+        dummy_obj = torch.zeros(5)
+        dummy_int = torch.zeros(5, 5)
+        dummy_raw = torch.zeros(25)
+        dummy_act = np.zeros(5, dtype=np.int64)
+
+        # Step 0 (Episode 1): non-terminal
+        buf.add(
+            node_hist=dummy_hist, obj_vec=dummy_obj, int_mat=dummy_int, raw_state=dummy_raw,
+            action=dummy_act, reward=1.0, value=2.0, log_prob=-0.5, done=False,
+            next_obj_vec=dummy_obj, weights=dummy_obj, terminated=False, truncated=False, bootstrap_value=0.0
+        )
+        # Step 1 (Episode 1): truncated (time limit reached, bootstrap V(s_{t+1}) = 4.0)
+        buf.add(
+            node_hist=dummy_hist, obj_vec=dummy_obj, int_mat=dummy_int, raw_state=dummy_raw,
+            action=dummy_act, reward=2.0, value=3.0, log_prob=-0.5, done=True,
+            next_obj_vec=dummy_obj, weights=dummy_obj, terminated=False, truncated=True, bootstrap_value=4.0
+        )
+        # Step 2 (Episode 2, new episode): non-terminal
+        buf.add(
+            node_hist=dummy_hist, obj_vec=dummy_obj, int_mat=dummy_int, raw_state=dummy_raw,
+            action=dummy_act, reward=10.0, value=5.0, log_prob=-0.5, done=False,
+            next_obj_vec=dummy_obj, weights=dummy_obj, terminated=False, truncated=False, bootstrap_value=0.0
+        )
+
+        returns, advantages = buf.compute_returns_and_advantages(last_value=6.0, gamma=0.9, gae_lambda=1.0)
+
+        raw_adv_2 = 10.4
+        raw_adv_1 = 2.6
+        raw_adv_0 = 4.04
+        assert np.isclose(returns[1].item(), raw_adv_1 + 3.0, atol=1e-5)
+        assert np.isclose(returns[0].item(), raw_adv_0 + 2.0, atol=1e-5)
+
+
+class TestActionSeparation:
+    """Verifies that proposed actions and executed actions are properly distinguished."""
+
+    def test_buffer_stores_both_proposed_and_executed_actions(self):
+        buf = RolloutBuffer(buffer_size=2)
+        dummy_hist = torch.zeros(10, 9, 5)
+        dummy_obj = torch.zeros(5)
+        dummy_int = torch.zeros(5, 5)
+        dummy_raw = torch.zeros(25)
+
+        proposed_act = np.array([1, 1, 0, 0, 1])
+        executed_act = np.array([0, 1, 0, 0, 0])
+
+        buf.add(
+            node_hist=dummy_hist, obj_vec=dummy_obj, int_mat=dummy_int, raw_state=dummy_raw,
+            action=proposed_act, exec_action=executed_act,
+            reward=1.0, value=2.0, log_prob=-0.5, done=False,
+            next_obj_vec=dummy_obj, weights=dummy_obj,
+        )
+
+        assert torch.equal(buf.actions[0], torch.tensor(proposed_act, dtype=torch.long))
+        assert torch.equal(buf.exec_actions[0], torch.tensor(executed_act, dtype=torch.long))
+        assert not torch.equal(buf.actions[0], buf.exec_actions[0])
+
+
+class TestCausalZeroPadding:
+    """Verifies temporal causal zero-padding initialization and progression."""
+
+    def test_initial_temporal_history_is_causally_padded(self):
+        raw_feat = torch.ones(1, 9, 5) * 3.14
+        node_history = torch.zeros(1, 10, 9, 5)
+        node_history[:, -1] = raw_feat
+
+        assert torch.all(node_history[:, :9] == 0.0)
+        assert torch.all(node_history[:, -1] == 3.14)
+
+    def test_sequential_updates_shift_causal_history(self):
+        node_history = torch.zeros(1, 10, 9, 5)
+        feat_t0 = torch.ones(1, 9, 5) * 1.0
+        node_history[:, -1] = feat_t0
+
+        feat_t1 = torch.ones(1, 1, 9, 5) * 2.0
+        node_history = torch.cat([node_history[:, 1:], feat_t1], dim=1)
+
+        assert torch.all(node_history[:, :8] == 0.0)
+        assert torch.all(node_history[:, 8] == 1.0)
+        assert torch.all(node_history[:, 9] == 2.0)

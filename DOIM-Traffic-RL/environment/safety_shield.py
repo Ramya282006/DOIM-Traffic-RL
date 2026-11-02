@@ -13,6 +13,27 @@ import xml.etree.ElementTree as ET
 import numpy as np
 
 
+class SafetyFaultError(RuntimeError):
+    """
+    Typed safety fault raised when no verified safe transition exists
+    in the configured traffic signal program.
+    """
+    def __init__(
+        self,
+        tls_id: str,
+        current_phase: int,
+        signal_state: str,
+        reason: str,
+        program_phases: Optional[List[Dict[str, Any]]] = None,
+    ):
+        super().__init__(f"CRITICAL SAFETY FAULT on TLS '{tls_id}': {reason}")
+        self.tls_id = str(tls_id)
+        self.current_phase = int(current_phase)
+        self.signal_state = str(signal_state)
+        self.reason = str(reason)
+        self.program_phases = list(program_phases) if program_phases else []
+
+
 VALID_SUMO_SIGNAL_CHARS = {"r", "R", "y", "Y", "g", "G", "u", "o", "O", "s"}
 
 
@@ -439,6 +460,7 @@ class SignalPhaseState:
         self.pending_fail_safe_lock: bool = False
         self.last_intervention_reason: Optional[str] = None
         self.intervention_history: List[Dict[str, Any]] = []
+        self.active_safety_fault: Optional[Dict[str, Any]] = None
 
         self._init_program_transitions(self.program_phases)
 
@@ -657,8 +679,11 @@ class TrafficSafetyShield:
         max_green: int = 60,
         yellow_duration: int = 3,
         all_red_duration: int = 1,
+        raise_on_fault: bool = False,
     ):
         self.controllable_tls = list(controllable_tls_ids)
+        self.raise_on_fault = bool(raise_on_fault)
+        self.active_faults: List[Dict[str, Any]] = []
         self.states: Dict[str, SignalPhaseState] = {}
         self.net_xml_path = Path(net_xml_path) if net_xml_path else None
 
@@ -865,13 +890,34 @@ class TrafficSafetyShield:
                                 )
                                 state.fail_safe_reason = fail_reason
                                 state.last_intervention_reason = fail_reason
+                                fault_record = {
+                                    "tls_id": tid,
+                                    "current_phase": curr,
+                                    "current_state_str": state.program_phases[curr].get("state", "") if curr < len(state.program_phases) else "UNKNOWN",
+                                    "nominal_next": nominal_next,
+                                    "reason": fail_reason,
+                                    "time_in_phase": state.time_in_current_phase,
+                                    "program_phases": state.program_phases,
+                                }
+                                state.active_safety_fault = fault_record
+                                if fault_record not in self.active_faults:
+                                    self.active_faults.append(fault_record)
                                 state.intervention_history.append({
                                     "step_time": state.time_in_current_phase,
                                     "reason": fail_reason,
+                                    "fault": fault_record,
                                 })
                                 state.total_interventions += 1
                                 step_interventions += 1
                                 safe_actions[i] = 0
+                                if self.raise_on_fault:
+                                    raise SafetyFaultError(
+                                        tls_id=tid,
+                                        current_phase=curr,
+                                        signal_state=fault_record["current_state_str"],
+                                        reason=fail_reason,
+                                        program_phases=state.program_phases,
+                                    )
                                 continue
 
                             # Reachable fallback found (Option A or Option B):
@@ -916,6 +962,18 @@ class TrafficSafetyShield:
                     state.last_intervention_reason = f"REJECTED_MIN_GREEN: min green duration {state.min_green}s not elapsed"
 
         return safe_actions, target_phases, step_interventions
+
+    def has_safety_fault(self) -> bool:
+        """True if any TLS has suffered an unresolvable critical safety fault."""
+        return len(self.active_faults) > 0 or any(s.cannot_safely_progress for s in self.states.values())
+
+    def get_active_faults(self) -> List[Dict[str, Any]]:
+        """Returns structured records of all active safety faults."""
+        faults = list(self.active_faults)
+        for s in self.states.values():
+            if s.active_safety_fault and s.active_safety_fault not in faults:
+                faults.append(s.active_safety_fault)
+        return faults
 
     def get_total_interventions(self) -> int:
         """Returns cumulative count of unsafe actions rejected across all lights."""

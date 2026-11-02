@@ -23,13 +23,14 @@ class DOIMTrafficEnv(gym.Env):
         "render_modes": ["human"]
     }
 
-    def __init__(self, sumo_config, enforce_safety_shield=True, max_steps=1800):
+    def __init__(self, sumo_config, enforce_safety_shield=True, max_steps=1800, abort_on_safety_fault=False):
 
         super().__init__()
 
         self.sumo_config = sumo_config
         self.enforce_safety_shield = bool(enforce_safety_shield)
         self.max_steps = int(max_steps)
+        self.abort_on_safety_fault = bool(abort_on_safety_fault)
         self.safety_shield = None
 
         # --------------------------------------------------
@@ -392,6 +393,26 @@ class DOIMTrafficEnv(gym.Env):
         # --------------------------------------------------
 
         info = self._build_info(vehicle_count, interventions=interventions, active_weights=active_weights)
+
+        # Critical Safety Fault: abort simulation episode if shield reports no safe transition
+        if self.enforce_safety_shield and self.safety_shield is not None:
+            if self.safety_shield.has_safety_fault():
+                faults = self.safety_shield.get_active_faults()
+                info["safety_fault"] = True
+                info["safety_fault_records"] = faults
+                info["is_valid_run"] = False
+                info["fault_reason"] = "CRITICAL_SAFETY_FAULT_NO_SAFE_TRANSITION"
+                terminated = True
+                if self.abort_on_safety_fault:
+                    from environment.safety_shield import SafetyFaultError
+                    first_fault = faults[0] if faults else {}
+                    raise SafetyFaultError(
+                        tls_id=first_fault.get("tls_id", "UNKNOWN"),
+                        current_phase=first_fault.get("current_phase", -1),
+                        signal_state=first_fault.get("current_state_str", "UNKNOWN"),
+                        reason=first_fault.get("reason", "No verified safe transition exists"),
+                        program_phases=first_fault.get("program_phases", []),
+                    )
 
         return (
             observation,

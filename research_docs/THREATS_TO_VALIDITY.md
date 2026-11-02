@@ -61,3 +61,4 @@
 ### B. Fail-Closed Benchmark Eligibility
 - **Standard:** Incomplete runs, diagnostic rollouts, and runs that encounter safety faults (`is_valid_run = False`) are strictly filtered out by `StatisticalAnalyzer`.
 - **Integrity Guarantee:** Zero synthetic or fabricated runs are included in benchmark comparison tables.
+

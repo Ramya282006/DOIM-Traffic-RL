@@ -51,3 +51,4 @@
    - Compile `research_docs/paper/MANUSCRIPT.md` into the IEEEtran 2-column format using Overleaf / pdflatex.
 3. **High-Resolution Vector Graphics:**
    - Generate vector EPS/PDF figures for the DOIM architecture, learned interaction matrix heatmap, and queue dissipation trajectories.
+

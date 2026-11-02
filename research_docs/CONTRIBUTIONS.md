@@ -59,3 +59,4 @@ We design and validate an active safety shield that:
 We provide an honest, scientifically grounded analysis of early RL exploration penalties:
 - During early training exploration, stochastic switching requests frequently trigger yellow clearance intervals ($3\,\text{s}$) and minimum green lockouts ($10\,\text{s}$), inflating lost clearance time to $23\%$ compared to $9\%$ for pre-timed Fixed-Time control.
 - Under saturated peak congestion (`rush_hour`), however, IA-MOPPO demonstrates superior stability and generalization, achieving the lowest policy loss ($0.0248$) and highest reward ($-73.08$), while Fixed-Time experiences gridlock ($286.26\,\text{s}$ delay) and State-Adaptive PPO diverges.
+

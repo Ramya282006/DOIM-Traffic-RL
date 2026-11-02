@@ -78,3 +78,4 @@ Unconstrained reinforcement learning agents frequently exploit simulator quirks,
 17. Federal Highway Administration, *Manual on Uniform Traffic Control Devices for Streets and Highways (MUTCD)*, U.S. Department of Transportation, Washington, D.C., 2009.
 18. M. Alshamsi, M. Abu-Lebdeh, and A. Al-Naimi, "Safety-shielded reinforcement learning for urban signalized networks," *Transportation Research Part C: Emerging Technologies*, vol. 129, p. 103248, 2021.
 19. M. Alshamsi and V. Gayah, "Safe reinforcement learning for connected and automated signal control under mixed autonomy," *IEEE Transactions on Intelligent Transportation Systems*, vol. 24, no. 3, pp. 2891–2904, 2023.
+

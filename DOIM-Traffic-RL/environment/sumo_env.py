@@ -11,7 +11,7 @@ import traci
 import shutil
 
 from environment.sumo_locator import find_sumo_binary
-from environment.safety_shield import TrafficSafetyShield
+from environment.safety_shield import TrafficSafetyShield, find_net_file_from_sumocfg
 from environment.traffic_signal_controller import (
     TrafficSignalController,
 )
@@ -23,13 +23,14 @@ class DOIMTrafficEnv(gym.Env):
         "render_modes": ["human"]
     }
 
-    def __init__(self, sumo_config, enforce_safety_shield=True, max_steps=1800):
+    def __init__(self, sumo_config, enforce_safety_shield=True, max_steps=1800, abort_on_safety_fault=False):
 
         super().__init__()
 
         self.sumo_config = sumo_config
         self.enforce_safety_shield = bool(enforce_safety_shield)
         self.max_steps = int(max_steps)
+        self.abort_on_safety_fault = bool(abort_on_safety_fault)
         self.safety_shield = None
 
         # --------------------------------------------------
@@ -179,13 +180,32 @@ class DOIMTrafficEnv(gym.Env):
 
         if self.enforce_safety_shield:
             phase_counts = {}
+            tls_programs = {}
+            net_xml_path = find_net_file_from_sumocfg(self.sumo_config)
             for tid in self.controllable_tls:
+                active_pid = str(traci.trafficlight.getProgram(tid))
                 logics = traci.trafficlight.getAllProgramLogics(tid)
-                phase_counts[tid] = len(logics[0].phases) if logics else 4
+                chosen_logic = None
+                for l in logics:
+                    if getattr(l, "subID", None) == active_pid or getattr(l, "programID", None) == active_pid:
+                        chosen_logic = l
+                        break
+                if chosen_logic is None and logics:
+                    chosen_logic = logics[0]
+
+                if chosen_logic:
+                    phase_counts[tid] = len(chosen_logic.phases)
+                    tls_programs[tid] = [
+                        {"duration": p.duration, "state": p.state} for p in chosen_logic.phases
+                    ]
+                else:
+                    phase_counts[tid] = 4
                 traci.trafficlight.setPhaseDuration(tid, 999999)
             self.safety_shield = TrafficSafetyShield(
                 controllable_tls_ids=self.controllable_tls,
                 tls_phase_counts=phase_counts,
+                tls_programs=tls_programs,
+                net_xml_path=net_xml_path,
                 min_green=10,
                 max_green=60,
                 yellow_duration=3,
@@ -373,6 +393,26 @@ class DOIMTrafficEnv(gym.Env):
         # --------------------------------------------------
 
         info = self._build_info(vehicle_count, interventions=interventions, active_weights=active_weights)
+
+        # Critical Safety Fault: abort simulation episode if shield reports no safe transition
+        if self.enforce_safety_shield and self.safety_shield is not None:
+            if self.safety_shield.has_safety_fault():
+                faults = self.safety_shield.get_active_faults()
+                info["safety_fault"] = True
+                info["safety_fault_records"] = faults
+                info["is_valid_run"] = False
+                info["fault_reason"] = "CRITICAL_SAFETY_FAULT_NO_SAFE_TRANSITION"
+                terminated = True
+                if self.abort_on_safety_fault:
+                    from environment.safety_shield import SafetyFaultError
+                    first_fault = faults[0] if faults else {}
+                    raise SafetyFaultError(
+                        tls_id=first_fault.get("tls_id", "UNKNOWN"),
+                        current_phase=first_fault.get("current_phase", -1),
+                        signal_state=first_fault.get("current_state_str", "UNKNOWN"),
+                        reason=first_fault.get("reason", "No verified safe transition exists"),
+                        program_phases=first_fault.get("program_phases", []),
+                    )
 
         return (
             observation,

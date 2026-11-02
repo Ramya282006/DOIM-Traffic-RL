@@ -5,12 +5,14 @@ Aggregates and computes the 5 core traffic objectives:
   2. Total Queue Length (halting vehicles)
   3. Integrated CO2 Emissions (milligrams)
   4. Step Throughput (completed vehicles)
-  5. Corridor Delay Fairness (Jain's disparity index)
+  5. Corridor Delay Fairness (Jain's disparity index in [0, 1])
+Enforces validation through AuthoritativeObjectiveConfig.
 """
 
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 import numpy as np
 
+from objectives.objective_config import AuthoritativeObjectiveConfig
 from objectives.fairness import CorridorFairnessCalculator
 from objectives.emissions import compute_step_co2
 from objectives.queue import compute_total_queue
@@ -21,10 +23,16 @@ from objectives.throughput import ThroughputTracker
 class MultiObjectiveEngine:
     """
     Computes the 5-dimensional objective vector from current traffic simulation states.
+    Validates physical consistency and units.
     """
 
-    def __init__(self, fairness_mode: str = "jain_disparity"):
+    def __init__(
+        self,
+        fairness_mode: str = "jain_disparity",
+        config: Optional[AuthoritativeObjectiveConfig] = None,
+    ):
         self.fairness_mode = str(fairness_mode)
+        self.config = config if config is not None else AuthoritativeObjectiveConfig(fairness_mode=self.fairness_mode)
         self.throughput_tracker = ThroughputTracker()
         self.fairness_calculator = CorridorFairnessCalculator()
 
@@ -69,14 +77,14 @@ class MultiObjectiveEngine:
         # Objective 4: Step throughput (completed vehicles)
         step_throughput = float(self.throughput_tracker.update(completed_vehicles))
 
-        # Objective 5: Fairness Disparity (1.0 - Jain Index across intersections in [0, 1])
+        # Objective 5: Fairness Disparity (1.0 - Jain Index across approaches/intersections in [0, 1])
         if self.fairness_mode == "jain_disparity":
             fairness_val = float(CorridorFairnessCalculator.compute_delay_disparity(waiting))
         else:
-            # Fallback to normalized variance
+            # Fallback to normalized variance or alternative
             fairness_val = float(np.var(waiting) if waiting else 0.0)
 
-        return np.array(
+        raw_vec = np.array(
             [
                 total_waiting,
                 total_queue,
@@ -86,3 +94,6 @@ class MultiObjectiveEngine:
             ],
             dtype=np.float32,
         )
+
+        # Validate with authoritative configuration
+        return self.config.validate_raw_vector(raw_vec)

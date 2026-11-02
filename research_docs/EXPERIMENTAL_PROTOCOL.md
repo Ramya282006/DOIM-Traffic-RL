@@ -1,99 +1,82 @@
-# Experimental Protocol and Scientific Methodology
+# DOIM-Traffic-RL: Publication-Grade Experimental Protocol
+**Target Venue:** IEEE Transactions on Intelligent Transportation Systems (T-ITS)  
+**Standard:** Strict Q1 Scientific Methodology, Pre-Registration, and Reproducibility  
+**Protocol Version:** `2.0-IEEE-TITS`  
+**Reference Code:** `experiments/run_comprehensive_matrix.py`, `analysis/statistical_analyzer.py`
 
-## 1. Overview and Hypothesis
+---
+
+## 1. Overview and Scientific Hypotheses
 
 ### 1.1 Central Research Question
-> *"Can explicitly learning state-dependent interactions among competing traffic objectives produce more robust, interpretable, and equitable traffic-signal policies than conventional fixed-weight scalarization and direct state-adaptive approaches under dynamic and non-stationary traffic demands?"*
+> *"Can an end-to-end differentiable, state-conditioned objective-interaction representation estimate time-varying trade-offs in urban traffic networks, enabling robust multi-objective signal control under non-stationary demand shifts while strictly enforcing microscopic safety and arterial corridor equity constraints?"*
 
-### 1.2 Formal Hypotheses
-- **$H_1$ (Convergence & Performance Advantage):** Policies conditioned on the Dynamic Objective Interaction Manifold ($\mathcal{M}_t$) achieve statistically significant reductions in mean waiting time ($p < 0.05$, Cohen's $d > 0.5$) and queue length compared to fixed-weight baselines across independent stochastic seeds.
-- **$H_2$ (Interaction Learning vs. Statistical Correlation):** State-Conditioned Objective Interaction Learning (SCOIL) with Bayesian shrinkage outperforms empirical rolling Pearson correlation under sudden traffic surges by capturing directional cross-gradients rather than mere co-occurrence.
-- **$H_3$ (Safety Integrity):** A formal clearance shield enforcing deterministic minimum green times ($\ge 10\,\text{s}$), maximum green bounds ($\le 60\,\text{s}$), and yellow clearance intervals ($3\,\text{s}$) eliminates rapid phase fluttering ($< 1\%$ change ratio) without destabilizing RL convergence.
-- **$H_4$ (Equitable Service):** Explicit vehicle-level delay disparity minimization ($Jain's \ge 0.85$) prevents localized starvation on minor approaches during directional surges.
-
----
-
-## 2. Simulation Environment and Traffic Networks
-
-### 2.1 Microscopic Simulator
-- **Platform:** Eclipse SUMO (Simulation of Urban MObility) v1.28.0.
-- **Interface:** TraCI (Traffic Control Interface) running on dedicated local TCP sockets.
-- **Step Resolution:** $\Delta t = 1.0\,\text{second}$ per simulation step.
-- **Collision & Teleport Policy:** Teleportation disabled (`--time-to-teleport -1`) to ensure strict physical conservation of vehicles.
-
-### 2.2 Network Topology ($3 \times 3$ Grid Network)
-- **Geometry:** 9 signalized intersections organized as a $3 \times 3$ grid with 300-meter link lengths.
-- **Node Classification:**
-  - 5 Controllable Multi-Phase Intersections: `A1, B0, B1, B2, C1` (arterial and central crossings).
-  - 4 Boundary Fixed Intersections: `A0, A2, C0, C2`.
-- **Lane Configuration:** 2 incoming and 2 outgoing lanes per approach link.
-- **Signal Logic:** 4 distinct phases per intersection (Phase 0: N-S Green, Phase 1: N-S Yellow, Phase 2: E-W Green, Phase 3: E-W Yellow).
-
-### 2.3 Traffic Demand Scenarios
-1. **Directional Shift (`directional_shift`):**
-   - High-volume North-South corridor surge ($1200\,\text{veh/hr/lane}$) transitioning to East-West cross-traffic surge ($1400\,\text{veh/hr/lane}$).
-   - Tests dynamic adaptation to non-stationary spatial flow imbalances.
-2. **Rush Hour Peak (`rush_hour`):**
-   - Exponentially increasing demand peaking at $t = 600\,\text{s}$ across all perimeter inflows, followed by sustained saturation.
-   - Tests queue spillback prevention and network throughput preservation.
-3. **Balanced Normal (`normal`):**
-   - Uniform stochastic Poisson arrival rates ($400\,\text{veh/hr/lane}$) on all arterial approaches.
-   - Serves as the nominal baseline condition.
+### 1.2 Formal Testable Hypotheses
+- **$H_1$ (Convergence & Non-Stationary Adaptation Advantage):** Under sudden directional demand shifts, policies conditioned on the Dynamic Objective Interaction Manifold ($\mathcal{M}_t$) achieve statistically significant reductions in mean waiting time ($p < 0.05$ after FDR correction, Cohen's $d > 0.8$) compared to fixed-weight and state-adaptive baselines.
+- **$H_2$ (Interaction Learning vs. Statistical Correlation):** State-Conditioned Objective Interaction Learning (SCOIL) with Bayesian shrinkage outperforms empirical rolling Pearson correlation by estimating directional cross-coupling ($M_{ij} \neq M_{ji}$) rather than confounding shared demand trends.
+- **$H_3$ (Microscopic Safety Integrity):** A formal action shield deriving conflict matrices and clearance graphs from junction geometry eliminates signal-induced movement conflicts without destabilizing reinforcement learning policy convergence.
+- **$H_4$ (Multi-Tier Equity Preservation):** Incorporating corridor delay disparity ($1.0 - J(\vec{d}_{\text{approach}}) \in [0, 1]$) into adaptive preference weighting significantly curtails side-street starvation ($\ge 25\%$ reduction in 95th percentile delay) without degrading total network throughput.
 
 ---
 
-## 3. Evaluated Algorithms and Baselines
+## 2. Experimental Environment & Scenarios
 
-| Algorithm Identifier | Paradigm | Objective Weighting | Interaction Model | Representation | Safety Shield |
+### 2.1 Microscopic Simulation Setup
+- **Simulator:** Eclipse SUMO (Simulation of Urban MObility) v1.28.0 via TraCI.
+- **Simulation Step Length:** $\Delta t = 1.0\text{ s}$.
+- **Teleportation:** Explicitly disabled (`--time-to-teleport -1`) to enforce physical conservation of all vehicles.
+- **Network Topology:** 9-intersection $3 \times 3$ grid with 300-meter link lengths.
+  - 5 Controllable TLS: `A1, B0, B1, B2, C1` (arterial corridor and central grid).
+  - 4 Boundary Inflow TLS: `A0, A2, C0, C2`.
+
+### 2.2 Pre-Registered Evaluation Scenarios
+1. **Directional Shift (`directional_shift` / North-South Surge):**
+   - High-volume North-South corridor surge ($2200\text{ veh/h}$) competing with baseline East-West flows ($800\text{ veh/h}$).
+   - Tests dynamic preference re-weighting under acute spatial competition.
+2. **Rush Hour Saturation (`rush_hour`):**
+   - Concentrated peak demand ($3000\text{ veh/h}$) approaching network saturation capacity.
+   - Tests queue spillback mitigation and throughput preservation under heavy load.
+3. **Balanced Ambient (`normal`):**
+   - Uniform stochastic Poisson arrival rates ($1200\text{ veh/h}$) across all perimeter entries.
+   - Benchmarks nominal efficiency without extreme directional bias.
+4. **Held-Out Generalization Scenarios:**
+   - Unseen inflow intensities ($\pm 25\%$ demand scaling) and stochastic route seeds held out until final evaluation.
+
+---
+
+## 3. Evaluated Algorithm Suite & Baselines
+
+| Algorithm Identifier | Objective Weighting | Interaction Model | Representation | Safety Shield | Training Instantiation |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **IA-MOPPO (Proposed)** | On-Policy Deep RL | Dynamic Simplex $\Delta^4$ | SCOIL Bilinear Manifold | Kipf GCN + Temporal GRU | Enforced |
-| **Fixed_Time** | Classical Cyclic | Static Default | None | N/A | Implicit Cycle |
-| **FW_PPO** | Multi-Objective RL | Constant $w_k = 0.2$ | None | Kipf GCN + Temporal GRU | Enforced |
-| **SA_PPO** | Adaptive MORL | State-Dependent $w(s)$ | None (Direct MLP) | Kipf GCN + Temporal GRU | Enforced |
-| **DOIM_no_interaction** | Ablation Study | Dynamic Simplex $\Delta^4$ | Zero Matrix $M = 0$ | Kipf GCN + Temporal GRU | Enforced |
-| **DOIM_rolling_pearson**| Ablation Study | Dynamic Simplex $\Delta^4$ | Rolling Pearson $R_t$ | Kipf GCN + Temporal GRU | Enforced |
-| **DOIM_no_shield** | Ablation Study | Dynamic Simplex $\Delta^4$ | SCOIL Bilinear Manifold | Kipf GCN + Temporal GRU | Disabled |
+| **IA-MOPPO (Proposed)** | Dynamic Simplex $w_t \in \Delta^4$ | SCOIL Bilinear + Shrinkage | GCN + GRU + DOIM | Enforced | Fresh per training seed |
+| **Fixed-Time** | Rule-Based Webster Cycle | None | Static Timings | Enforced (Cyclic) | Non-learning reference |
+| **Fixed-Weight PPO (FW-PPO)** | Static Uniform ($w_k = 0.2$) | None | GCN + GRU | Enforced | Fresh per training seed |
+| **State-Adaptive PPO (SA-PPO)** | Direct State MLP $w(s)$ | None | GCN + GRU | Enforced | Fresh per training seed |
+| **DOIM_no_interaction** | Dynamic Simplex $w_t \in \Delta^4$ | Zero Matrix ($M = 0$) | GCN + GRU + DOIM | Enforced | Ablation baseline |
+| **DOIM_rolling_pearson** | Dynamic Simplex $w_t \in \Delta^4$ | Rolling Pearson $R_t$ | GCN + GRU + DOIM | Enforced | Ablation baseline |
+| **DOIM_no_shield** | Dynamic Simplex $w_t \in \Delta^4$ | SCOIL Bilinear + Shrinkage | GCN + GRU + DOIM | Disabled | Safety ablation |
 
 ---
 
-## 4. Multi-Objective Formulation
+## 4. Training & Evaluation Protocol
 
-The system explicitly evaluates 5 physical traffic objectives:
+### 4.1 Staged Budget Qualification
+- **Diagnostic / Smoke Stage (128 steps):** Verifies execution flow, TraCI socket communication, GNN autograd backward passes, and manifest generation.
+- **Pilot Stage (5,000 steps):** Evaluates learning curve stability across 3 seeds (`[42, 123, 456]`), verifying gradient flow checksums and non-negative returns.
+- **Main Mainstream Convergence (10,000 – 50,000 steps):** Executes across $\ge 5$ independent training seeds (`[42, 123, 456, 789, 2024]`).
 
-1. **Cumulative Delay / Waiting Time ($z_1$, minimize):**
-   $$z_1(t) = \sum_{v \in \mathcal{V}_t} w_v(t) \quad [\text{vehicle-seconds}]$$
-2. **Queue Length ($z_2$, minimize):**
-   $$z_2(t) = \sum_{l \in \mathcal{L}} \text{halting}(l, t) \quad [\text{vehicles}]$$
-3. **CO2 Emissions ($z_3$, minimize):**
-   $$z_3(t) = \sum_{v \in \mathcal{V}_t} \text{EM}_{CO_2}(v, t) \quad [\text{mg/s}]$$
-4. **Throughput ($z_4$, maximize):**
-   $$z_4(t) = N_{\text{arrived}}(t) \quad [\text{completed vehicles}]$$
-5. **Delay Disparity / Fairness ($z_5$, minimize):**
-   $$z_5(t) = \frac{\sum_{v} (w_v(t) - \bar{w}(t))^2}{|\mathcal{V}_t|} \quad [\text{variance of waiting times}]$$
+### 4.2 Disjoint Seeding & Deterministic Evaluation
+- **Independent Training Seeds:** `[42, 123, 456, 789, 2024]`. Every baseline model is trained from scratch with its own random weight initialization and stochastic trajectory.
+- **Disjoint Evaluation Seeds:** `[1001, 1002, 1003, 1004, 1005]`.
+- **Frozen Deterministic Evaluation:** Evaluation episodes are executed with frozen parameters (`torch.no_grad()`, `eval()` mode, deterministic greedy actions $\arg\max \pi_\theta$).
+- **Common Horizon:** Strict evaluation horizon of $T_{\text{eval}} = 1800\text{ s}$ (30 minutes of microscopic simulation) across all algorithms.
 
 ---
 
-## 5. Statistical Rigor and Reproducibility Protocol
+## 5. Statistical Aggregation & Integrity Rules
 
-### 5.1 Seeding Architecture
-- **Training Seeds:** Fixed multi-seed set: `[42, 123, 456, 789, 2024]`.
-- **Evaluation Seeds:** Disjoint evaluation seeds: `[1001, 1002, 1003, 1004, 1005]`.
-- **Seed Injection:** Seed passed synchronously to `random`, `np.random`, `torch.manual_seed`, Gymnasium `env.reset(seed=s)`, and SUMO CLI (`--seed s`).
-- **Validation:** Automated detection of cross-seed duplicate outputs (DEF-04 prevention).
-
-### 5.2 Reporting Metrics
-For every evaluation metric $X$:
-- Sample Mean: $\bar{X} = \frac{1}{N}\sum_{i=1}^N X_i$
-- Sample Standard Deviation: $s = \sqrt{\frac{1}{N-1}\sum_{i=1}^N (X_i - \bar{X})^2}$
-- Median: $\tilde{X}$
-- 95% Confidence Interval: $\bar{X} \pm t_{N-1, 0.975} \cdot \frac{s}{\sqrt{N}}$
-- Two-Sided Welch's $t$-test (unequal variance) against FW-PPO:
-  $$t = \frac{\bar{X}_{\text{DOIM}} - \bar{X}_{\text{base}}}{\sqrt{\frac{s_{\text{DOIM}}^2}{N_1} + \frac{s_{\text{base}}^2}{N_2}}}$$
-- Standardized Effect Size (Cohen's $d$).
-
-### 5.3 Automated Verification Pipeline
-Every completed run directory must pass:
-1. `verify_finite_metrics`: Zero NaNs, Infs, or truncated records in `metrics_step.csv`.
-2. `verify_json_csv_consistency`: Exact mathematical agreement between raw step data and `summary.json`.
-3. `verify_simplex_weights`: $w_k \ge 0$ and $\sum_k w_k = 1.0 \pm 10^{-4}$.
-4. SHA-256 Configuration Fingerprinting: Immutable record of all hyperparameters and network weights.
+1. **Independent Training Seed as Unit:** The primary statistical sample size $N$ is strictly the number of independent trained models ($N \ge 5$). Repeated evaluation episodes of the same model are averaged first to prevent pseudoreplication.
+2. **Paired Comparisons:** Models trained on seed $s_i$ are evaluated on the exact same set of evaluation seeds $\{e_1, \dots, e_m\}$ as baselines, enabling paired Student's $t$-tests and Wilcoxon signed-rank tests.
+3. **Multiple Testing Correction:** All cross-algorithm p-values are adjusted using the Holm-Bonferroni step-down procedure to guarantee Family-Wise Error Rate (FWER) control at $\alpha = 0.05$.
+4. **Mandatory Reporting:** Every reported result must present Mean $\pm$ Standard Deviation, Median, 95% Student-t Confidence Interval, and Cohen's $d$ effect size.
+5. **No Selective Reporting:** All training runs, whether converged or degraded, must be preserved in immutable run manifests. Failed runs with safety faults are explicitly documented in `rejected_runs`.

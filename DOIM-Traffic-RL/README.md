@@ -3,7 +3,7 @@
 [![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/downloads/release/python-3119/)
 [![PyTorch 2.15](https://img.shields.io/badge/PyTorch-2.15.0%2Bcpu-orange.svg)](https://pytorch.org/)
 [![SUMO 1.28](https://img.shields.io/badge/SUMO-1.28.0-green.svg)](https://eclipse.dev/sumo/)
-[![Tests](https://img.shields.io/badge/pytest-28%2F28%20passing-brightgreen.svg)](tests/)
+[![Tests](https://img.shields.io/badge/pytest-95%20passed%2C%201%20skipped-brightgreen.svg)](tests/)
 [![Target](https://img.shields.io/badge/target-IEEE%20T--ITS-darkblue.svg)](research_docs/paper/MANUSCRIPT.md)
 
 ---
@@ -92,13 +92,18 @@ $$\mathbf{\hat{z}}_{t+1} = \text{clamp}\left(\mathbf{z}_t + \mathbf{\Delta z}(\m
 python -c "import torch, sumo, gymnasium; print('Dependencies OK')"
 ```
 
-> **Note on Windows Smart App Control (SAC):** If running on Windows 11 with Smart App Control enabled, third-party `.dll` and `.pyd` binaries require Authenticode signatures. All `.dll`, `.pyd`, and `.exe` binaries in `.venv_doim` have been code-signed with the local development certificate `LocalDevCert`.
+> **Environment Integrity & Platform Support:** The project uses standard canonical dependencies specified in `requirements.txt`. On Linux, macOS, and standard Windows systems, dependencies install cleanly via `pip install -r requirements.txt`. On Windows 11 systems with Smart App Control (SAC) enabled in 'Enforce' mode, Microsoft cloud reputation inspects binary hashes; unmodified PyPI wheels execute cleanly without requiring local developer certificates (`LocalDevCert`).
 
-### 3.3 Running Automated Test Suite (28 Tests)
+### 3.3 Running Automated Test Suite (95 Passed, 1 Skipped)
 ```powershell
-.venv_doim\Scripts\python.exe -m pytest tests/ -v
+python -m pytest tests/ -v
 ```
-All 28 tests pass with 100% success rate:
+All 95 active tests pass with 100% success rate (1 optional external SB3 test skipped):
+- `tests/test_safety_shield_semantics.py`: Dynamic SUMO tlLogic parsing, clearance intervals, single-phase junction stability, and signal conflict validation.
+- `tests/test_deterministic_evaluation.py`: Deterministic evaluation reproducibility, frozen baseline weights, non-learning Fixed-Time controller verification.
+- `tests/test_manifest_migration_and_classification.py`: 4-state manifest classification (VALID, LEGACY_VALID, INCOMPLETE, INVALID) and canonical schema normalization.
+- `tests/test_fairness_definitions.py`: Delay Disparity vs Delay Variance unit separation and Jain Fairness calculations.
+- `tests/test_scenario_isolation_synthetic.py`: Scenario isolation and intra-model averaging preserving independent seed units.
 - `tests/test_actual_training_gradient_flow.py`: Verifies non-zero gradients and parameter updates across all 17 submodules after genuine PPO update.
 - `tests/test_safety_transitions_trace.py`: Verifies zero illegal transitions across 120 live SUMO steps under adversarial phase-switch requests.
 - `tests/test_doim_architecture.py`: Tensor shapes, autograd backprop, forward passes.
@@ -116,8 +121,8 @@ All 28 tests pass with 100% success rate:
 # 1. Smoke Test (Diagnostic execution check)
 .venv_doim\Scripts\python.exe -c "from training.interaction_aware_ppo import train_interaction_aware_ppo; train_interaction_aware_ppo(total_timesteps=128, seed=42)"
 
-# 2. Comprehensive Multi-Seed Matrix (Baselines + Ablations across 5 independent seeds)
-.venv_doim\Scripts\python.exe experiments/run_comprehensive_matrix.py --timesteps 128 --seeds 42 123 456 789 2024
+# 2. Comprehensive Multi-Seed Matrix (Baselines + Ablations across 5 independent seeds with frozen deterministic evaluation)
+.venv_doim\Scripts\python.exe experiments/run_comprehensive_matrix.py --timesteps 128 --eval_episodes 1 --eval_horizon 1800 --seeds 42 123 456 789 2024
 
 # 3. Held-Out Peak Congestion Generalization (Rush Hour demand)
 .venv_doim\Scripts\python.exe experiments/run_comprehensive_matrix.py --timesteps 128 --seeds 42 --scenarios scenarios/rush_hour/rush_hour.sumocfg
@@ -134,6 +139,8 @@ All 28 tests pass with 100% success rate:
 ## 5. Empirical Benchmark Summary
 
 Evaluated across 5 independent training seeds (`42, 123, 456, 789, 2024`) on the $3 \times 3$ grid network under non-stationary traffic surge (`north_south_surge`):
+
+> **Critical Scientific Clarification:** These results reflect initial 128-step diagnostic pipeline runs, NOT converged training. In 128-step exploration, the non-learning Fixed-Time controller achieves lower waiting time ($55.13 \pm 5.33\,\text{s}$) than learning agents ($82.19 \pm 45.69\,\text{s}$) because learning agents explore phase switching actions and incur mandatory yellow clearance intervals (3s) before value functions and policies have converged. Long-horizon convergence evaluations (5,000 to 50,000 steps) are scheduled for full production training.
 
 | Algorithm | Avg Waiting Time (s) $\downarrow$ | Avg Queue (veh) $\downarrow$ | Max Queue (veh) $\downarrow$ | CO2 (mg/s) $\downarrow$ | Throughput (veh) $\uparrow$ | Safety Violations |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
@@ -166,7 +173,7 @@ DOIM-Traffic-RL/
 ├── research_docs/          # FINAL_IMPLEMENTATION_REPORT, THEORY, PROTOCOL, MANUSCRIPT
 ├── results/                # Immutable runs (runs/), tables (tables/), figures (figures/)
 ├── scenarios/              # SUMO network grid.net.xml, north_south_surge, rush_hour
-├── tests/                  # 28 passing pytest test suites
+├── tests/                  # 95 passing pytest test suites (1 skipped)
 └── training/               # InteractionAwarePPOAgent, RolloutBuffer, train loop
 ```
 

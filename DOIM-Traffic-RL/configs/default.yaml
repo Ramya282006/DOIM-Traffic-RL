@@ -44,11 +44,11 @@ objectives:
     queue: "halting_vehicles"
     co2: "mg"
     throughput: "completed_vehicles"
-    fairness: "jain_index_or_delay_disparity"
+    fairness: "jain_disparity"
   normalization_bounds:
     lower: [0.0, 0.0, 0.0, 0.0, 0.0]
-    upper: [600.0, 20.0, 120000.0, 20.0, 3000.0]
-  fairness_metric: "jain_index" # options: jain_index, delay_variance, gini
+    upper: [600.0, 20.0, 120000.0, 20.0, 1.0]
+  fairness_metric: "jain_disparity" # options: jain_disparity, delay_variance, gini
 
 interaction_model:
   method: "state_conditioned_doim" # options: state_conditioned_doim, rolling_pearson, static_identity

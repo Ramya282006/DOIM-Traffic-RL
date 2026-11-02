@@ -9,3 +9,7 @@ env/
 *.log
 .DS_Store
 .venv_doim
+.venv_clean/
+.venv*/
+.pytest_cache/
+scratch/

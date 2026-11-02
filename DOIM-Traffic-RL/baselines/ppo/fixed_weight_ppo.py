@@ -8,7 +8,7 @@ import os
 import sys
 from pathlib import Path
 import time
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 import numpy as np
 import torch
 import torch.nn as nn
@@ -226,12 +226,22 @@ class FixedWeightPPOAgent:
             "value_loss": float(np.mean(value_losses)),
         }
 
+    def load_checkpoint(self, checkpoint_path: Union[str, Path]) -> None:
+        """Loads network parameters and optimizer state from checkpoint."""
+        ckpt = torch.load(checkpoint_path, map_location=self.device)
+        self.network.load_state_dict(ckpt["network_state_dict"])
+        if "optimizer_state_dict" in ckpt and hasattr(self, "optimizer"):
+            self.optimizer.load_state_dict(ckpt["optimizer_state_dict"])
+
 
 def train_fixed_weight_ppo(
     config_path: str = "configs/default.yaml",
     scenario_override: Optional[str] = None,
     total_timesteps: int = 1000,
     seed: int = 42,
+    eval_episodes: int = 0,
+    eval_horizon: int = 1800,
+    eval_seed: Optional[int] = None,
     output_root: str = "results/runs",
 ) -> ExperimentRun:
     """
@@ -373,7 +383,128 @@ def train_fixed_weight_ppo(
     print(f"Total Steps: {summary['total_steps']}, Total Reward: {summary['total_reward']:.2f}")
     print("=" * 80)
 
+    # Decoupled frozen deterministic evaluation loop if requested
+    if eval_episodes > 0:
+        actual_eval_seed = eval_seed if eval_seed is not None else seed + 1000
+        print(f"\n--- LAUNCHING FROZEN DETERMINISTIC EVALUATION (FW-PPO) (Horizon: {eval_horizon}s) ---")
+        evaluate_fixed_weight_ppo(
+            agent_or_checkpoint=agent,
+            config_path=config_path,
+            scenario_override=scenario_override,
+            n_episodes=eval_episodes,
+            eval_seed=actual_eval_seed,
+            train_seed=seed,
+            eval_horizon=eval_horizon,
+            max_steps_per_episode=eval_horizon,
+            output_root=output_root,
+        )
+
     return run
+
+
+def evaluate_fixed_weight_ppo(
+    agent_or_checkpoint: Union[FixedWeightPPOAgent, str, Path],
+    config_path: str = "configs/default.yaml",
+    scenario_override: Optional[str] = None,
+    n_episodes: int = 1,
+    eval_seed: int = 1042,
+    train_seed: int = 42,
+    eval_horizon: int = 1800,
+    max_steps_per_episode: Optional[int] = None,
+    enforce_safety_shield: bool = True,
+    output_root: str = "results/runs",
+) -> List[ExperimentRun]:
+    """
+    Rigorously evaluates a trained Fixed-Weight PPO agent using a deterministic policy (argmax action).
+    Guarantees baseline evaluation symmetry with IA-MOPPO: identical evaluation horizons, decoupled seeds,
+    and frozen model parameters (torch.no_grad(), eval mode).
+    """
+    config = load_experiment_config(
+        default_config_path=config_path,
+        scenario_config_path=scenario_override,
+    )
+    scenario_name = Path(config.simulation.sumo_config).stem
+
+    if isinstance(agent_or_checkpoint, (str, Path)):
+        agent = FixedWeightPPOAgent(config=config, device="cpu")
+        agent.load_checkpoint(agent_or_checkpoint)
+    else:
+        agent = agent_or_checkpoint
+
+    agent.network.eval()
+    eval_runs = []
+    effective_horizon = int(max_steps_per_episode) if max_steps_per_episode is not None else int(eval_horizon)
+
+    for ep in range(n_episodes):
+        current_eval_seed = eval_seed + ep
+        run = ExperimentRun(
+            experiment_name=f"EVAL_FW_PPO_{scenario_name}_s{train_seed}_e{current_eval_seed}",
+            algorithm="FW_PPO",
+            config=config,
+            train_seed=train_seed,
+            eval_seed=current_eval_seed,
+            eval_horizon=effective_horizon,
+            scenario=scenario_name,
+            output_root=output_root,
+            training_timesteps=config.policy.total_timesteps,
+            episode_id=ep,
+            evaluation_mode="deterministic_eval",
+        )
+
+        env = DOIMTrafficEnv(
+            sumo_config=config.simulation.sumo_config,
+            enforce_safety_shield=enforce_safety_shield,
+            max_steps=effective_horizon,
+        )
+
+        obs, info = env.reset(seed=current_eval_seed)
+        node_feat = torch.tensor(info["node_features"], dtype=torch.float32)
+        with torch.no_grad():
+            init_spatial = agent.network.encode_spatial(node_feat).unsqueeze(1)
+        spatial_history = init_spatial.repeat(1, 10, 1)
+        raw_state = torch.tensor(info["raw_state"], dtype=torch.float32).unsqueeze(0)
+
+        step = 0
+        done = False
+        while not done and step < effective_horizon:
+            with torch.no_grad():
+                action, value, log_prob = agent.act(
+                    spatial_history=spatial_history,
+                    raw_state=raw_state,
+                    deterministic=True,
+                )
+
+            next_obs, reward, terminated, truncated, next_info = env.step(action)
+            done = terminated or truncated
+
+            # Scalarized reward using fixed weights
+            norm_objs = next_info["normalized_objectives"]
+            scalar_reward = float(np.sum(agent.fixed_weights * (-norm_objs)))
+
+            run.log_step(
+                step=step,
+                sim_time=next_info["time"],
+                reward=scalar_reward,
+                raw_objs=next_info["raw_objectives"],
+                norm_objs=next_info["normalized_objectives"],
+                weights=agent.fixed_weights,
+                actions=action.tolist(),
+                shield_interventions=next_info.get("shield_interventions", 0),
+            )
+
+            step += 1
+            info = next_info
+            node_feat = torch.tensor(info["node_features"], dtype=torch.float32)
+            with torch.no_grad():
+                new_spatial = agent.network.encode_spatial(node_feat).unsqueeze(1)
+            spatial_history = torch.cat([spatial_history[:, 1:], new_spatial], dim=1)
+            raw_state = torch.tensor(info["raw_state"], dtype=torch.float32).unsqueeze(0)
+
+        env.close()
+        run.close(status="COMPLETED")
+        eval_runs.append(run)
+
+    return eval_runs
 
 
 if __name__ == "__main__":

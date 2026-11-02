@@ -50,6 +50,8 @@ class RolloutBuffer:
         self.dones = []
         self.next_objectives = []
         self.weights = []
+        self.prev_weights = []
+        self.same_episode_masks = []
         self.ptr = 0
 
     def add(
@@ -66,6 +68,8 @@ class RolloutBuffer:
         next_obj_vec: torch.Tensor = None,
         weights: torch.Tensor = None,
         spatial_hist: Optional[torch.Tensor] = None,
+        prev_weights: Optional[torch.Tensor] = None,
+        same_episode_mask: float = 1.0,
     ):
         hist = node_hist if node_hist is not None else spatial_hist
         if hist is None:
@@ -81,6 +85,9 @@ class RolloutBuffer:
         self.dones.append(bool(done))
         self.next_objectives.append(next_obj_vec.squeeze(0).detach().cpu() if next_obj_vec.dim() > 1 and next_obj_vec.size(0) == 1 else next_obj_vec.detach().cpu())
         self.weights.append(weights.squeeze(0).detach().cpu() if weights.dim() > 1 and weights.size(0) == 1 else weights.detach().cpu())
+        pw = prev_weights if prev_weights is not None else weights
+        self.prev_weights.append(pw.squeeze(0).detach().cpu() if pw.dim() > 1 and pw.size(0) == 1 else pw.detach().cpu())
+        self.same_episode_masks.append(float(same_episode_mask))
         self.ptr += 1
 
     def compute_returns_and_advantages(
@@ -292,6 +299,8 @@ class InteractionAwarePPOAgent:
         returns = returns.to(self.device)
         advantages = advantages.to(self.device)
         next_obj_vecs = torch.stack(buffer.next_objectives, dim=0).to(self.device)
+        prev_weights_all = torch.stack(buffer.prev_weights, dim=0).to(self.device)
+        masks_all = torch.tensor(buffer.same_episode_masks, dtype=torch.float32).to(self.device)
 
         for _ in range(self.n_epochs):
             np.random.shuffle(indices)
@@ -309,6 +318,8 @@ class InteractionAwarePPOAgent:
                 b_ret = returns[b_idx]
                 b_adv = advantages[b_idx]
                 b_next_obj = next_obj_vecs[b_idx]
+                b_prev_w = prev_weights_all[b_idx]
+                b_mask = masks_all[b_idx]
 
                 # 1. LIVE RECOMPUTATION OF SPATIAL GNN AND TEMPORAL GRU
                 # This guarantees that gcn1, gcn2, and gru receive full autograd gradients
@@ -364,7 +375,16 @@ class InteractionAwarePPOAgent:
                 u_t = (b_obj + 1e-4) / (b_obj + 1e-4).sum(dim=-1, keepdim=True)
                 kl_pref = F.kl_div(torch.log(weights + 1e-8), u_t, reduction="batchmean")
                 pref_entropy = -(weights * torch.log(weights + 1e-8)).sum(dim=-1).mean()
-                smooth_loss = torch.mean((weights[:, 1:] - weights[:, :-1]) ** 2)
+
+                # Correct temporal smoothness regularization: L_smooth = mean_{same_episode}( || w_t - w_{t-1} ||^2_2 )
+                # Compares the SAME objective across adjacent time steps, masking episode boundaries.
+                temporal_diff_sq = ((weights - b_prev_w) ** 2).sum(dim=-1)  # [B]
+                mask_sum = b_mask.sum()
+                if mask_sum > 0:
+                    smooth_loss = (b_mask * temporal_diff_sq).sum() / mask_sum
+                else:
+                    smooth_loss = torch.tensor(0.0, device=self.device)
+
                 pref_loss = self.pref_kl_coef * kl_pref - self.pref_entropy_coef * pref_entropy + self.smooth_lambda * smooth_loss
 
                 # 8. JOINT MULTI-OBJECTIVE DIFFERENTIABLE LOSS
@@ -407,6 +427,7 @@ def train_interaction_aware_ppo(
     enforce_safety_shield: bool = True,
     checkpoint_interval: int = 2500,
     eval_episodes: int = 0,
+    eval_horizon: int = 1800,
     eval_seed: Optional[int] = None,
 ) -> ExperimentRun:
     """
@@ -448,6 +469,7 @@ def train_interaction_aware_ppo(
     obs, info = env.reset(seed=seed)
     current_step = 0
     episodes = 0
+    last_weights = None
 
     print("=" * 80)
     print(f"STARTING {algo_name} TRAINING | RUN: {run.run_id} | SEED: {seed}")
@@ -498,6 +520,14 @@ def train_interaction_aware_ppo(
                 shield_interventions=next_info.get("shield_interventions", 0),
             )
 
+            if last_weights is None:
+                same_episode_mask = 0.0
+                prev_w = weights[0].clone().detach()
+            else:
+                same_episode_mask = 1.0
+                prev_w = last_weights.clone().detach()
+            last_weights = weights[0].clone().detach()
+
             buffer.add(
                 node_hist=node_history[0],
                 obj_vec=obj_vec[0],
@@ -510,6 +540,8 @@ def train_interaction_aware_ppo(
                 done=done,
                 next_obj_vec=next_obj_vec[0],
                 weights=weights[0],
+                prev_weights=prev_w,
+                same_episode_mask=same_episode_mask,
             )
 
             current_step += 1
@@ -529,6 +561,7 @@ def train_interaction_aware_ppo(
             if done:
                 obs, info = env.reset(seed=seed + current_step)
                 episodes += 1
+                last_weights = None
                 node_feat = torch.tensor(info["node_features"], dtype=torch.float32).unsqueeze(0)
                 node_history = node_feat.unsqueeze(1).repeat(1, 10, 1, 1)
                 raw_state = torch.tensor(info["raw_state"], dtype=torch.float32).unsqueeze(0)
@@ -557,8 +590,8 @@ def train_interaction_aware_ppo(
 
     # Optional deterministic evaluation
     if eval_episodes > 0:
-        actual_eval_seed = eval_seed if eval_seed is not None else seed + 10000
-        print(f"\n[EVALUATION] Launching {eval_episodes} deterministic evaluation episodes with seed {actual_eval_seed}...")
+        actual_eval_seed = eval_seed if eval_seed is not None else seed + 1000
+        print(f"\n[EVALUATION] Launching {eval_episodes} deterministic evaluation episodes with seed {actual_eval_seed} (Horizon: {eval_horizon}s)...")
         evaluate_interaction_aware_ppo(
             agent_or_checkpoint=agent,
             config_path=config_path,
@@ -566,6 +599,8 @@ def train_interaction_aware_ppo(
             eval_seed=actual_eval_seed,
             train_seed=seed,
             n_episodes=eval_episodes,
+            eval_horizon=eval_horizon,
+            max_steps_per_episode=eval_horizon,
             output_root=output_root,
             ablation_mode=ablation_mode,
             enforce_safety_shield=enforce_safety_shield,
@@ -581,7 +616,8 @@ def evaluate_interaction_aware_ppo(
     eval_seed: int = 1042,
     train_seed: int = 42,
     n_episodes: int = 1,
-    max_steps_per_episode: int = 1800,
+    eval_horizon: int = 1800,
+    max_steps_per_episode: Optional[int] = None,
     output_root: str = "results/runs",
     ablation_mode: Optional[str] = None,
     enforce_safety_shield: bool = True,
@@ -608,6 +644,7 @@ def evaluate_interaction_aware_ppo(
     agent.interaction_learner.eval()
 
     eval_runs = []
+    effective_horizon = int(max_steps_per_episode) if max_steps_per_episode is not None else int(eval_horizon)
 
     for ep in range(n_episodes):
         current_eval_seed = eval_seed + ep
@@ -619,17 +656,18 @@ def evaluate_interaction_aware_ppo(
             config=config,
             train_seed=train_seed,
             eval_seed=current_eval_seed,
+            eval_horizon=effective_horizon,
             scenario=scenario_name,
             output_root=output_root,
             training_timesteps=config.policy.total_timesteps,
             episode_id=ep,
-            evaluation_mode="deterministic_evaluation",
+            evaluation_mode="deterministic_eval",
         )
 
         env = DOIMTrafficEnv(
             sumo_config=config.simulation.sumo_config,
             enforce_safety_shield=shield_enabled,
-            max_steps=max_steps_per_episode,
+            max_steps=effective_horizon,
         )
 
         obs, info = env.reset(seed=current_eval_seed)
@@ -639,7 +677,7 @@ def evaluate_interaction_aware_ppo(
 
         step = 0
         done = False
-        while not done and step < max_steps_per_episode:
+        while not done and step < effective_horizon:
             obj_vec = torch.tensor(info["normalized_objectives"], dtype=torch.float32).unsqueeze(0)
 
             with torch.no_grad():

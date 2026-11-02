@@ -1,0 +1,32 @@
+# DOIM-Traffic-RL: Research Dependencies
+# Compatible with Python 3.11
+# Standard cross-platform dependencies for scientific reproduction.
+
+# Core Machine Learning & Deep RL
+torch>=2.0.0,<=2.5.1
+
+# Microscopic Traffic Simulation
+eclipse-sumo>=1.28.0
+traci>=1.28.0
+
+# RL Environments & Mathematics
+gymnasium>=1.0.0
+numpy>=1.26.0,<2.0.0
+scipy>=1.11.0
+pandas>=2.1.0
+
+# Configuration & Utilities
+pyyaml>=6.0.1
+
+# Visualization & Statistics
+matplotlib>=3.8.0
+seaborn>=0.13.0
+
+# Testing & Verification
+pytest>=8.0.0
+
+# Optional / Platform Note:
+# On Windows 11 with Smart App Control (SAC) enabled in 'Enforce' mode,
+# unsigned third-party C/C++ extension wheels in user venvs may trigger
+# [WinError 4551]. Standard Linux, macOS, and standard Windows systems
+# install and execute these wheels without restriction.

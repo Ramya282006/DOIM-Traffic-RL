@@ -1,0 +1,1313 @@
+{
+  "total_historical_records": 49,
+  "completed_on_disk": 44,
+  "incomplete_on_disk": 5,
+  "reproducibility_eligible": 0,
+  "reproducibility_ineligible": 49,
+  "records": [
+    {
+      "run_dir": "DOIM_no_interaction_north_south_surge_s123_20261031_151928",
+      "manifest_exists": true,
+      "summary_exists": true,
+      "metrics_csv_exists": true,
+      "classification_status": "LEGACY_VALID",
+      "classification_reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "historical_completion": "COMPLETED",
+      "reproducibility_eligibility": "INELIGIBLE",
+      "recovered_fields": {
+        "algorithm": "DOIM_no_interaction",
+        "scenario": "north_south_surge",
+        "train_seed": 123,
+        "evaluation_seed": 123,
+        "training_timesteps": 128,
+        "code_commit": "fd264346a9f3f5c7a6859c045561b9650b7dc922",
+        "config_hash": "9455f65fd0b9e130"
+      },
+      "inferred_fields": {},
+      "unavailable_fields": [
+        "evaluation_mode",
+        "fairness_metric_name"
+      ],
+      "ineligibility_reasons": [
+        "Evaluation mode is UNKNOWN (not explicitly declared in historical run)",
+        "Explicit fairness metric identity unavailable in historical manifest"
+      ]
+    },
+    {
+      "run_dir": "DOIM_no_interaction_north_south_surge_s2024_20261031_170430",
+      "manifest_exists": true,
+      "summary_exists": true,
+      "metrics_csv_exists": true,
+      "classification_status": "LEGACY_VALID",
+      "classification_reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "historical_completion": "COMPLETED",
+      "reproducibility_eligibility": "INELIGIBLE",
+      "recovered_fields": {
+        "algorithm": "DOIM_no_interaction",
+        "scenario": "north_south_surge",
+        "train_seed": 2024,
+        "evaluation_seed": 2024,
+        "training_timesteps": 128,
+        "code_commit": "68e953a54adbf2b51ec392a06b92f76200323cc1",
+        "config_hash": "9455f65fd0b9e130"
+      },
+      "inferred_fields": {},
+      "unavailable_fields": [
+        "evaluation_mode",
+        "fairness_metric_name"
+      ],
+      "ineligibility_reasons": [
+        "Evaluation mode is UNKNOWN (not explicitly declared in historical run)",
+        "Explicit fairness metric identity unavailable in historical manifest"
+      ]
+    },
+    {
+      "run_dir": "DOIM_no_interaction_north_south_surge_s42_20261031_151836",
+      "manifest_exists": true,
+      "summary_exists": true,
+      "metrics_csv_exists": true,
+      "classification_status": "LEGACY_VALID",
+      "classification_reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "historical_completion": "COMPLETED",
+      "reproducibility_eligibility": "INELIGIBLE",
+      "recovered_fields": {
+        "algorithm": "DOIM_no_interaction",
+        "scenario": "north_south_surge",
+        "train_seed": 42,
+        "evaluation_seed": 42,
+        "training_timesteps": 128,
+        "code_commit": "fd264346a9f3f5c7a6859c045561b9650b7dc922",
+        "config_hash": "9455f65fd0b9e130"
+      },
+      "inferred_fields": {},
+      "unavailable_fields": [
+        "evaluation_mode",
+        "fairness_metric_name"
+      ],
+      "ineligibility_reasons": [
+        "Evaluation mode is UNKNOWN (not explicitly declared in historical run)",
+        "Explicit fairness metric identity unavailable in historical manifest"
+      ]
+    },
+    {
+      "run_dir": "DOIM_no_interaction_north_south_surge_s456_20261031_170214",
+      "manifest_exists": true,
+      "summary_exists": true,
+      "metrics_csv_exists": true,
+      "classification_status": "LEGACY_VALID",
+      "classification_reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "historical_completion": "COMPLETED",
+      "reproducibility_eligibility": "INELIGIBLE",
+      "recovered_fields": {
+        "algorithm": "DOIM_no_interaction",
+        "scenario": "north_south_surge",
+        "train_seed": 456,
+        "evaluation_seed": 456,
+        "training_timesteps": 128,
+        "code_commit": "68e953a54adbf2b51ec392a06b92f76200323cc1",
+        "config_hash": "9455f65fd0b9e130"
+      },
+      "inferred_fields": {},
+      "unavailable_fields": [
+        "evaluation_mode",
+        "fairness_metric_name"
+      ],
+      "ineligibility_reasons": [
+        "Evaluation mode is UNKNOWN (not explicitly declared in historical run)",
+        "Explicit fairness metric identity unavailable in historical manifest"
+      ]
+    },
+    {
+      "run_dir": "DOIM_no_interaction_north_south_surge_s789_20261031_170326",
+      "manifest_exists": true,
+      "summary_exists": true,
+      "metrics_csv_exists": true,
+      "classification_status": "LEGACY_VALID",
+      "classification_reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "historical_completion": "COMPLETED",
+      "reproducibility_eligibility": "INELIGIBLE",
+      "recovered_fields": {
+        "algorithm": "DOIM_no_interaction",
+        "scenario": "north_south_surge",
+        "train_seed": 789,
+        "evaluation_seed": 789,
+        "training_timesteps": 128,
+        "code_commit": "68e953a54adbf2b51ec392a06b92f76200323cc1",
+        "config_hash": "9455f65fd0b9e130"
+      },
+      "inferred_fields": {},
+      "unavailable_fields": [
+        "evaluation_mode",
+        "fairness_metric_name"
+      ],
+      "ineligibility_reasons": [
+        "Evaluation mode is UNKNOWN (not explicitly declared in historical run)",
+        "Explicit fairness metric identity unavailable in historical manifest"
+      ]
+    },
+    {
+      "run_dir": "DOIM_no_interaction_rush_hour_s42_20261031_170647",
+      "manifest_exists": true,
+      "summary_exists": true,
+      "metrics_csv_exists": true,
+      "classification_status": "LEGACY_VALID",
+      "classification_reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "historical_completion": "COMPLETED",
+      "reproducibility_eligibility": "INELIGIBLE",
+      "recovered_fields": {
+        "algorithm": "DOIM_no_interaction",
+        "scenario": "rush_hour",
+        "train_seed": 42,
+        "evaluation_seed": 42,
+        "training_timesteps": 128,
+        "code_commit": "68e953a54adbf2b51ec392a06b92f76200323cc1",
+        "config_hash": "9455f65fd0b9e130"
+      },
+      "inferred_fields": {},
+      "unavailable_fields": [
+        "evaluation_mode",
+        "fairness_metric_name"
+      ],
+      "ineligibility_reasons": [
+        "Evaluation mode is UNKNOWN (not explicitly declared in historical run)",
+        "Explicit fairness metric identity unavailable in historical manifest"
+      ]
+    },
+    {
+      "run_dir": "DOIM_rolling_pearson_north_south_surge_s123_20261031_151937",
+      "manifest_exists": true,
+      "summary_exists": true,
+      "metrics_csv_exists": true,
+      "classification_status": "LEGACY_VALID",
+      "classification_reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "historical_completion": "COMPLETED",
+      "reproducibility_eligibility": "INELIGIBLE",
+      "recovered_fields": {
+        "algorithm": "DOIM_rolling_pearson",
+        "scenario": "north_south_surge",
+        "train_seed": 123,
+        "evaluation_seed": 123,
+        "training_timesteps": 128,
+        "code_commit": "fd264346a9f3f5c7a6859c045561b9650b7dc922",
+        "config_hash": "9455f65fd0b9e130"
+      },
+      "inferred_fields": {},
+      "unavailable_fields": [
+        "evaluation_mode",
+        "fairness_metric_name"
+      ],
+      "ineligibility_reasons": [
+        "Evaluation mode is UNKNOWN (not explicitly declared in historical run)",
+        "Explicit fairness metric identity unavailable in historical manifest"
+      ]
+    },
+    {
+      "run_dir": "DOIM_rolling_pearson_north_south_surge_s2024_20261031_170441",
+      "manifest_exists": true,
+      "summary_exists": true,
+      "metrics_csv_exists": true,
+      "classification_status": "LEGACY_VALID",
+      "classification_reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "historical_completion": "COMPLETED",
+      "reproducibility_eligibility": "INELIGIBLE",
+      "recovered_fields": {
+        "algorithm": "DOIM_rolling_pearson",
+        "scenario": "north_south_surge",
+        "train_seed": 2024,
+        "evaluation_seed": 2024,
+        "training_timesteps": 128,
+        "code_commit": "68e953a54adbf2b51ec392a06b92f76200323cc1",
+        "config_hash": "9455f65fd0b9e130"
+      },
+      "inferred_fields": {},
+      "unavailable_fields": [
+        "evaluation_mode",
+        "fairness_metric_name"
+      ],
+      "ineligibility_reasons": [
+        "Evaluation mode is UNKNOWN (not explicitly declared in historical run)",
+        "Explicit fairness metric identity unavailable in historical manifest"
+      ]
+    },
+    {
+      "run_dir": "DOIM_rolling_pearson_north_south_surge_s42_20261031_151845",
+      "manifest_exists": true,
+      "summary_exists": true,
+      "metrics_csv_exists": true,
+      "classification_status": "LEGACY_VALID",
+      "classification_reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "historical_completion": "COMPLETED",
+      "reproducibility_eligibility": "INELIGIBLE",
+      "recovered_fields": {
+        "algorithm": "DOIM_rolling_pearson",
+        "scenario": "north_south_surge",
+        "train_seed": 42,
+        "evaluation_seed": 42,
+        "training_timesteps": 128,
+        "code_commit": "fd264346a9f3f5c7a6859c045561b9650b7dc922",
+        "config_hash": "9455f65fd0b9e130"
+      },
+      "inferred_fields": {},
+      "unavailable_fields": [
+        "evaluation_mode",
+        "fairness_metric_name"
+      ],
+      "ineligibility_reasons": [
+        "Evaluation mode is UNKNOWN (not explicitly declared in historical run)",
+        "Explicit fairness metric identity unavailable in historical manifest"
+      ]
+    },
+    {
+      "run_dir": "DOIM_rolling_pearson_north_south_surge_s456_20261031_170229",
+      "manifest_exists": true,
+      "summary_exists": true,
+      "metrics_csv_exists": true,
+      "classification_status": "LEGACY_VALID",
+      "classification_reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "historical_completion": "COMPLETED",
+      "reproducibility_eligibility": "INELIGIBLE",
+      "recovered_fields": {
+        "algorithm": "DOIM_rolling_pearson",
+        "scenario": "north_south_surge",
+        "train_seed": 456,
+        "evaluation_seed": 456,
+        "training_timesteps": 128,
+        "code_commit": "68e953a54adbf2b51ec392a06b92f76200323cc1",
+        "config_hash": "9455f65fd0b9e130"
+      },
+      "inferred_fields": {},
+      "unavailable_fields": [
+        "evaluation_mode",
+        "fairness_metric_name"
+      ],
+      "ineligibility_reasons": [
+        "Evaluation mode is UNKNOWN (not explicitly declared in historical run)",
+        "Explicit fairness metric identity unavailable in historical manifest"
+      ]
+    },
+    {
+      "run_dir": "DOIM_rolling_pearson_north_south_surge_s789_20261031_170337",
+      "manifest_exists": true,
+      "summary_exists": true,
+      "metrics_csv_exists": true,
+      "classification_status": "LEGACY_VALID",
+      "classification_reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "historical_completion": "COMPLETED",
+      "reproducibility_eligibility": "INELIGIBLE",
+      "recovered_fields": {
+        "algorithm": "DOIM_rolling_pearson",
+        "scenario": "north_south_surge",
+        "train_seed": 789,
+        "evaluation_seed": 789,
+        "training_timesteps": 128,
+        "code_commit": "68e953a54adbf2b51ec392a06b92f76200323cc1",
+        "config_hash": "9455f65fd0b9e130"
+      },
+      "inferred_fields": {},
+      "unavailable_fields": [
+        "evaluation_mode",
+        "fairness_metric_name"
+      ],
+      "ineligibility_reasons": [
+        "Evaluation mode is UNKNOWN (not explicitly declared in historical run)",
+        "Explicit fairness metric identity unavailable in historical manifest"
+      ]
+    },
+    {
+      "run_dir": "DOIM_rolling_pearson_rush_hour_s42_20261031_170702",
+      "manifest_exists": true,
+      "summary_exists": true,
+      "metrics_csv_exists": true,
+      "classification_status": "LEGACY_VALID",
+      "classification_reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "historical_completion": "COMPLETED",
+      "reproducibility_eligibility": "INELIGIBLE",
+      "recovered_fields": {
+        "algorithm": "DOIM_rolling_pearson",
+        "scenario": "rush_hour",
+        "train_seed": 42,
+        "evaluation_seed": 42,
+        "training_timesteps": 128,
+        "code_commit": "68e953a54adbf2b51ec392a06b92f76200323cc1",
+        "config_hash": "9455f65fd0b9e130"
+      },
+      "inferred_fields": {},
+      "unavailable_fields": [
+        "evaluation_mode",
+        "fairness_metric_name"
+      ],
+      "ineligibility_reasons": [
+        "Evaluation mode is UNKNOWN (not explicitly declared in historical run)",
+        "Explicit fairness metric identity unavailable in historical manifest"
+      ]
+    },
+    {
+      "run_dir": "DOIM_SMOKE_directional_shift_s42_20261031_144955",
+      "manifest_exists": true,
+      "summary_exists": true,
+      "metrics_csv_exists": true,
+      "classification_status": "LEGACY_VALID",
+      "classification_reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "historical_completion": "COMPLETED",
+      "reproducibility_eligibility": "INELIGIBLE",
+      "recovered_fields": {
+        "algorithm": "DOIM_SMOKE",
+        "scenario": "directional_shift",
+        "train_seed": 42,
+        "evaluation_seed": 42,
+        "training_timesteps": 30,
+        "code_commit": "fd264346a9f3f5c7a6859c045561b9650b7dc922",
+        "config_hash": "258b73a76e884c81"
+      },
+      "inferred_fields": {},
+      "unavailable_fields": [
+        "evaluation_mode",
+        "fairness_metric_name"
+      ],
+      "ineligibility_reasons": [
+        "Evaluation mode is UNKNOWN (not explicitly declared in historical run)",
+        "Explicit fairness metric identity unavailable in historical manifest"
+      ]
+    },
+    {
+      "run_dir": "DOIM_SMOKE_directional_shift_s42_20261031_145037",
+      "manifest_exists": true,
+      "summary_exists": true,
+      "metrics_csv_exists": true,
+      "classification_status": "LEGACY_VALID",
+      "classification_reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "historical_completion": "COMPLETED",
+      "reproducibility_eligibility": "INELIGIBLE",
+      "recovered_fields": {
+        "algorithm": "DOIM_SMOKE",
+        "scenario": "directional_shift",
+        "train_seed": 42,
+        "evaluation_seed": 42,
+        "training_timesteps": 30,
+        "code_commit": "fd264346a9f3f5c7a6859c045561b9650b7dc922",
+        "config_hash": "258b73a76e884c81"
+      },
+      "inferred_fields": {},
+      "unavailable_fields": [
+        "evaluation_mode",
+        "fairness_metric_name"
+      ],
+      "ineligibility_reasons": [
+        "Evaluation mode is UNKNOWN (not explicitly declared in historical run)",
+        "Explicit fairness metric identity unavailable in historical manifest"
+      ]
+    },
+    {
+      "run_dir": "Fixed_Time_directional_shift_north_south_s42_20261031_150907",
+      "manifest_exists": true,
+      "summary_exists": true,
+      "metrics_csv_exists": true,
+      "classification_status": "LEGACY_VALID",
+      "classification_reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "historical_completion": "COMPLETED",
+      "reproducibility_eligibility": "INELIGIBLE",
+      "recovered_fields": {
+        "algorithm": "Fixed_Time",
+        "scenario": "directional_shift_north_south",
+        "train_seed": 42,
+        "evaluation_seed": 42,
+        "training_timesteps": 128,
+        "code_commit": "fd264346a9f3f5c7a6859c045561b9650b7dc922",
+        "config_hash": "258b73a76e884c81"
+      },
+      "inferred_fields": {},
+      "unavailable_fields": [
+        "evaluation_mode",
+        "fairness_metric_name"
+      ],
+      "ineligibility_reasons": [
+        "Evaluation mode is UNKNOWN (not explicitly declared in historical run)",
+        "Explicit fairness metric identity unavailable in historical manifest"
+      ]
+    },
+    {
+      "run_dir": "Fixed_Time_north_south_surge_s123_20261031_151903",
+      "manifest_exists": true,
+      "summary_exists": true,
+      "metrics_csv_exists": true,
+      "classification_status": "LEGACY_VALID",
+      "classification_reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "historical_completion": "COMPLETED",
+      "reproducibility_eligibility": "INELIGIBLE",
+      "recovered_fields": {
+        "algorithm": "Fixed_Time",
+        "scenario": "north_south_surge",
+        "train_seed": 123,
+        "evaluation_seed": 123,
+        "training_timesteps": 128,
+        "code_commit": "fd264346a9f3f5c7a6859c045561b9650b7dc922",
+        "config_hash": "7888a45453a99435"
+      },
+      "inferred_fields": {},
+      "unavailable_fields": [
+        "evaluation_mode",
+        "fairness_metric_name"
+      ],
+      "ineligibility_reasons": [
+        "Evaluation mode is UNKNOWN (not explicitly declared in historical run)",
+        "Explicit fairness metric identity unavailable in historical manifest"
+      ]
+    },
+    {
+      "run_dir": "Fixed_Time_north_south_surge_s2024_20261031_170400",
+      "manifest_exists": true,
+      "summary_exists": true,
+      "metrics_csv_exists": true,
+      "classification_status": "LEGACY_VALID",
+      "classification_reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "historical_completion": "COMPLETED",
+      "reproducibility_eligibility": "INELIGIBLE",
+      "recovered_fields": {
+        "algorithm": "Fixed_Time",
+        "scenario": "north_south_surge",
+        "train_seed": 2024,
+        "evaluation_seed": 2024,
+        "training_timesteps": 128,
+        "code_commit": "68e953a54adbf2b51ec392a06b92f76200323cc1",
+        "config_hash": "7888a45453a99435"
+      },
+      "inferred_fields": {},
+      "unavailable_fields": [
+        "evaluation_mode",
+        "fairness_metric_name"
+      ],
+      "ineligibility_reasons": [
+        "Evaluation mode is UNKNOWN (not explicitly declared in historical run)",
+        "Explicit fairness metric identity unavailable in historical manifest"
+      ]
+    },
+    {
+      "run_dir": "Fixed_Time_north_south_surge_s42_20261031_151810",
+      "manifest_exists": true,
+      "summary_exists": true,
+      "metrics_csv_exists": true,
+      "classification_status": "LEGACY_VALID",
+      "classification_reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "historical_completion": "COMPLETED",
+      "reproducibility_eligibility": "INELIGIBLE",
+      "recovered_fields": {
+        "algorithm": "Fixed_Time",
+        "scenario": "north_south_surge",
+        "train_seed": 42,
+        "evaluation_seed": 42,
+        "training_timesteps": 128,
+        "code_commit": "fd264346a9f3f5c7a6859c045561b9650b7dc922",
+        "config_hash": "7888a45453a99435"
+      },
+      "inferred_fields": {},
+      "unavailable_fields": [
+        "evaluation_mode",
+        "fairness_metric_name"
+      ],
+      "ineligibility_reasons": [
+        "Evaluation mode is UNKNOWN (not explicitly declared in historical run)",
+        "Explicit fairness metric identity unavailable in historical manifest"
+      ]
+    },
+    {
+      "run_dir": "Fixed_Time_north_south_surge_s456_20261031_170138",
+      "manifest_exists": true,
+      "summary_exists": true,
+      "metrics_csv_exists": true,
+      "classification_status": "LEGACY_VALID",
+      "classification_reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "historical_completion": "COMPLETED",
+      "reproducibility_eligibility": "INELIGIBLE",
+      "recovered_fields": {
+        "algorithm": "Fixed_Time",
+        "scenario": "north_south_surge",
+        "train_seed": 456,
+        "evaluation_seed": 456,
+        "training_timesteps": 128,
+        "code_commit": "68e953a54adbf2b51ec392a06b92f76200323cc1",
+        "config_hash": "7888a45453a99435"
+      },
+      "inferred_fields": {},
+      "unavailable_fields": [
+        "evaluation_mode",
+        "fairness_metric_name"
+      ],
+      "ineligibility_reasons": [
+        "Evaluation mode is UNKNOWN (not explicitly declared in historical run)",
+        "Explicit fairness metric identity unavailable in historical manifest"
+      ]
+    },
+    {
+      "run_dir": "Fixed_Time_north_south_surge_s789_20261031_170256",
+      "manifest_exists": true,
+      "summary_exists": true,
+      "metrics_csv_exists": true,
+      "classification_status": "LEGACY_VALID",
+      "classification_reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "historical_completion": "COMPLETED",
+      "reproducibility_eligibility": "INELIGIBLE",
+      "recovered_fields": {
+        "algorithm": "Fixed_Time",
+        "scenario": "north_south_surge",
+        "train_seed": 789,
+        "evaluation_seed": 789,
+        "training_timesteps": 128,
+        "code_commit": "68e953a54adbf2b51ec392a06b92f76200323cc1",
+        "config_hash": "7888a45453a99435"
+      },
+      "inferred_fields": {},
+      "unavailable_fields": [
+        "evaluation_mode",
+        "fairness_metric_name"
+      ],
+      "ineligibility_reasons": [
+        "Evaluation mode is UNKNOWN (not explicitly declared in historical run)",
+        "Explicit fairness metric identity unavailable in historical manifest"
+      ]
+    },
+    {
+      "run_dir": "Fixed_Time_rush_hour_s42_20261031_170605",
+      "manifest_exists": true,
+      "summary_exists": true,
+      "metrics_csv_exists": true,
+      "classification_status": "LEGACY_VALID",
+      "classification_reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "historical_completion": "COMPLETED",
+      "reproducibility_eligibility": "INELIGIBLE",
+      "recovered_fields": {
+        "algorithm": "Fixed_Time",
+        "scenario": "rush_hour",
+        "train_seed": 42,
+        "evaluation_seed": 42,
+        "training_timesteps": 128,
+        "code_commit": "68e953a54adbf2b51ec392a06b92f76200323cc1",
+        "config_hash": "3d4882178ba88704"
+      },
+      "inferred_fields": {},
+      "unavailable_fields": [
+        "evaluation_mode",
+        "fairness_metric_name"
+      ],
+      "ineligibility_reasons": [
+        "Evaluation mode is UNKNOWN (not explicitly declared in historical run)",
+        "Explicit fairness metric identity unavailable in historical manifest"
+      ]
+    },
+    {
+      "run_dir": "FW_PPO_directional_shift_north_south_s42_20261031_150954",
+      "manifest_exists": true,
+      "summary_exists": false,
+      "metrics_csv_exists": false,
+      "classification_status": "INCOMPLETE",
+      "classification_reason": "Incomplete or unverified historical run (status='INITIALIZED')",
+      "historical_completion": "INCOMPLETE",
+      "reproducibility_eligibility": "INELIGIBLE",
+      "recovered_fields": {},
+      "inferred_fields": {},
+      "unavailable_fields": [],
+      "ineligibility_reasons": []
+    },
+    {
+      "run_dir": "FW_PPO_directional_shift_north_south_s42_20261031_151025",
+      "manifest_exists": true,
+      "summary_exists": true,
+      "metrics_csv_exists": true,
+      "classification_status": "LEGACY_VALID",
+      "classification_reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "historical_completion": "COMPLETED",
+      "reproducibility_eligibility": "INELIGIBLE",
+      "recovered_fields": {
+        "algorithm": "FW_PPO",
+        "scenario": "directional_shift_north_south",
+        "train_seed": 42,
+        "evaluation_seed": 42,
+        "training_timesteps": 128,
+        "code_commit": "fd264346a9f3f5c7a6859c045561b9650b7dc922",
+        "config_hash": "9455f65fd0b9e130"
+      },
+      "inferred_fields": {},
+      "unavailable_fields": [
+        "evaluation_mode",
+        "fairness_metric_name"
+      ],
+      "ineligibility_reasons": [
+        "Evaluation mode is UNKNOWN (not explicitly declared in historical run)",
+        "Explicit fairness metric identity unavailable in historical manifest"
+      ]
+    },
+    {
+      "run_dir": "FW_PPO_north_south_surge_s123_20261031_151911",
+      "manifest_exists": true,
+      "summary_exists": true,
+      "metrics_csv_exists": true,
+      "classification_status": "LEGACY_VALID",
+      "classification_reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "historical_completion": "COMPLETED",
+      "reproducibility_eligibility": "INELIGIBLE",
+      "recovered_fields": {
+        "algorithm": "FW_PPO",
+        "scenario": "north_south_surge",
+        "train_seed": 123,
+        "evaluation_seed": 123,
+        "training_timesteps": 128,
+        "code_commit": "fd264346a9f3f5c7a6859c045561b9650b7dc922",
+        "config_hash": "7888a45453a99435"
+      },
+      "inferred_fields": {},
+      "unavailable_fields": [
+        "evaluation_mode",
+        "fairness_metric_name"
+      ],
+      "ineligibility_reasons": [
+        "Evaluation mode is UNKNOWN (not explicitly declared in historical run)",
+        "Explicit fairness metric identity unavailable in historical manifest"
+      ]
+    },
+    {
+      "run_dir": "FW_PPO_north_south_surge_s2024_20261031_170409",
+      "manifest_exists": true,
+      "summary_exists": true,
+      "metrics_csv_exists": true,
+      "classification_status": "LEGACY_VALID",
+      "classification_reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "historical_completion": "COMPLETED",
+      "reproducibility_eligibility": "INELIGIBLE",
+      "recovered_fields": {
+        "algorithm": "FW_PPO",
+        "scenario": "north_south_surge",
+        "train_seed": 2024,
+        "evaluation_seed": 2024,
+        "training_timesteps": 128,
+        "code_commit": "68e953a54adbf2b51ec392a06b92f76200323cc1",
+        "config_hash": "7888a45453a99435"
+      },
+      "inferred_fields": {},
+      "unavailable_fields": [
+        "evaluation_mode",
+        "fairness_metric_name"
+      ],
+      "ineligibility_reasons": [
+        "Evaluation mode is UNKNOWN (not explicitly declared in historical run)",
+        "Explicit fairness metric identity unavailable in historical manifest"
+      ]
+    },
+    {
+      "run_dir": "FW_PPO_north_south_surge_s42_20261031_151818",
+      "manifest_exists": true,
+      "summary_exists": true,
+      "metrics_csv_exists": true,
+      "classification_status": "LEGACY_VALID",
+      "classification_reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "historical_completion": "COMPLETED",
+      "reproducibility_eligibility": "INELIGIBLE",
+      "recovered_fields": {
+        "algorithm": "FW_PPO",
+        "scenario": "north_south_surge",
+        "train_seed": 42,
+        "evaluation_seed": 42,
+        "training_timesteps": 128,
+        "code_commit": "fd264346a9f3f5c7a6859c045561b9650b7dc922",
+        "config_hash": "7888a45453a99435"
+      },
+      "inferred_fields": {},
+      "unavailable_fields": [
+        "evaluation_mode",
+        "fairness_metric_name"
+      ],
+      "ineligibility_reasons": [
+        "Evaluation mode is UNKNOWN (not explicitly declared in historical run)",
+        "Explicit fairness metric identity unavailable in historical manifest"
+      ]
+    },
+    {
+      "run_dir": "FW_PPO_north_south_surge_s456_20261031_170149",
+      "manifest_exists": true,
+      "summary_exists": true,
+      "metrics_csv_exists": true,
+      "classification_status": "LEGACY_VALID",
+      "classification_reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "historical_completion": "COMPLETED",
+      "reproducibility_eligibility": "INELIGIBLE",
+      "recovered_fields": {
+        "algorithm": "FW_PPO",
+        "scenario": "north_south_surge",
+        "train_seed": 456,
+        "evaluation_seed": 456,
+        "training_timesteps": 128,
+        "code_commit": "68e953a54adbf2b51ec392a06b92f76200323cc1",
+        "config_hash": "7888a45453a99435"
+      },
+      "inferred_fields": {},
+      "unavailable_fields": [
+        "evaluation_mode",
+        "fairness_metric_name"
+      ],
+      "ineligibility_reasons": [
+        "Evaluation mode is UNKNOWN (not explicitly declared in historical run)",
+        "Explicit fairness metric identity unavailable in historical manifest"
+      ]
+    },
+    {
+      "run_dir": "FW_PPO_north_south_surge_s789_20261031_170305",
+      "manifest_exists": true,
+      "summary_exists": true,
+      "metrics_csv_exists": true,
+      "classification_status": "LEGACY_VALID",
+      "classification_reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "historical_completion": "COMPLETED",
+      "reproducibility_eligibility": "INELIGIBLE",
+      "recovered_fields": {
+        "algorithm": "FW_PPO",
+        "scenario": "north_south_surge",
+        "train_seed": 789,
+        "evaluation_seed": 789,
+        "training_timesteps": 128,
+        "code_commit": "68e953a54adbf2b51ec392a06b92f76200323cc1",
+        "config_hash": "7888a45453a99435"
+      },
+      "inferred_fields": {},
+      "unavailable_fields": [
+        "evaluation_mode",
+        "fairness_metric_name"
+      ],
+      "ineligibility_reasons": [
+        "Evaluation mode is UNKNOWN (not explicitly declared in historical run)",
+        "Explicit fairness metric identity unavailable in historical manifest"
+      ]
+    },
+    {
+      "run_dir": "FW_PPO_rush_hour_s42_20261031_170619",
+      "manifest_exists": true,
+      "summary_exists": true,
+      "metrics_csv_exists": true,
+      "classification_status": "LEGACY_VALID",
+      "classification_reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "historical_completion": "COMPLETED",
+      "reproducibility_eligibility": "INELIGIBLE",
+      "recovered_fields": {
+        "algorithm": "FW_PPO",
+        "scenario": "rush_hour",
+        "train_seed": 42,
+        "evaluation_seed": 42,
+        "training_timesteps": 128,
+        "code_commit": "68e953a54adbf2b51ec392a06b92f76200323cc1",
+        "config_hash": "3d4882178ba88704"
+      },
+      "inferred_fields": {},
+      "unavailable_fields": [
+        "evaluation_mode",
+        "fairness_metric_name"
+      ],
+      "ineligibility_reasons": [
+        "Evaluation mode is UNKNOWN (not explicitly declared in historical run)",
+        "Explicit fairness metric identity unavailable in historical manifest"
+      ]
+    },
+    {
+      "run_dir": "IA_MOPPO_north_south_surge_s123_20261031_151854",
+      "manifest_exists": true,
+      "summary_exists": true,
+      "metrics_csv_exists": true,
+      "classification_status": "LEGACY_VALID",
+      "classification_reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "historical_completion": "COMPLETED",
+      "reproducibility_eligibility": "INELIGIBLE",
+      "recovered_fields": {
+        "algorithm": "IA_MOPPO",
+        "scenario": "north_south_surge",
+        "train_seed": 123,
+        "evaluation_seed": 123,
+        "training_timesteps": 128,
+        "code_commit": "fd264346a9f3f5c7a6859c045561b9650b7dc922",
+        "config_hash": "9455f65fd0b9e130"
+      },
+      "inferred_fields": {},
+      "unavailable_fields": [
+        "evaluation_mode",
+        "fairness_metric_name"
+      ],
+      "ineligibility_reasons": [
+        "Evaluation mode is UNKNOWN (not explicitly declared in historical run)",
+        "Explicit fairness metric identity unavailable in historical manifest"
+      ]
+    },
+    {
+      "run_dir": "IA_MOPPO_north_south_surge_s2024_20261031_170348",
+      "manifest_exists": true,
+      "summary_exists": true,
+      "metrics_csv_exists": true,
+      "classification_status": "LEGACY_VALID",
+      "classification_reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "historical_completion": "COMPLETED",
+      "reproducibility_eligibility": "INELIGIBLE",
+      "recovered_fields": {
+        "algorithm": "IA_MOPPO",
+        "scenario": "north_south_surge",
+        "train_seed": 2024,
+        "evaluation_seed": 2024,
+        "training_timesteps": 128,
+        "code_commit": "68e953a54adbf2b51ec392a06b92f76200323cc1",
+        "config_hash": "9455f65fd0b9e130"
+      },
+      "inferred_fields": {},
+      "unavailable_fields": [
+        "evaluation_mode",
+        "fairness_metric_name"
+      ],
+      "ineligibility_reasons": [
+        "Evaluation mode is UNKNOWN (not explicitly declared in historical run)",
+        "Explicit fairness metric identity unavailable in historical manifest"
+      ]
+    },
+    {
+      "run_dir": "IA_MOPPO_north_south_surge_s42_20261031_150420",
+      "manifest_exists": false,
+      "summary_exists": false,
+      "metrics_csv_exists": false,
+      "classification_status": "MISSING_MANIFEST",
+      "classification_reason": "manifest.json file does not exist",
+      "historical_completion": "INCOMPLETE",
+      "reproducibility_eligibility": "INELIGIBLE",
+      "recovered_fields": {},
+      "inferred_fields": {},
+      "unavailable_fields": [],
+      "ineligibility_reasons": [
+        "Missing manifest.json"
+      ]
+    },
+    {
+      "run_dir": "IA_MOPPO_north_south_surge_s42_20261031_150516",
+      "manifest_exists": true,
+      "summary_exists": false,
+      "metrics_csv_exists": false,
+      "classification_status": "INCOMPLETE",
+      "classification_reason": "Incomplete or unverified historical run (status='INITIALIZED')",
+      "historical_completion": "INCOMPLETE",
+      "reproducibility_eligibility": "INELIGIBLE",
+      "recovered_fields": {},
+      "inferred_fields": {},
+      "unavailable_fields": [],
+      "ineligibility_reasons": []
+    },
+    {
+      "run_dir": "IA_MOPPO_north_south_surge_s42_20261031_150551",
+      "manifest_exists": true,
+      "summary_exists": false,
+      "metrics_csv_exists": false,
+      "classification_status": "INCOMPLETE",
+      "classification_reason": "Incomplete or unverified historical run (status='INITIALIZED')",
+      "historical_completion": "INCOMPLETE",
+      "reproducibility_eligibility": "INELIGIBLE",
+      "recovered_fields": {},
+      "inferred_fields": {},
+      "unavailable_fields": [],
+      "ineligibility_reasons": []
+    },
+    {
+      "run_dir": "IA_MOPPO_north_south_surge_s42_20261031_150620",
+      "manifest_exists": true,
+      "summary_exists": false,
+      "metrics_csv_exists": false,
+      "classification_status": "INCOMPLETE",
+      "classification_reason": "Incomplete or unverified historical run (status='INITIALIZED')",
+      "historical_completion": "INCOMPLETE",
+      "reproducibility_eligibility": "INELIGIBLE",
+      "recovered_fields": {},
+      "inferred_fields": {},
+      "unavailable_fields": [],
+      "ineligibility_reasons": []
+    },
+    {
+      "run_dir": "IA_MOPPO_north_south_surge_s42_20261031_150647",
+      "manifest_exists": true,
+      "summary_exists": true,
+      "metrics_csv_exists": true,
+      "classification_status": "LEGACY_VALID",
+      "classification_reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "historical_completion": "COMPLETED",
+      "reproducibility_eligibility": "INELIGIBLE",
+      "recovered_fields": {
+        "algorithm": "IA_MOPPO",
+        "scenario": "north_south_surge",
+        "train_seed": 42,
+        "evaluation_seed": 42,
+        "training_timesteps": 128,
+        "code_commit": "fd264346a9f3f5c7a6859c045561b9650b7dc922",
+        "config_hash": "258b73a76e884c81"
+      },
+      "inferred_fields": {},
+      "unavailable_fields": [
+        "evaluation_mode",
+        "fairness_metric_name"
+      ],
+      "ineligibility_reasons": [
+        "Evaluation mode is UNKNOWN (not explicitly declared in historical run)",
+        "Explicit fairness metric identity unavailable in historical manifest"
+      ]
+    },
+    {
+      "run_dir": "IA_MOPPO_north_south_surge_s42_20261031_151659",
+      "manifest_exists": true,
+      "summary_exists": true,
+      "metrics_csv_exists": true,
+      "classification_status": "LEGACY_VALID",
+      "classification_reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "historical_completion": "COMPLETED",
+      "reproducibility_eligibility": "INELIGIBLE",
+      "recovered_fields": {
+        "algorithm": "IA_MOPPO",
+        "scenario": "north_south_surge",
+        "train_seed": 42,
+        "evaluation_seed": 42,
+        "training_timesteps": 128,
+        "code_commit": "fd264346a9f3f5c7a6859c045561b9650b7dc922",
+        "config_hash": "9455f65fd0b9e130"
+      },
+      "inferred_fields": {},
+      "unavailable_fields": [
+        "evaluation_mode",
+        "fairness_metric_name"
+      ],
+      "ineligibility_reasons": [
+        "Evaluation mode is UNKNOWN (not explicitly declared in historical run)",
+        "Explicit fairness metric identity unavailable in historical manifest"
+      ]
+    },
+    {
+      "run_dir": "IA_MOPPO_north_south_surge_s42_20261031_151759",
+      "manifest_exists": true,
+      "summary_exists": true,
+      "metrics_csv_exists": true,
+      "classification_status": "LEGACY_VALID",
+      "classification_reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "historical_completion": "COMPLETED",
+      "reproducibility_eligibility": "INELIGIBLE",
+      "recovered_fields": {
+        "algorithm": "IA_MOPPO",
+        "scenario": "north_south_surge",
+        "train_seed": 42,
+        "evaluation_seed": 42,
+        "training_timesteps": 128,
+        "code_commit": "fd264346a9f3f5c7a6859c045561b9650b7dc922",
+        "config_hash": "9455f65fd0b9e130"
+      },
+      "inferred_fields": {},
+      "unavailable_fields": [
+        "evaluation_mode",
+        "fairness_metric_name"
+      ],
+      "ineligibility_reasons": [
+        "Evaluation mode is UNKNOWN (not explicitly declared in historical run)",
+        "Explicit fairness metric identity unavailable in historical manifest"
+      ]
+    },
+    {
+      "run_dir": "IA_MOPPO_north_south_surge_s42_20261031_170035",
+      "manifest_exists": true,
+      "summary_exists": true,
+      "metrics_csv_exists": true,
+      "classification_status": "LEGACY_VALID",
+      "classification_reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "historical_completion": "COMPLETED",
+      "reproducibility_eligibility": "INELIGIBLE",
+      "recovered_fields": {
+        "algorithm": "IA_MOPPO",
+        "scenario": "north_south_surge",
+        "train_seed": 42,
+        "evaluation_seed": 42,
+        "training_timesteps": 128,
+        "code_commit": "68e953a54adbf2b51ec392a06b92f76200323cc1",
+        "config_hash": "9455f65fd0b9e130"
+      },
+      "inferred_fields": {},
+      "unavailable_fields": [
+        "evaluation_mode",
+        "fairness_metric_name"
+      ],
+      "ineligibility_reasons": [
+        "Evaluation mode is UNKNOWN (not explicitly declared in historical run)",
+        "Explicit fairness metric identity unavailable in historical manifest"
+      ]
+    },
+    {
+      "run_dir": "IA_MOPPO_north_south_surge_s456_20261031_170123",
+      "manifest_exists": true,
+      "summary_exists": true,
+      "metrics_csv_exists": true,
+      "classification_status": "LEGACY_VALID",
+      "classification_reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "historical_completion": "COMPLETED",
+      "reproducibility_eligibility": "INELIGIBLE",
+      "recovered_fields": {
+        "algorithm": "IA_MOPPO",
+        "scenario": "north_south_surge",
+        "train_seed": 456,
+        "evaluation_seed": 456,
+        "training_timesteps": 128,
+        "code_commit": "68e953a54adbf2b51ec392a06b92f76200323cc1",
+        "config_hash": "9455f65fd0b9e130"
+      },
+      "inferred_fields": {},
+      "unavailable_fields": [
+        "evaluation_mode",
+        "fairness_metric_name"
+      ],
+      "ineligibility_reasons": [
+        "Evaluation mode is UNKNOWN (not explicitly declared in historical run)",
+        "Explicit fairness metric identity unavailable in historical manifest"
+      ]
+    },
+    {
+      "run_dir": "IA_MOPPO_north_south_surge_s789_20261031_170244",
+      "manifest_exists": true,
+      "summary_exists": true,
+      "metrics_csv_exists": true,
+      "classification_status": "LEGACY_VALID",
+      "classification_reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "historical_completion": "COMPLETED",
+      "reproducibility_eligibility": "INELIGIBLE",
+      "recovered_fields": {
+        "algorithm": "IA_MOPPO",
+        "scenario": "north_south_surge",
+        "train_seed": 789,
+        "evaluation_seed": 789,
+        "training_timesteps": 128,
+        "code_commit": "68e953a54adbf2b51ec392a06b92f76200323cc1",
+        "config_hash": "9455f65fd0b9e130"
+      },
+      "inferred_fields": {},
+      "unavailable_fields": [
+        "evaluation_mode",
+        "fairness_metric_name"
+      ],
+      "ineligibility_reasons": [
+        "Evaluation mode is UNKNOWN (not explicitly declared in historical run)",
+        "Explicit fairness metric identity unavailable in historical manifest"
+      ]
+    },
+    {
+      "run_dir": "IA_MOPPO_rush_hour_s42_20261031_170547",
+      "manifest_exists": true,
+      "summary_exists": true,
+      "metrics_csv_exists": true,
+      "classification_status": "LEGACY_VALID",
+      "classification_reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "historical_completion": "COMPLETED",
+      "reproducibility_eligibility": "INELIGIBLE",
+      "recovered_fields": {
+        "algorithm": "IA_MOPPO",
+        "scenario": "rush_hour",
+        "train_seed": 42,
+        "evaluation_seed": 42,
+        "training_timesteps": 128,
+        "code_commit": "68e953a54adbf2b51ec392a06b92f76200323cc1",
+        "config_hash": "9455f65fd0b9e130"
+      },
+      "inferred_fields": {},
+      "unavailable_fields": [
+        "evaluation_mode",
+        "fairness_metric_name"
+      ],
+      "ineligibility_reasons": [
+        "Evaluation mode is UNKNOWN (not explicitly declared in historical run)",
+        "Explicit fairness metric identity unavailable in historical manifest"
+      ]
+    },
+    {
+      "run_dir": "SA_PPO_directional_shift_north_south_s42_20261031_151113",
+      "manifest_exists": true,
+      "summary_exists": true,
+      "metrics_csv_exists": true,
+      "classification_status": "LEGACY_VALID",
+      "classification_reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "historical_completion": "COMPLETED",
+      "reproducibility_eligibility": "INELIGIBLE",
+      "recovered_fields": {
+        "algorithm": "SA_PPO",
+        "scenario": "directional_shift_north_south",
+        "train_seed": 42,
+        "evaluation_seed": 42,
+        "training_timesteps": 128,
+        "code_commit": "fd264346a9f3f5c7a6859c045561b9650b7dc922",
+        "config_hash": "9455f65fd0b9e130"
+      },
+      "inferred_fields": {},
+      "unavailable_fields": [
+        "evaluation_mode",
+        "fairness_metric_name"
+      ],
+      "ineligibility_reasons": [
+        "Evaluation mode is UNKNOWN (not explicitly declared in historical run)",
+        "Explicit fairness metric identity unavailable in historical manifest"
+      ]
+    },
+    {
+      "run_dir": "SA_PPO_north_south_surge_s123_20261031_151920",
+      "manifest_exists": true,
+      "summary_exists": true,
+      "metrics_csv_exists": true,
+      "classification_status": "LEGACY_VALID",
+      "classification_reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "historical_completion": "COMPLETED",
+      "reproducibility_eligibility": "INELIGIBLE",
+      "recovered_fields": {
+        "algorithm": "SA_PPO",
+        "scenario": "north_south_surge",
+        "train_seed": 123,
+        "evaluation_seed": 123,
+        "training_timesteps": 128,
+        "code_commit": "fd264346a9f3f5c7a6859c045561b9650b7dc922",
+        "config_hash": "7888a45453a99435"
+      },
+      "inferred_fields": {},
+      "unavailable_fields": [
+        "evaluation_mode",
+        "fairness_metric_name"
+      ],
+      "ineligibility_reasons": [
+        "Evaluation mode is UNKNOWN (not explicitly declared in historical run)",
+        "Explicit fairness metric identity unavailable in historical manifest"
+      ]
+    },
+    {
+      "run_dir": "SA_PPO_north_south_surge_s2024_20261031_170420",
+      "manifest_exists": true,
+      "summary_exists": true,
+      "metrics_csv_exists": true,
+      "classification_status": "LEGACY_VALID",
+      "classification_reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "historical_completion": "COMPLETED",
+      "reproducibility_eligibility": "INELIGIBLE",
+      "recovered_fields": {
+        "algorithm": "SA_PPO",
+        "scenario": "north_south_surge",
+        "train_seed": 2024,
+        "evaluation_seed": 2024,
+        "training_timesteps": 128,
+        "code_commit": "68e953a54adbf2b51ec392a06b92f76200323cc1",
+        "config_hash": "7888a45453a99435"
+      },
+      "inferred_fields": {},
+      "unavailable_fields": [
+        "evaluation_mode",
+        "fairness_metric_name"
+      ],
+      "ineligibility_reasons": [
+        "Evaluation mode is UNKNOWN (not explicitly declared in historical run)",
+        "Explicit fairness metric identity unavailable in historical manifest"
+      ]
+    },
+    {
+      "run_dir": "SA_PPO_north_south_surge_s42_20261031_151827",
+      "manifest_exists": true,
+      "summary_exists": true,
+      "metrics_csv_exists": true,
+      "classification_status": "LEGACY_VALID",
+      "classification_reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "historical_completion": "COMPLETED",
+      "reproducibility_eligibility": "INELIGIBLE",
+      "recovered_fields": {
+        "algorithm": "SA_PPO",
+        "scenario": "north_south_surge",
+        "train_seed": 42,
+        "evaluation_seed": 42,
+        "training_timesteps": 128,
+        "code_commit": "fd264346a9f3f5c7a6859c045561b9650b7dc922",
+        "config_hash": "7888a45453a99435"
+      },
+      "inferred_fields": {},
+      "unavailable_fields": [
+        "evaluation_mode",
+        "fairness_metric_name"
+      ],
+      "ineligibility_reasons": [
+        "Evaluation mode is UNKNOWN (not explicitly declared in historical run)",
+        "Explicit fairness metric identity unavailable in historical manifest"
+      ]
+    },
+    {
+      "run_dir": "SA_PPO_north_south_surge_s456_20261031_170200",
+      "manifest_exists": true,
+      "summary_exists": true,
+      "metrics_csv_exists": true,
+      "classification_status": "LEGACY_VALID",
+      "classification_reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "historical_completion": "COMPLETED",
+      "reproducibility_eligibility": "INELIGIBLE",
+      "recovered_fields": {
+        "algorithm": "SA_PPO",
+        "scenario": "north_south_surge",
+        "train_seed": 456,
+        "evaluation_seed": 456,
+        "training_timesteps": 128,
+        "code_commit": "68e953a54adbf2b51ec392a06b92f76200323cc1",
+        "config_hash": "7888a45453a99435"
+      },
+      "inferred_fields": {},
+      "unavailable_fields": [
+        "evaluation_mode",
+        "fairness_metric_name"
+      ],
+      "ineligibility_reasons": [
+        "Evaluation mode is UNKNOWN (not explicitly declared in historical run)",
+        "Explicit fairness metric identity unavailable in historical manifest"
+      ]
+    },
+    {
+      "run_dir": "SA_PPO_north_south_surge_s789_20261031_170316",
+      "manifest_exists": true,
+      "summary_exists": true,
+      "metrics_csv_exists": true,
+      "classification_status": "LEGACY_VALID",
+      "classification_reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "historical_completion": "COMPLETED",
+      "reproducibility_eligibility": "INELIGIBLE",
+      "recovered_fields": {
+        "algorithm": "SA_PPO",
+        "scenario": "north_south_surge",
+        "train_seed": 789,
+        "evaluation_seed": 789,
+        "training_timesteps": 128,
+        "code_commit": "68e953a54adbf2b51ec392a06b92f76200323cc1",
+        "config_hash": "7888a45453a99435"
+      },
+      "inferred_fields": {},
+      "unavailable_fields": [
+        "evaluation_mode",
+        "fairness_metric_name"
+      ],
+      "ineligibility_reasons": [
+        "Evaluation mode is UNKNOWN (not explicitly declared in historical run)",
+        "Explicit fairness metric identity unavailable in historical manifest"
+      ]
+    },
+    {
+      "run_dir": "SA_PPO_rush_hour_s42_20261031_170633",
+      "manifest_exists": true,
+      "summary_exists": true,
+      "metrics_csv_exists": true,
+      "classification_status": "LEGACY_VALID",
+      "classification_reason": "Legacy manifest migrated: Legacy manifest successfully migrated.",
+      "historical_completion": "COMPLETED",
+      "reproducibility_eligibility": "INELIGIBLE",
+      "recovered_fields": {
+        "algorithm": "SA_PPO",
+        "scenario": "rush_hour",
+        "train_seed": 42,
+        "evaluation_seed": 42,
+        "training_timesteps": 128,
+        "code_commit": "68e953a54adbf2b51ec392a06b92f76200323cc1",
+        "config_hash": "3d4882178ba88704"
+      },
+      "inferred_fields": {},
+      "unavailable_fields": [
+        "evaluation_mode",
+        "fairness_metric_name"
+      ],
+      "ineligibility_reasons": [
+        "Evaluation mode is UNKNOWN (not explicitly declared in historical run)",
+        "Explicit fairness metric identity unavailable in historical manifest"
+      ]
+    }
+  ]
+}

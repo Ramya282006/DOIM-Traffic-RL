@@ -349,3 +349,116 @@ class TestSCOILInteractionLearner:
         assert learner.query_proj.weight.grad is not None
         assert torch.any(learner.query_proj.weight.grad != 0.0)
 
+
+
+class TestAuthoritativePipelineAndExclusion:
+    """Verifies end-to-end objective config propagation, action tracking, and fail-closed analyzer."""
+
+    def test_doim_processor_authoritative_config_propagation(self, monkeypatch):
+        import traci
+        monkeypatch.setattr(traci.trafficlight, "getControlledLinks", lambda tid: [("lane1", "lane2", "via")])
+
+        from environment.doim_processor import DOIMProcessor
+        from objectives.objective_config import AuthoritativeObjectiveConfig
+
+        custom_cfg = AuthoritativeObjectiveConfig.from_config_dict({
+            "objectives": {
+                "normalization_bounds": {
+                    "lower": [0.0, 0.0, 0.0, 0.0, 0.0],
+                    "upper": [1200.0, 50.0, 200000.0, 40.0, 1.0],
+                },
+                "fairness_metric": "jain_disparity",
+            }
+        })
+
+        proc = DOIMProcessor(
+            tls_ids=["A1", "B0", "B1", "B2", "C1"],
+            history_length=10,
+            objective_config=custom_cfg,
+        )
+
+        assert proc.objective_config is custom_cfg
+        assert proc.normalizer.upper_bounds[0] == 1200.0
+        assert proc.normalizer.upper_bounds[1] == 50.0
+
+        # Verify preservation across reset()
+        proc.reset()
+        assert proc.objective_config is custom_cfg
+        assert proc.objective_engine.config.fairness_mode == "jain_disparity"
+
+    def test_statistical_analyzer_rejects_safety_faulted_runs(self, tmp_path):
+        import json
+        from analysis.statistical_analyzer import StatisticalAnalyzer
+
+        # 1. Create a valid run
+        valid_dir = tmp_path / "valid_run_01"
+        valid_dir.mkdir(parents=True)
+        (valid_dir / "manifest.json").write_text(json.dumps({
+            "experiment_id": "valid_01",
+            "algorithm": "IA_MOPPO",
+            "scenario": "north_south_surge",
+            "train_seed": 42,
+            "evaluation_seed": 42,
+            "training_timesteps": 128,
+            "episode_id": 0,
+            "evaluation_mode": "deterministic_eval",
+            "config_hash": "cfg123",
+            "code_commit": "abc456",
+            "start_time": "2026-11-02T00:00:00",
+            "completion_status": "COMPLETED",
+        }), encoding="utf-8")
+        (valid_dir / "summary.json").write_text(json.dumps({
+            "algorithm": "IA_MOPPO",
+            "scenario": "north_south_surge",
+            "train_seed": 42,
+            "eval_seed": 42,
+            "total_steps": 1,
+            "average_waiting": 75.0,
+            "average_queue": 2.5,
+            "average_fairness": 0.15,
+            "fairness_metric_name": "delay_disparity",
+            "evaluation_mode": "deterministic_eval",
+        }), encoding="utf-8")
+        (valid_dir / "metrics_step.csv").write_text("step,reward\n1,-0.5\n", encoding="utf-8")
+
+        # 2. Create a safety-faulted run
+        fault_dir = tmp_path / "faulted_run_02"
+        fault_dir.mkdir(parents=True)
+        (fault_dir / "manifest.json").write_text(json.dumps({
+            "experiment_id": "fault_02",
+            "algorithm": "IA_MOPPO",
+            "scenario": "north_south_surge",
+            "train_seed": 43,
+            "evaluation_seed": 43,
+            "training_timesteps": 128,
+            "episode_id": 0,
+            "evaluation_mode": "deterministic_eval",
+            "config_hash": "cfg123",
+            "code_commit": "abc456",
+            "start_time": "2026-11-02T00:00:00",
+            "completion_status": "COMPLETED",
+            "safety_fault": True,
+            "is_valid_run": False,
+            "fault_reason": "CRITICAL_SAFETY_FAULT_NO_SAFE_TRANSITION",
+        }), encoding="utf-8")
+        (fault_dir / "summary.json").write_text(json.dumps({
+            "algorithm": "IA_MOPPO",
+            "scenario": "north_south_surge",
+            "train_seed": 43,
+            "eval_seed": 43,
+            "total_steps": 1,
+            "safety_fault": True,
+            "is_valid_run": False,
+            "fault_reason": "CRITICAL_SAFETY_FAULT_NO_SAFE_TRANSITION",
+            "evaluation_mode": "deterministic_eval",
+        }), encoding="utf-8")
+        (fault_dir / "metrics_step.csv").write_text("step,reward\n1,-0.5\n", encoding="utf-8")
+
+        analyzer = StatisticalAnalyzer(runs_root=tmp_path)
+        df = analyzer.load_run_summaries(reject_incomplete=True)
+
+        # Valid run must be loaded, faulted run must be rejected
+        assert len(df) == 1
+        assert df.iloc[0]["algorithm"] == "IA_MOPPO"
+        rejected_statuses = [r["status"] for r in analyzer.rejected_runs]
+        assert "SAFETY_FAULTED" in rejected_statuses

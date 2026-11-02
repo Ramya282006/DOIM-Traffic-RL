@@ -112,11 +112,29 @@ class StatisticalAnalyzer:
                 if reject_incomplete:
                     continue
 
+            # Fail-closed safety fault check: reject safety-faulted runs from benchmark eligibility
+            if migrated_manifest and (migrated_manifest.get("safety_fault") or migrated_manifest.get("is_valid_run") is False):
+                self.rejected_runs.append({
+                    "run_dir": str(run_dir.name),
+                    "status": "SAFETY_FAULTED",
+                    "reason": migrated_manifest.get("fault_reason", "Critical safety fault detected in manifest; run is invalid"),
+                })
+                if reject_incomplete:
+                    continue
+
             try:
                 with open(summary_path, "r", encoding="utf-8") as f:
                     data = json.load(f)
 
                 data["run_dir"] = str(run_dir)
+                if data.get("safety_fault") or data.get("is_valid_run") is False:
+                    self.rejected_runs.append({
+                        "run_dir": str(run_dir.name),
+                        "status": "SAFETY_FAULTED",
+                        "reason": data.get("fault_reason", "Critical safety fault recorded in summary.json; run is invalid"),
+                    })
+                    if reject_incomplete:
+                        continue
 
                 # Cross-Artifact Consistency Checks (Summary vs Manifest vs Metrics CSV)
                 inconsistencies = []

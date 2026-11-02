@@ -9,7 +9,7 @@ Aggregates and computes the 5 core traffic objectives:
 Enforces validation through AuthoritativeObjectiveConfig.
 """
 
-from typing import Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 import numpy as np
 
 from objectives.objective_config import AuthoritativeObjectiveConfig
@@ -29,9 +29,11 @@ class MultiObjectiveEngine:
     def __init__(
         self,
         fairness_mode: str = "jain_disparity",
-        config: Optional[AuthoritativeObjectiveConfig] = None,
+        config: Optional[Union[AuthoritativeObjectiveConfig, Dict[str, Any]]] = None,
     ):
         self.fairness_mode = str(fairness_mode)
+        if isinstance(config, dict):
+            config = AuthoritativeObjectiveConfig.from_config_dict(config)
         self.config = config if config is not None else AuthoritativeObjectiveConfig(fairness_mode=self.fairness_mode)
         self.throughput_tracker = ThroughputTracker()
         self.fairness_calculator = CorridorFairnessCalculator()

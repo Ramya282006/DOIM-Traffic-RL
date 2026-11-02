@@ -286,6 +286,7 @@ def train_state_adaptive_ppo(
         sumo_config=config.simulation.sumo_config,
         enforce_safety_shield=config.safety_and_constraints.enforce_safety_shield,
         max_steps=1800,
+        objective_config=config.get("objectives"),
     )
 
     agent = StateAdaptivePPOAgent(config=config, device="cpu")

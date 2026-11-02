@@ -366,8 +366,9 @@ class InteractionAwarePPOAgent:
                 # 6. AUXILIARY RESIDUAL OBJECTIVE DYNAMICS LOSS
                 pred_next_obj = self.network.predict_next_objectives(manifold, b_act, b_obj)
                 aux_loss = F.mse_loss(pred_next_obj, b_next_obj)
+                live_unc = scoil_out.get("uncertainty") if self.ablation_mode not in ("no_interaction", "rolling_pearson") else None
                 scoil_pred_loss = self.interaction_learner.compute_predictive_loss(
-                    live_int_mat, b_obj, b_act, b_next_obj
+                    live_int_mat, b_obj, b_act, b_next_obj, uncertainty=live_unc
                 )
 
                 # 7. URGENCY-REGULATED PREFERENCE ADAPTATION WITH ANTI-COLLAPSE ENTROPY BARRIER
@@ -460,6 +461,7 @@ def train_interaction_aware_ppo(
         sumo_config=config.simulation.sumo_config,
         enforce_safety_shield=shield_enabled,
         max_steps=1800,
+        objective_config=config.get("objectives"),
     )
 
     agent = InteractionAwarePPOAgent(config=config, device="cpu", ablation_mode=ablation_mode)
@@ -668,6 +670,7 @@ def evaluate_interaction_aware_ppo(
             sumo_config=config.simulation.sumo_config,
             enforce_safety_shield=shield_enabled,
             max_steps=effective_horizon,
+            objective_config=config.get("objectives"),
         )
 
         obs, info = env.reset(seed=current_eval_seed)

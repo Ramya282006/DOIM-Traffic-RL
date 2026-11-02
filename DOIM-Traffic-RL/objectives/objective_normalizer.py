@@ -32,6 +32,8 @@ class ObjectiveNormalizer:
         config: Optional[AuthoritativeObjectiveConfig] = None,
     ):
         if config is not None:
+            if isinstance(config, dict):
+                config = AuthoritativeObjectiveConfig.from_config_dict(config)
             self.lower_bounds = config.lower_bounds.copy()
             self.upper_bounds = config.upper_bounds.copy()
             self.config = config

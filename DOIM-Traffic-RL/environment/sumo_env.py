@@ -23,7 +23,7 @@ class DOIMTrafficEnv(gym.Env):
         "render_modes": ["human"]
     }
 
-    def __init__(self, sumo_config, enforce_safety_shield=True, max_steps=1800, abort_on_safety_fault=False):
+    def __init__(self, sumo_config, enforce_safety_shield=True, max_steps=1800, abort_on_safety_fault=False, objective_config=None):
 
         super().__init__()
 
@@ -31,6 +31,7 @@ class DOIMTrafficEnv(gym.Env):
         self.enforce_safety_shield = bool(enforce_safety_shield)
         self.max_steps = int(max_steps)
         self.abort_on_safety_fault = bool(abort_on_safety_fault)
+        self.objective_config = objective_config
         self.safety_shield = None
 
         # --------------------------------------------------
@@ -153,7 +154,8 @@ class DOIMTrafficEnv(gym.Env):
         # --------------------------------------------------
 
         self.doim_processor = DOIMProcessor(
-            tls_ids
+            tls_ids,
+            objective_config=self.objective_config,
         )
 
         self.doim_processor.reset()
@@ -253,6 +255,9 @@ class DOIMTrafficEnv(gym.Env):
         return {
             "time": self.current_time,
             "shield_interventions": interventions,
+            "requested_action": getattr(self, "last_requested_action", np.zeros(len(self.controllable_tls), dtype=int)).tolist(),
+            "executed_action": getattr(self, "last_executed_action", np.zeros(len(self.controllable_tls), dtype=int)).tolist(),
+            "action_intervened": bool(interventions > 0),
             "vehicle_count": int(vehicle_count),
             "controllable_tls": self.controllable_tls,
             "current_phases": self.signal_controller.get_current_phases(),
@@ -328,6 +333,10 @@ class DOIMTrafficEnv(gym.Env):
             self.signal_controller.apply_action(
                 action
             )
+            safe_action = np.copy(action)
+
+        self.last_requested_action = np.copy(action)
+        self.last_executed_action = np.copy(safe_action)
 
         # --------------------------------------------------
         # Advance SUMO

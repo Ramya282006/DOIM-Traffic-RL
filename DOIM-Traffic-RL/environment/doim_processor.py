@@ -57,9 +57,11 @@ class DOIMProcessor:
         self,
         tls_ids,
         history_length=10,
+        objective_config=None,
     ):
 
         self.tls_ids = list(tls_ids)
+        self.objective_config = objective_config
 
         # --------------------------------------------------
         # State extraction
@@ -76,11 +78,11 @@ class DOIMProcessor:
         # --------------------------------------------------
 
         self.objective_engine = (
-            MultiObjectiveEngine()
+            MultiObjectiveEngine(config=self.objective_config)
         )
 
         self.normalizer = (
-            ObjectiveNormalizer()
+            ObjectiveNormalizer(config=self.objective_config)
         )
 
         self.interaction_analyzer = (
@@ -159,7 +161,7 @@ class DOIMProcessor:
         self.history.clear()
 
         self.objective_engine = (
-            MultiObjectiveEngine()
+            MultiObjectiveEngine(config=self.objective_config)
         )
 
         self.interaction_analyzer = (

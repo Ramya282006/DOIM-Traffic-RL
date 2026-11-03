@@ -15,6 +15,7 @@ from scipy import stats
 from common.experiment import (
     validate_experiment_manifest,
     classify_experiment_manifest,
+    is_confirmatory_benchmark_eligible,
     ManifestStatus,
 )
 
@@ -37,11 +38,18 @@ class StatisticalAnalyzer:
         self.legacy_runs: List[str] = []
         self.valid_runs: List[str] = []
 
-    def load_completed_runs(self, reject_incomplete: bool = True) -> pd.DataFrame:
+    def load_completed_runs(self, reject_incomplete: bool = True, confirmatory_only: bool = False) -> pd.DataFrame:
         """Alias for load_run_summaries."""
-        return self.load_run_summaries(reject_incomplete=reject_incomplete)
+        return self.load_run_summaries(reject_incomplete=reject_incomplete, confirmatory_only=confirmatory_only)
 
-    def load_run_summaries(self, reject_incomplete: bool = True) -> pd.DataFrame:
+    def load_confirmatory_benchmark_runs(self) -> pd.DataFrame:
+        """
+        Strict fail-closed benchmark loader: loads ONLY runs certified eligible for confirmatory benchmark tables.
+        Rejects diagnostic (128-step), smoke, unconverged, and incomplete runs.
+        """
+        return self.load_run_summaries(reject_incomplete=True, confirmatory_only=True)
+
+    def load_run_summaries(self, reject_incomplete: bool = True, confirmatory_only: bool = False) -> pd.DataFrame:
         """
         Scans all subdirectories in results/runs, validates manifest and CSV integrity,
         and aggregates run records. Rejects incomplete, failed, or corrupted runs.
@@ -135,6 +143,23 @@ class StatisticalAnalyzer:
                     })
                     if reject_incomplete:
                         continue
+
+                # Confirmatory Benchmark Eligibility Check (Phase 20)
+                if migrated_manifest is not None:
+                    is_confirmatory, conf_reasons, _ = is_confirmatory_benchmark_eligible(migrated_manifest)
+                else:
+                    is_confirmatory, conf_reasons = False, ["MISSING_MANIFEST"]
+
+                data["confirmatory_eligible"] = is_confirmatory
+                data["confirmatory_exclusion_reasons"] = conf_reasons
+
+                if confirmatory_only and not is_confirmatory:
+                    self.rejected_runs.append({
+                        "run_dir": str(run_dir.name),
+                        "status": "NOT_CONFIRMATORY_ELIGIBLE",
+                        "reason": "; ".join(conf_reasons),
+                    })
+                    continue
 
                 # Cross-Artifact Consistency Checks (Summary vs Manifest vs Metrics CSV)
                 inconsistencies = []
@@ -578,6 +603,25 @@ class StatisticalAnalyzer:
             less += int(np.sum(xi < y_arr))
 
         return float((greater - less) / (n_x * n_y))
+
+    
+    @staticmethod
+    def compute_hypervolume_sensitivity(
+        pareto_front: np.ndarray,
+        reference_scales: Optional[List[float]] = None,
+    ) -> Dict[float, float]:
+        """
+        Evaluates 2D Hypervolume across multiple reference points to assess ranking sensitivity.
+        """
+        if reference_scales is None:
+            reference_scales = [1.0, 1.1, 1.2, 1.5]
+
+        results = {}
+        for scale in reference_scales:
+            ref = (float(scale), float(scale))
+            hv = StatisticalAnalyzer.compute_hypervolume_2d(pareto_front, ref_point=ref)
+            results[float(scale)] = hv
+        return results
 
     def export_latex_tables(self, output_csv: Optional[Union[str, Path]] = None, output_markdown: Optional[Union[str, Path]] = None):
         """Exports latex/markdown tables for IEEE T-ITS manuscript."""

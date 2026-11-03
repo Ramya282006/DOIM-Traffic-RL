@@ -1,0 +1,7 @@
+scenario:
+  name: "arterial_corridor"
+  sumocfg: "scenarios/arterial_corridor/arterial_corridor.sumocfg"
+  episode_horizon_seconds: 1800
+  demand_type: "arterial_corridor_progression"
+  description: "Heavy East-West arterial corridor carrying 2600 veh/h, testing green-wave synchronization and cross-street fairness."
+  expected_inflow_veh_per_hour: 3300

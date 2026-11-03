@@ -1,9 +1,9 @@
 {
-  "total_historical_records": 49,
-  "completed_on_disk": 44,
+  "total_historical_records": 50,
+  "completed_on_disk": 45,
   "incomplete_on_disk": 5,
   "reproducibility_eligible": 0,
-  "reproducibility_ineligible": 49,
+  "reproducibility_ineligible": 50,
   "records": [
     {
       "run_dir": "DOIM_no_interaction_north_south_surge_s123_20261031_151928",
@@ -396,6 +396,30 @@
         "Evaluation mode is UNKNOWN (not explicitly declared in historical run)",
         "Explicit fairness metric identity unavailable in historical manifest"
       ]
+    },
+    {
+      "run_dir": "DOIM_SMOKE_directional_shift_s42_20261103_171423",
+      "manifest_exists": true,
+      "summary_exists": true,
+      "metrics_csv_exists": true,
+      "classification_status": "VALID",
+      "classification_reason": "Valid canonical experiment manifest.",
+      "historical_completion": "COMPLETED",
+      "reproducibility_eligibility": "INELIGIBLE",
+      "recovered_fields": {
+        "algorithm": "DOIM_SMOKE",
+        "scenario": "directional_shift",
+        "train_seed": 42,
+        "evaluation_seed": 42,
+        "training_timesteps": 128,
+        "code_commit": "adec0370478d1face87a9a09211527e3871fd880",
+        "config_hash": "9483dd3e3a70e75b",
+        "evaluation_mode": "train_rollout",
+        "fairness_metric_name": "jain_disparity"
+      },
+      "inferred_fields": {},
+      "unavailable_fields": [],
+      "ineligibility_reasons": []
     },
     {
       "run_dir": "Fixed_Time_directional_shift_north_south_s42_20261031_150907",

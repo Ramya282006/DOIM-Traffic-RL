@@ -719,6 +719,7 @@ def train_interaction_aware_ppo(
             output_root=output_root,
             ablation_mode=ablation_mode,
             enforce_safety_shield=enforce_safety_shield,
+            training_timesteps=total_timesteps,
         )
 
     return run
@@ -736,6 +737,7 @@ def evaluate_interaction_aware_ppo(
     output_root: str = "results/runs",
     ablation_mode: Optional[str] = None,
     enforce_safety_shield: bool = True,
+    training_timesteps: Optional[int] = None,
 ) -> List[ExperimentRun]:
     """
     Rigorously evaluates a trained IA-MOPPO agent using a deterministic policy (argmax action).
@@ -774,7 +776,7 @@ def evaluate_interaction_aware_ppo(
             eval_horizon=effective_horizon,
             scenario=scenario_name,
             output_root=output_root,
-            training_timesteps=config.policy.total_timesteps,
+            training_timesteps=training_timesteps if training_timesteps is not None else config.policy.total_timesteps,
             episode_id=ep,
             evaluation_mode="deterministic_eval",
         )

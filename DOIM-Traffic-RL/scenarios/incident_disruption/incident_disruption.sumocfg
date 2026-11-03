@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <configuration>
   <input>
-    <net-file value="../../configs/network/grid3x3.net.xml" />
+    <net-file value="../../environment/network/research_3x3/grid.net.xml" />
     <route-files value="incident_disruption.rou.xml" />
   </input>
   <time>

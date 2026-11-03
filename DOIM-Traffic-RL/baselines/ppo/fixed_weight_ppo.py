@@ -259,6 +259,7 @@ def train_fixed_weight_ppo(
         train_seed=seed,
         scenario=config.simulation.scenario_name,
         output_root=output_root,
+        training_timesteps=total_timesteps,
     )
 
     env = DOIMTrafficEnv(
@@ -398,6 +399,7 @@ def train_fixed_weight_ppo(
             eval_horizon=eval_horizon,
             max_steps_per_episode=eval_horizon,
             output_root=output_root,
+            training_timesteps=total_timesteps,
         )
 
     return run
@@ -414,6 +416,7 @@ def evaluate_fixed_weight_ppo(
     max_steps_per_episode: Optional[int] = None,
     enforce_safety_shield: bool = True,
     output_root: str = "results/runs",
+    training_timesteps: Optional[int] = None,
 ) -> List[ExperimentRun]:
     """
     Rigorously evaluates a trained Fixed-Weight PPO agent using a deterministic policy (argmax action).
@@ -447,7 +450,7 @@ def evaluate_fixed_weight_ppo(
             eval_horizon=effective_horizon,
             scenario=scenario_name,
             output_root=output_root,
-            training_timesteps=config.policy.total_timesteps,
+            training_timesteps=training_timesteps if training_timesteps is not None else config.policy.total_timesteps,
             episode_id=ep,
             evaluation_mode="deterministic_eval",
         )

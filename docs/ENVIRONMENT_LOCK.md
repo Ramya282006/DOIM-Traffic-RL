@@ -61,3 +61,4 @@
 1. **Smart App Control (SAC) Compatibility:** Unmodified, official PyPI and PyTorch CPU binary wheels execute cleanly on Windows 11 without security policy overrides or developer certificates.
 2. **Immutable Historical Results:** All 49 historical run directories in `results/runs/` are sealed and protected with SHA-256 checksums in `results/historical_archive_manifest.json`.
 3. **No In-Place Result Overwrites:** Diagnostic runs ($\le 128$ steps) are segregated from pilot ($\ge 5,000$ steps) and confirmatory ($\ge 10,000$ steps) benchmark matrices.
+

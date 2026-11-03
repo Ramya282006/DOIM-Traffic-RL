@@ -142,3 +142,4 @@ def test_multiobjective_engine_integration():
     assert pytest.approx(vec[3], rel=1e-4) == 4.0
     # Fairness Disparity in [0, 1]
     assert 0.0 <= vec[4] <= 1.0
+

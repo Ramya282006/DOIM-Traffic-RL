@@ -70,3 +70,4 @@ def test_parameter_matched_mlp_network_architecture():
     for logits in out["action_logits"]:
         assert logits.shape == (4, 2)
     assert out["value"].shape == (4, 1)
+

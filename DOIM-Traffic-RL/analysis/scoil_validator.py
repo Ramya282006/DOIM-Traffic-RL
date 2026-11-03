@@ -159,3 +159,4 @@ class SCOILScientificValidator:
             "scientific_classification": classification,
             "mean_dispersion_sigma": sigma.mean().item(),
         }
+

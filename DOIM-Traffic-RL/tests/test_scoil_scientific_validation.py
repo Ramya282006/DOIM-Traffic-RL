@@ -70,3 +70,4 @@ def test_scoil_validator_dispersion_classification():
         "CALIBRATED_PREDICTIVE_UNCERTAINTY",
         "UNCALIBRATED_DISPERSION_PROXY",
     )
+

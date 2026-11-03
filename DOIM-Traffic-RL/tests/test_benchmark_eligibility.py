@@ -143,3 +143,4 @@ def test_valid_confirmatory_run_accepted():
     assert is_eligible
     assert len(reasons) == 0
     assert data["algorithm"] == "IA_MOPPO"
+

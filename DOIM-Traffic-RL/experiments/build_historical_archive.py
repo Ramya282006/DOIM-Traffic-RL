@@ -164,3 +164,4 @@ if __name__ == "__main__":
         print(f"WARNING: {len(manifest['duplicate_checkpoints_detected'])} duplicate checkpoint sets detected!")
     if manifest["duplicate_trajectories_detected"]:
         print(f"WARNING: {len(manifest['duplicate_trajectories_detected'])} duplicate trajectory sets detected!")
+

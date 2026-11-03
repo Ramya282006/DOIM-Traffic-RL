@@ -86,3 +86,4 @@ def test_holm_bonferroni_step_down():
     assert results[2]["significant"] is False
     # rank 4: p=0.150, threshold = 0.05 / 1 = 0.050 -> Not significant!
     assert results[3]["significant"] is False
+

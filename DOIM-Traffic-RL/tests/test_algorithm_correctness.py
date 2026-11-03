@@ -104,3 +104,4 @@ def test_temporal_smoothness_episode_boundary_masking():
     masked_loss = (masks * temporal_diff_sq).sum() / (masks.sum() + 1e-8)
     
     assert pytest.approx(masked_loss.item(), abs=1e-6) == 0.0
+

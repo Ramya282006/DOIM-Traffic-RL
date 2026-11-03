@@ -71,3 +71,39 @@ def test_scoil_validator_dispersion_classification():
         "UNCALIBRATED_DISPERSION_PROXY",
     )
 
+
+
+def test_scoil_split_conformal_calibration():
+    """
+    Phase 17 verification:
+      Verifies that Split-Conformal Prediction calibration guarantees finite-sample
+      marginal coverage (>= 1 - alpha - tolerance) on held-out test data.
+    """
+    model = StateConditionedInteractionLearner(num_objectives=5, traffic_dim=64, latent_dim=32)
+    validator = SCOILScientificValidator(model)
+    
+    n_cal = 50
+    n_test = 50
+    
+    # Calibration set
+    c_traffic = torch.randn(n_cal, 64)
+    c_objs = torch.rand(n_cal, 5)
+    c_acts = torch.randint(0, 2, (n_cal, 5))
+    c_next = torch.clamp(c_objs + 0.05 * torch.randn(n_cal, 5), 0.0, 1.0)
+    
+    # Test set
+    t_traffic = torch.randn(n_test, 64)
+    t_objs = torch.rand(n_test, 5)
+    t_acts = torch.randint(0, 2, (n_test, 5))
+    t_next = torch.clamp(t_objs + 0.05 * torch.randn(n_test, 5), 0.0, 1.0)
+    
+    conformal = validator.calibrate_split_conformal_prediction(
+        c_traffic, c_objs, c_acts, c_next,
+        t_traffic, t_objs, t_acts, t_next,
+        alpha=0.10
+    )
+    
+    assert "conformal_quantile_q_hat" in conformal
+    assert "test_empirical_coverage" in conformal
+    assert conformal["coverage_guarantee_satisfied"] is True
+    assert conformal["scientific_status"] == "CONFORMALLY_CALIBRATED_PREDICTIVE_UNCERTAINTY"

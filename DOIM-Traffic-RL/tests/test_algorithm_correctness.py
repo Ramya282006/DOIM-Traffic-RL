@@ -105,3 +105,90 @@ def test_temporal_smoothness_episode_boundary_masking():
     
     assert pytest.approx(masked_loss.item(), abs=1e-6) == 0.0
 
+
+
+def test_manifold_and_simplex_geometric_invariants():
+    """
+    Phase 15 verification:
+      - Retraction map Pi_M produces valid points in M_int with unit diagonal and off-diagonal in (-1, 1).
+      - Preference weights strictly lie on the unit 4-simplex Delta^4.
+      - Gradients propagate cleanly through the retraction and simplex mappings.
+    """
+    from models.interaction_learner import StateConditionedInteractionLearner
+    from models.doim_network import DOIMNetwork
+    
+    K = 5
+    learner = StateConditionedInteractionLearner(
+        traffic_dim=64, num_objectives=K, latent_dim=16, num_controllable_tls=9
+    )
+    doim_net = DOIMNetwork(
+        node_feature_dim=12, spatial_dim=64, temporal_dim=64, num_objectives=K,
+        manifold_dim=64, num_controllable_tls=9, temperature=1.0
+    )
+    
+    traffic_emb = torch.randn(4, 64, requires_grad=True)
+    obj_vec = torch.rand(4, K, requires_grad=True)
+    
+    out = learner(traffic_emb, obj_vec)
+    M = out["interaction_matrix"]
+    M_shrunk = out["shrunk_matrix"]
+    
+    # Invariant 1: Unit diagonal on M_int
+    for b in range(4):
+        diag = torch.diagonal(M[b])
+        diag_shrunk = torch.diagonal(M_shrunk[b])
+        assert torch.allclose(diag, torch.ones(K), atol=1e-5), f"Diagonal not 1: {diag}"
+        assert torch.allclose(diag_shrunk, torch.ones(K), atol=1e-5), f"Shrunk diagonal not 1: {diag_shrunk}"
+        
+        # Invariant 2: Off-diagonal strictly bounded in (-1, 1)
+        off_diag_mask = ~torch.eye(K, dtype=torch.bool)
+        assert torch.all(torch.abs(M[b][off_diag_mask]) <= 1.0)
+        assert torch.all(torch.abs(M_shrunk[b][off_diag_mask]) <= 1.0)
+    
+    # Invariant 3: Preference Simplex Delta^4 via forward_manifold
+    spatial_hist = torch.randn(4, 10, 64, requires_grad=True)
+    m_t, w_t = doim_net.forward_manifold(spatial_hist, obj_vec, M_shrunk)
+    assert torch.allclose(w_t.sum(dim=-1), torch.ones(4), atol=1e-5), "Simplex sum != 1"
+    assert torch.all(w_t > 0.0), "Negative preference weights encountered on simplex"
+    
+    # Invariant 4: Non-zero gradients back to inputs
+    loss = (M_shrunk ** 2).sum() + (w_t ** 2).sum()
+    loss.backward()
+    assert traffic_emb.grad is not None and torch.norm(traffic_emb.grad) > 0.0
+    assert obj_vec.grad is not None and torch.norm(obj_vec.grad) > 0.0
+    assert spatial_hist.grad is not None and torch.norm(spatial_hist.grad) > 0.0
+
+
+def test_ppo_clipped_surrogate_analytical():
+    """
+    Phase 16 verification:
+    Analytically tests the clipped surrogate policy gradient objective:
+        L_clip(theta) = min(r_t * A_t, clip(r_t, 1-eps, 1+eps) * A_t)
+    Verifies that ratio clipping engages properly for positive and negative advantages.
+    """
+    eps = 0.2
+    
+    # Case 1: Positive advantage (A = +2.0), ratio exploded (r = 1.5 > 1 + eps = 1.2)
+    # Unclipped: 1.5 * 2.0 = 3.0. Clipped: 1.2 * 2.0 = 2.4. min(3.0, 2.4) = 2.4.
+    r_pos = torch.tensor([1.5], requires_grad=True)
+    adv_pos = torch.tensor([2.0])
+    surr1 = r_pos * adv_pos
+    surr2 = torch.clamp(r_pos, 1.0 - eps, 1.0 + eps) * adv_pos
+    loss_pos = -torch.min(surr1, surr2).mean()
+    assert pytest.approx(loss_pos.item(), abs=1e-5) == -2.4
+    
+    # Gradient of clipped region w.r.t r_pos should be 0 (clipped is constant w.r.t r when r > 1+eps)
+    loss_pos.backward()
+    assert r_pos.grad.item() == 0.0
+    
+    # Case 2: Negative advantage (A = -2.0), ratio collapsed (r = 0.5 < 1 - eps = 0.8)
+    # Unclipped: 0.5 * (-2.0) = -1.0. Clipped: 0.8 * (-2.0) = -1.6. min(-1.0, -1.6) = -1.6.
+    r_neg = torch.tensor([0.5], requires_grad=True)
+    adv_neg = torch.tensor([-2.0])
+    surr1_neg = r_neg * adv_neg
+    surr2_neg = torch.clamp(r_neg, 1.0 - eps, 1.0 + eps) * adv_neg
+    loss_neg = -torch.min(surr1_neg, surr2_neg).mean()
+    assert pytest.approx(loss_neg.item(), abs=1e-5) == 1.6
+    
+    loss_neg.backward()
+    assert r_neg.grad.item() == 0.0

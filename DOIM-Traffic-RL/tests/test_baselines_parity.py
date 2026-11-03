@@ -1,10 +1,11 @@
 """
-DOIM-Traffic-RL: Baseline Parity and Operational Tests (Phase G)
+DOIM-Traffic-RL: Baseline Parity and Operational Tests (Phase 19)
 Verifies:
-  1. Actuated Controller enforces min-green (10s) and triggers gap-out when queues are clear.
-  2. Max-Pressure Controller calculates phase pressures and outputs binary transitions.
-  3. Parameter-Matched MLP-PPO forward pass matches expected multi-discrete logits and value dimensions.
-  4. Interface consistency: all controllers interface with multi-discrete 5-junction action space {0, 1}^5.
+  1. Actuated Controller enforces min-green (10s) and triggers gap-out when passage timer expires (3s).
+  2. Actuated Controller resets passage timer upon vehicle presence.
+  3. Max-Pressure Controller calculates phase pressures and outputs binary transitions.
+  4. Parameter-Matched MLP-PPO forward pass matches expected multi-discrete logits and value dimensions.
+  5. Interface consistency: all controllers interface with multi-discrete 5-junction action space {0, 1}^5.
 """
 
 import numpy as np
@@ -17,26 +18,59 @@ from baselines.ppo.mlp_ppo import ParameterMatchedMLPNetwork
 
 
 def test_actuated_controller_min_green_and_gap_out():
-    """Actuated controller must honor min-green before evaluating gap-out."""
+    """Actuated controller must honor min-green and NEMA passage timer gap-out."""
     tls_ids = ["A1", "B0", "B1", "B2", "C1"]
     ctrl = ActuatedTrafficController(
         controllable_tls_ids=tls_ids,
         min_green=10,
         max_green=60,
+        gap_threshold_sec=3.0,
     )
     
     current_phases = {tid: 0 for tid in tls_ids}
-    queues = {tid: 0.0 for tid in tls_ids}  # No vehicles -> eligible for gap-out
+    queues_zero = {tid: 0.0 for tid in tls_ids}
     
-    # Step 0 to 8: min green has NOT elapsed, must return 0 (no transition)
-    for _ in range(8):
-        act = ctrl.select_actions(current_phases, queues)
-        assert (act == 0).all()
+    # Steps 0 to 8 (9 steps): min green has NOT elapsed (t_elapsed < 10)
+    for _ in range(9):
+        act = ctrl.select_actions(current_phases, queues_zero)
+        assert (act == 0).all(), "Must not transition during minimum green"
 
-    # Step 10: min green has elapsed (10s), queue is 0 -> gap out triggered -> return 1
-    for _ in range(3):
-        act = ctrl.select_actions(current_phases, queues)
-    assert act[0] == 1  # Transition requested!
+    # Step 9: t_elapsed = 10, gap_timer = 1.0s < 3.0s -> holds green (0)
+    act = ctrl.select_actions(current_phases, queues_zero)
+    assert act[0] == 0
+
+    # Step 10: t_elapsed = 11, gap_timer = 2.0s < 3.0s -> holds green (0)
+    act = ctrl.select_actions(current_phases, queues_zero)
+    assert act[0] == 0
+
+    # Step 11: t_elapsed = 12, gap_timer = 3.0s >= 3.0s -> gap-out triggers (1)!
+    act = ctrl.select_actions(current_phases, queues_zero)
+    assert act[0] == 1, "Must trigger gap-out when passage timer reaches gap_threshold_sec"
+
+
+def test_actuated_controller_vehicle_extension():
+    """Vehicle detection resets passage timer and extends green."""
+    tls_ids = ["A1", "B0", "B1", "B2", "C1"]
+    ctrl = ActuatedTrafficController(
+        controllable_tls_ids=tls_ids,
+        min_green=10,
+        max_green=60,
+        gap_threshold_sec=3.0,
+        unit_extension_sec=2.0,
+    )
+    current_phases = {tid: 0 for tid in tls_ids}
+    queues_zero = {tid: 0.0 for tid in tls_ids}
+    queues_active = {tid: 3.0 for tid in tls_ids}
+    
+    # Advance past min-green (10 steps)
+    for _ in range(10):
+        ctrl.select_actions(current_phases, queues_zero)
+        
+    # Vehicle arrives at step 10: resets gap timer and extends
+    act = ctrl.select_actions(current_phases, queues_active)
+    assert act[0] == 0
+    assert ctrl.gap_timer["A1"] == 0.0
+    assert ctrl.extension_remaining["A1"] == 2.0
 
 
 def test_max_pressure_controller_action_selection():
@@ -70,4 +104,3 @@ def test_parameter_matched_mlp_network_architecture():
     for logits in out["action_logits"]:
         assert logits.shape == (4, 2)
     assert out["value"].shape == (4, 1)
-

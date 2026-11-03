@@ -1,0 +1,7 @@
+scenario:
+  name: "incident_disruption"
+  sumocfg: "scenarios/incident_disruption/incident_disruption.sumocfg"
+  episode_horizon_seconds: 1800
+  demand_type: "bottleneck_incident_surge"
+  description: "High-density commute surge combined with localized link blockage, testing rapid queue detection and dynamic phase adaptation."
+  expected_inflow_veh_per_hour: 2400

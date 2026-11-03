@@ -99,3 +99,4 @@ The architecture recomputes all spatial GCN and temporal GRU layers dynamically 
 - Gradients from `policy_loss`, `value_loss`, `aux_loss`, and `pref_loss` flow backwards through `manifold_mlp`, `gru`, and `gcn1`/`gcn2`.
 - Gradients from `scoil_pred_loss` train the bilinear projections $\mathbf{W}_q, \mathbf{W}_k$ and uncertainty head $\mathbf{U}_t$.
 - All gradients are jointly clipped using `nn.utils.clip_grad_norm_` at threshold $\rho_{\text{clip}} = 0.5$.
+

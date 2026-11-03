@@ -41,3 +41,4 @@ permit transient constraint violations during exploration or distribution shifts
 1. Every candidate action is verified against yellow clearance intervals, minimum green times, and non-conflicting signal link phases.
 2. If an unsafe action is proposed, the shield intervenes and substitutes the mandatory legal transition.
 3. If no safe transition path exists, the shield triggers a fail-safe all-red hold and raises a typed `SafetyFaultError`, aborting the run to prevent corrupted or unverified data from masquerading as valid research.
+

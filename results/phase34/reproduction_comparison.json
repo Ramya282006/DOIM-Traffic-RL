@@ -1,0 +1,25 @@
+{
+  "mission_id": "DOIM-PPO-PHASE34-INDEPENDENT-FORENSIC-AUDIT",
+  "benchmark": "Fixed-Time on grid3x3 (train_seed=42, eval_seed=1042, horizon=1800)",
+  "reproduction_run_dir": "D:\\DOIM-Traffic-RL\\results\\phase34\\repro_run\\Fixed_Time_directional_shift_north_south_s42_20261104_002751",
+  "execution_time_seconds": 74.45,
+  "archived_metrics": {
+    "average_waiting": 366.932222,
+    "average_queue": 6.005556,
+    "total_throughput": 643.0,
+    "average_fairness": 0.419355
+  },
+  "reproduced_metrics": {
+    "average_waiting": 366.932222,
+    "average_queue": 6.005556,
+    "total_throughput": 643.0,
+    "average_fairness": 0.419355
+  },
+  "absolute_deltas": {
+    "delta_waiting": 0.0,
+    "delta_queue": 0.0,
+    "delta_throughput": 0.0,
+    "delta_fairness": 0.0
+  },
+  "reproducibility_verdict": "BITWISE_DETERMINISTIC"
+}

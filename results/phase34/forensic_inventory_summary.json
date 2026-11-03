@@ -1,0 +1,33 @@
+{
+  "total_directories_scanned": 112,
+  "provenance_breakdown": {
+    "VERIFIED": 97,
+    "CONFLICTED": 0,
+    "INCOMPLETE": 15,
+    "UNVERIFIED": 0
+  },
+  "evaluation_runs_ge_1800": 41,
+  "training_runs_ge_5000": 4,
+  "smoke_runs_le_500": 55,
+  "algorithms_detected": [
+    "Actuated",
+    "DOIM_SMOKE",
+    "DOIM_no_interaction",
+    "DOIM_rolling_pearson",
+    "FW_PPO",
+    "Fixed_Time",
+    "IA_MOPPO",
+    "MLP_PPO",
+    "MaxPressure",
+    "SA_PPO"
+  ],
+  "scenarios_detected": [
+    "arterial_corridor",
+    "directional_shift",
+    "directional_shift_north_south",
+    "incident_disruption",
+    "north_south_surge",
+    "rush_hour"
+  ],
+  "total_checkpoints_found": 60
+}

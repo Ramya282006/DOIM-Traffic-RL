@@ -1,0 +1,78 @@
+{
+  "mission_id": "DOIM-PPO-PHASE34-INDEPENDENT-FORENSIC-AUDIT",
+  "project_title": "Learning Dynamic Objective Interaction Manifolds for Adaptive Multi-Objective Deep Reinforcement Learning in Real-Time Traffic Systems",
+  "generated_at": "2026-11-04T00:38:00+05:30",
+  "audit_phase_artifacts": {
+    "phase_34_1_inventory": {
+      "report": "research_docs/phase34/PHASE34_1_FORENSIC_INVENTORY.md",
+      "data_csv": "results/phase34/forensic_run_inventory.csv",
+      "data_json": "results/phase34/forensic_inventory_summary.json",
+      "script": "DOIM-Traffic-RL/analysis/phase34_forensic_inventory.py"
+    },
+    "phase_34_2_matrix_reconstruction": {
+      "report": "research_docs/phase34/PHASE34_2_CONFIRMATORY_MATRIX_AUDIT.md",
+      "status_csv": "results/phase34/confirmatory_matrix_status.csv",
+      "dataset_json": "results/phase34/verified_confirmatory_dataset.json",
+      "script": "DOIM-Traffic-RL/analysis/phase34_matrix_reconstruction.py"
+    },
+    "phase_34_3_statistical_methodology": {
+      "report": "research_docs/phase34/PHASE34_3_STATISTICAL_VALIDATION.md",
+      "data_json": "results/phase34/statistical_recalculation.json",
+      "script": "DOIM-Traffic-RL/analysis/phase34_statistical_audit.py"
+    },
+    "phase_34_4_metric_integrity": {
+      "report": "research_docs/phase34/PHASE34_4_METRIC_INTEGRITY.md",
+      "data_csv": "results/phase34/recalculated_metrics.csv",
+      "script": "DOIM-Traffic-RL/analysis/phase34_metric_integrity.py"
+    },
+    "phase_34_5_pareto_revalidation": {
+      "report": "research_docs/phase34/PHASE34_5_PARETO_AUDIT.md",
+      "data_json": "results/phase34/pareto_recalculation.json",
+      "script": "DOIM-Traffic-RL/analysis/phase34_pareto_reference.py"
+    },
+    "phase_34_6_doim_contribution": {
+      "report": "research_docs/phase34/PHASE34_6_DOIM_CONTRIBUTION_AUDIT.md",
+      "data_json": "results/phase34/ablation_recalculation.json",
+      "script": "DOIM-Traffic-RL/analysis/phase34_doim_contribution.py"
+    },
+    "phase_34_7_generalization": {
+      "report": "research_docs/phase34/PHASE34_7_GENERALIZATION_AUDIT.md",
+      "data_json": "results/phase34/generalization_recalculation.json",
+      "script": "DOIM-Traffic-RL/analysis/phase34_generalization_audit.py"
+    },
+    "phase_34_8_baseline_fairness": {
+      "report": "research_docs/phase34/PHASE34_8_BASELINE_FAIRNESS_AUDIT.md",
+      "source_files": [
+        "DOIM-Traffic-RL/baselines/max_pressure/max_pressure_controller.py",
+        "DOIM-Traffic-RL/baselines/actuated/actuated_controller.py",
+        "DOIM-Traffic-RL/baselines/fixed_time/fixed_time_controller.py"
+      ]
+    },
+    "phase_34_9_safety_verification": {
+      "report": "research_docs/phase34/PHASE34_9_SAFETY_AUDIT.md",
+      "data_json": "results/phase34/safety_audit_results.json",
+      "script": "DOIM-Traffic-RL/analysis/phase34_safety_audit.py"
+    },
+    "phase_34_10_reproducibility": {
+      "report": "research_docs/phase34/PHASE34_10_REPRODUCIBILITY_AUDIT.md",
+      "data_json": "results/phase34/reproduction_comparison.json",
+      "reproduced_run": "results/phase34/repro_run/Fixed_Time_directional_shift_north_south_s42_20261104_002751",
+      "script": "DOIM-Traffic-RL/analysis/phase34_reproducibility_audit.py"
+    },
+    "phase_34_11_test_suite": {
+      "report": "research_docs/phase34/PHASE34_11_TEST_VALIDATION.md",
+      "data_json": "results/phase34/test_execution_summary.json",
+      "test_directory": "DOIM-Traffic-RL/tests/"
+    },
+    "phase_34_12_evidence_gap_closure": {
+      "report": "research_docs/phase34/PHASE34_12_EVIDENCE_GAP_CLOSURE.md"
+    },
+    "phase_34_13_master_deliverables": {
+      "master_report": "research_docs/phase34/FINAL_PHASE34_INDEPENDENT_AUDIT_REPORT.md",
+      "scorecard_json": "research_docs/phase34/FINAL_PHASE34_SCORECARD.json",
+      "remaining_gaps_md": "research_docs/phase34/FINAL_PHASE34_REMAINING_GAPS.md",
+      "verified_dataset_json": "results/phase34/FINAL_VERIFIED_DATASET.json",
+      "evidence_index_json": "research_docs/phase34/FINAL_PHASE34_EVIDENCE_INDEX.json"
+    }
+  }
+}

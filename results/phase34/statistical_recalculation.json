@@ -1,0 +1,353 @@
+{
+  "mission_id": "DOIM-PPO-PHASE34-INDEPENDENT-FORENSIC-AUDIT",
+  "methodology": {
+    "audited_error": "Prior reports claimed pooled Linear Mixed Models with df=72 across all 105 planned cells. Only 29 cells exist on disk, making df=72 non-estimable and fraudulent.",
+    "corrected_approach": "Exact paired Student's t-test with df = N - 1 (df=4 for N=5, df=3 for N=4), exact Wilcoxon signed-rank tests, Cohen's dz effect size, Holm-Bonferroni correction, and exact power calculations.",
+    "mde_n5_80pct_power": 1.681996965955554,
+    "mde_n4_80pct_power": 2.1279493432578
+  },
+  "paired_baseline_tests": [
+    {
+      "comparison": "Fixed-Time vs Actuated",
+      "metric": "w_net",
+      "n_pairs": 5,
+      "df": 4,
+      "mean_a": 372.6935555555556,
+      "std_a": 19.40705111853123,
+      "mean_b": 1531.8677777777777,
+      "std_b": 72.11126644607477,
+      "mean_diff": -1159.1742222222224,
+      "std_diff": 63.55386793553872,
+      "se_diff": 28.42215378738176,
+      "t_statistic": -40.78417951340644,
+      "p_value_t": 2.1599599157288537e-06,
+      "ci_95": [
+        -1238.0867719843775,
+        -1080.2616724600673
+      ],
+      "cohens_dz": -18.23923955970622,
+      "wilcoxon_stat": 0.0,
+      "p_value_wilcoxon": 0.0625,
+      "p_value_holm_bonferroni": 1.727967932583083e-05,
+      "power_achieved": NaN
+    },
+    {
+      "comparison": "Actuated vs Max-Pressure",
+      "metric": "w_net",
+      "n_pairs": 5,
+      "df": 4,
+      "mean_a": 1531.8677777777777,
+      "std_a": 72.11126644607477,
+      "mean_b": 181.8842222222222,
+      "std_b": 45.73272369545617,
+      "mean_diff": 1349.9835555555553,
+      "std_diff": 67.66088830532323,
+      "se_diff": 30.258869133744653,
+      "t_statistic": 44.614474836736555,
+      "p_value_t": 1.5093672253423367e-06,
+      "ci_95": [
+        1265.9714664603493,
+        1433.9956446507613
+      ],
+      "cohens_dz": 19.95219970307935,
+      "wilcoxon_stat": 0.0,
+      "p_value_wilcoxon": 0.0625,
+      "p_value_holm_bonferroni": 1.3584305028081031e-05,
+      "power_achieved": NaN
+    },
+    {
+      "comparison": "Fixed-Time vs Max-Pressure",
+      "metric": "w_net",
+      "n_pairs": 5,
+      "df": 4,
+      "mean_a": 372.6935555555556,
+      "std_a": 19.40705111853123,
+      "mean_b": 181.8842222222222,
+      "std_b": 45.73272369545617,
+      "mean_diff": 190.8093333333333,
+      "std_diff": 58.22239148141216,
+      "se_diff": 26.037845033008452,
+      "t_statistic": 7.328153811939593,
+      "p_value_t": 0.0018454149913411692,
+      "ci_95": [
+        118.51668594153831,
+        263.1019807251283
+      ],
+      "cohens_dz": 3.277250014614228,
+      "wilcoxon_stat": 0.0,
+      "p_value_wilcoxon": 0.0625,
+      "p_value_holm_bonferroni": 0.007362689960580428,
+      "power_achieved": 0.9993927285393169
+    },
+    {
+      "comparison": "Fixed-Time vs Actuated",
+      "metric": "queue",
+      "n_pairs": 5,
+      "df": 4,
+      "mean_a": 6.051555555555556,
+      "std_a": 0.25548984662486135,
+      "mean_b": 20.90211111111111,
+      "std_b": 0.9616236911894339,
+      "mean_diff": -14.850555555555555,
+      "std_diff": 0.8846192596636716,
+      "se_diff": 0.39561375976270147,
+      "t_statistic": -37.538015776962034,
+      "p_value_t": 3.0075584788963613e-06,
+      "ci_95": [
+        -15.948955442397603,
+        -13.752155668713508
+      ],
+      "cohens_dz": -16.787511003549337,
+      "wilcoxon_stat": 0.0,
+      "p_value_wilcoxon": 0.0625,
+      "p_value_holm_bonferroni": 2.105290935227453e-05,
+      "power_achieved": NaN
+    },
+    {
+      "comparison": "Actuated vs Max-Pressure",
+      "metric": "queue",
+      "n_pairs": 5,
+      "df": 4,
+      "mean_a": 20.90211111111111,
+      "std_a": 0.9616236911894339,
+      "mean_b": 3.166666666666667,
+      "std_b": 0.6548826584177476,
+      "mean_diff": 17.735444444444447,
+      "std_diff": 0.8626218289337961,
+      "se_diff": 0.3857762096742326,
+      "t_statistic": 45.97340115768436,
+      "p_value_t": 1.338924479626262e-06,
+      "ci_95": [
+        16.664357975392665,
+        18.80653091349623
+      ],
+      "cohens_dz": 20.559930029089948,
+      "wilcoxon_stat": 0.0,
+      "p_value_wilcoxon": 0.0625,
+      "p_value_holm_bonferroni": 1.338924479626262e-05,
+      "power_achieved": NaN
+    },
+    {
+      "comparison": "Fixed-Time vs Max-Pressure",
+      "metric": "queue",
+      "n_pairs": 5,
+      "df": 4,
+      "mean_a": 6.051555555555556,
+      "std_a": 0.25548984662486135,
+      "mean_b": 3.166666666666667,
+      "std_b": 0.6548826584177476,
+      "mean_diff": 2.8848888888888893,
+      "std_diff": 0.8252130663884761,
+      "se_diff": 0.36904650247313586,
+      "t_statistic": 7.8171419307757555,
+      "p_value_t": 0.0014454545820918982,
+      "ci_95": [
+        1.8602515335069858,
+        3.9095262442707925
+      ],
+      "cohens_dz": 3.495932149395709,
+      "wilcoxon_stat": 0.0,
+      "p_value_wilcoxon": 0.0625,
+      "p_value_holm_bonferroni": 0.007362689960580428,
+      "power_achieved": 0.9998088105801054
+    },
+    {
+      "comparison": "Actuated vs Fixed-Time",
+      "metric": "throughput",
+      "n_pairs": 5,
+      "df": 4,
+      "mean_a": 626.0,
+      "std_a": 3.7416573867739413,
+      "mean_b": 642.4,
+      "std_b": 1.5165750888103102,
+      "mean_diff": -16.4,
+      "std_diff": 4.61519230368573,
+      "se_diff": 2.063976744055029,
+      "t_statistic": -7.94582596302875,
+      "p_value_t": 0.0013585452398756472,
+      "ci_95": [
+        -22.130518128273664,
+        -10.669481871726335
+      ],
+      "cohens_dz": -3.5534813981430036,
+      "wilcoxon_stat": 0.0,
+      "p_value_wilcoxon": 0.0625,
+      "p_value_holm_bonferroni": 0.007362689960580428,
+      "power_achieved": 0.9998609621621872
+    },
+    {
+      "comparison": "Max-Pressure vs Actuated",
+      "metric": "throughput",
+      "n_pairs": 5,
+      "df": 4,
+      "mean_a": 644.2,
+      "std_a": 7.014271166700073,
+      "mean_b": 626.0,
+      "std_b": 3.7416573867739413,
+      "mean_diff": 18.2,
+      "std_diff": 5.06951674225463,
+      "se_diff": 2.2671568097509267,
+      "t_statistic": 8.027675863320402,
+      "p_value_t": 0.001306618117452926,
+      "ci_95": [
+        11.905363572851194,
+        24.494636427148805
+      ],
+      "cohens_dz": 3.590085786343746,
+      "wilcoxon_stat": 0.0,
+      "p_value_wilcoxon": 0.0625,
+      "p_value_holm_bonferroni": 0.007362689960580428,
+      "power_achieved": 0.9998868132019869
+    },
+    {
+      "comparison": "Max-Pressure vs Fixed-Time",
+      "metric": "throughput",
+      "n_pairs": 5,
+      "df": 4,
+      "mean_a": 644.2,
+      "std_a": 7.014271166700073,
+      "mean_b": 642.4,
+      "std_b": 1.5165750888103102,
+      "mean_diff": 1.8,
+      "std_diff": 8.105553651663778,
+      "se_diff": 3.6249137920783716,
+      "t_statistic": 0.49656353316142077,
+      "p_value_t": 0.645547083245607,
+      "ci_95": [
+        -8.264374154779967,
+        11.864374154779968
+      ],
+      "cohens_dz": 0.2220699630592816,
+      "wilcoxon_stat": 6.0,
+      "p_value_wilcoxon": 0.8125,
+      "p_value_holm_bonferroni": 0.645547083245607,
+      "power_achieved": 0.06760975512521106
+    },
+    {
+      "comparison": "Fixed-Time (Arterial) vs Actuated (Arterial)",
+      "metric": "w_net",
+      "n_pairs": 4,
+      "df": 3,
+      "mean_a": 1980.6022222222223,
+      "std_a": 345.9834142469124,
+      "mean_b": 5699.6547222222225,
+      "std_b": 437.0444607630237,
+      "mean_diff": -3719.0525,
+      "std_diff": 616.8077987073392,
+      "se_diff": 308.4038993536696,
+      "t_statistic": -12.059032028434526,
+      "p_value_t": 0.0012271149934300713,
+      "ci_95": [
+        -4700.531350033174,
+        -2737.5736499668255
+      ],
+      "cohens_dz": -6.029516014217263,
+      "wilcoxon_stat": 0.0,
+      "p_value_wilcoxon": 0.125,
+      "p_value_holm_bonferroni": 0.007362689960580428,
+      "power_achieved": NaN
+    }
+  ],
+  "seed_1042_head_to_head_grid3x3": {
+    "raw_metrics": {
+      "Fixed-Time": {
+        "w_net": 366.9322222222222,
+        "queue": 6.0055555555555555,
+        "throughput": 643.0,
+        "shield_interventions": 0
+      },
+      "Actuated": {
+        "w_net": 1454.5127777777777,
+        "queue": 19.86,
+        "throughput": 631.0,
+        "shield_interventions": 0
+      },
+      "Max-Pressure": {
+        "w_net": 158.5338888888889,
+        "queue": 2.837222222222222,
+        "throughput": 648.0,
+        "shield_interventions": 6240
+      },
+      "FW-PPO": {
+        "w_net": 812.4383333333334,
+        "queue": 11.356111111111112,
+        "throughput": 637.0,
+        "shield_interventions": 2393
+      },
+      "SA-PPO": {
+        "w_net": 949.3905555555556,
+        "queue": 12.905,
+        "throughput": 637.0,
+        "shield_interventions": 1142
+      },
+      "MLP-PPO": {
+        "w_net": 721.1133333333333,
+        "queue": 9.926666666666666,
+        "throughput": 638.0,
+        "shield_interventions": 2127
+      },
+      "DOIM-PPO": {
+        "w_net": 510.9427777777778,
+        "queue": 7.256666666666667,
+        "throughput": 641.0,
+        "shield_interventions": 4249
+      }
+    },
+    "relative_improvements_vs_doim": {
+      "Fixed-Time": {
+        "w_net_baseline": 366.9322222222222,
+        "w_net_doim": 510.9427777777778,
+        "reduction_pct": -39.24718158666906,
+        "queue_baseline": 6.0055555555555555,
+        "queue_doim": 7.256666666666667,
+        "throughput_baseline": 643.0,
+        "throughput_doim": 641.0
+      },
+      "Actuated": {
+        "w_net_baseline": 1454.5127777777777,
+        "w_net_doim": 510.9427777777778,
+        "reduction_pct": 64.87189486513812,
+        "queue_baseline": 19.86,
+        "queue_doim": 7.256666666666667,
+        "throughput_baseline": 631.0,
+        "throughput_doim": 641.0
+      },
+      "Max-Pressure": {
+        "w_net_baseline": 158.5338888888889,
+        "w_net_doim": 510.9427777777778,
+        "reduction_pct": -222.2924646325181,
+        "queue_baseline": 2.837222222222222,
+        "queue_doim": 7.256666666666667,
+        "throughput_baseline": 648.0,
+        "throughput_doim": 641.0
+      },
+      "FW-PPO": {
+        "w_net_baseline": 812.4383333333334,
+        "w_net_doim": 510.9427777777778,
+        "reduction_pct": 37.10996185009597,
+        "queue_baseline": 11.356111111111112,
+        "queue_doim": 7.256666666666667,
+        "throughput_baseline": 637.0,
+        "throughput_doim": 641.0
+      },
+      "SA-PPO": {
+        "w_net_baseline": 949.3905555555556,
+        "w_net_doim": 510.9427777777778,
+        "reduction_pct": 46.1820243747012,
+        "queue_baseline": 12.905,
+        "queue_doim": 7.256666666666667,
+        "throughput_baseline": 637.0,
+        "throughput_doim": 641.0
+      },
+      "MLP-PPO": {
+        "w_net_baseline": 721.1133333333333,
+        "w_net_doim": 510.9427777777778,
+        "reduction_pct": 29.145287687865366,
+        "queue_baseline": 9.926666666666666,
+        "queue_doim": 7.256666666666667,
+        "throughput_baseline": 638.0,
+        "throughput_doim": 641.0
+      }
+    }
+  }
+}

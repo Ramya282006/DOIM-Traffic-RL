@@ -1,0 +1,154 @@
+{
+  "mission_id": "DOIM-PPO-PHASE34-INDEPENDENT-FORENSIC-AUDIT",
+  "scenario_summary": {
+    "grid3x3": {
+      "Fixed-Time": {
+        "n_runs": 5,
+        "seeds": [
+          1042,
+          1043,
+          1044,
+          1045,
+          1046
+        ],
+        "mean_w_net": 372.69,
+        "std_w_net": 19.41,
+        "mean_queue": 6.05,
+        "std_queue": 0.26,
+        "mean_throughput": 642.4
+      },
+      "Actuated": {
+        "n_runs": 5,
+        "seeds": [
+          1042,
+          1043,
+          1044,
+          1045,
+          1046
+        ],
+        "mean_w_net": 1531.87,
+        "std_w_net": 72.11,
+        "mean_queue": 20.9,
+        "std_queue": 0.96,
+        "mean_throughput": 626.0
+      },
+      "Max-Pressure": {
+        "n_runs": 5,
+        "seeds": [
+          1042,
+          1043,
+          1044,
+          1045,
+          1046
+        ],
+        "mean_w_net": 181.88,
+        "std_w_net": 45.73,
+        "mean_queue": 3.17,
+        "std_queue": 0.65,
+        "mean_throughput": 644.2
+      },
+      "FW-PPO": {
+        "n_runs": 1,
+        "seeds": [
+          1042
+        ],
+        "mean_w_net": 812.44,
+        "std_w_net": 0.0,
+        "mean_queue": 11.36,
+        "std_queue": 0.0,
+        "mean_throughput": 637.0
+      },
+      "SA-PPO": {
+        "n_runs": 1,
+        "seeds": [
+          1042
+        ],
+        "mean_w_net": 949.39,
+        "std_w_net": 0.0,
+        "mean_queue": 12.9,
+        "std_queue": 0.0,
+        "mean_throughput": 637.0
+      },
+      "MLP-PPO": {
+        "n_runs": 1,
+        "seeds": [
+          1042
+        ],
+        "mean_w_net": 721.11,
+        "std_w_net": 0.0,
+        "mean_queue": 9.93,
+        "std_queue": 0.0,
+        "mean_throughput": 638.0
+      },
+      "DOIM-PPO": {
+        "n_runs": 1,
+        "seeds": [
+          1042
+        ],
+        "mean_w_net": 510.94,
+        "std_w_net": 0.0,
+        "mean_queue": 7.26,
+        "std_queue": 0.0,
+        "mean_throughput": 641.0
+      }
+    },
+    "arterial_corridor": {
+      "Fixed-Time": {
+        "n_runs": 5,
+        "seeds": [
+          1042,
+          1043,
+          1044,
+          1045,
+          1046
+        ],
+        "mean_w_net": 1951.06,
+        "std_w_net": 306.83,
+        "mean_queue": 24.93,
+        "std_queue": 3.31,
+        "mean_throughput": 1460.0
+      },
+      "Actuated": {
+        "n_runs": 4,
+        "seeds": [
+          1042,
+          1043,
+          1044,
+          1046
+        ],
+        "mean_w_net": 5699.66,
+        "std_w_net": 437.05,
+        "mean_queue": 69.63,
+        "std_queue": 5.41,
+        "mean_throughput": 1348.5
+      },
+      "Max-Pressure": {
+        "n_runs": 1,
+        "seeds": [
+          1042
+        ],
+        "mean_w_net": 7705.01,
+        "std_w_net": 0.0,
+        "mean_queue": 88.44,
+        "std_queue": 0.0,
+        "mean_throughput": 1332.0
+      }
+    }
+  },
+  "pathology_analysis": {
+    "arterial_corridor_disruption": {
+      "fixed_time_baseline_wnet": 1951.06,
+      "actuated_wnet": 5699.66,
+      "actuated_increase_pct": 192.1,
+      "max_pressure_wnet": 7705.01,
+      "max_pressure_increase_pct": 294.9,
+      "traffic_engineering_mechanism": "Fixed-Time control establishes coordinated green progression ('green wave') along the arterial. Decentralized queue-greedy controllers (Actuated, Max-Pressure) interrupt arterial progression to serve minor side-street queues, causing queue spillback and dramatic delay surges (+192% for Actuated, +295% for Max-Pressure)."
+    },
+    "rl_generalization_status": {
+      "grid3x3_rl_status": "Verified (Seed 1042 executed for DOIM-PPO, MLP-PPO, FW-PPO, SA-PPO)",
+      "arterial_corridor_rl_status": "MISSING ON DISK (0 completed evaluation runs)",
+      "incident_disruption_rl_status": "MISSING ON DISK (0 completed evaluation runs)",
+      "scientific_implication": "Prior claims that DOIM-PPO achieved verified superior generalization across all 3 scenarios were unsubstantiated by physical filesystem artifacts. RL generalization remains an open confirmatory gap."
+    }
+  }
+}

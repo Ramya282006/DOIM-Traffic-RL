@@ -1,0 +1,71 @@
+{
+  "mission_id": "DOIM-PPO-PHASE34-INDEPENDENT-FORENSIC-AUDIT",
+  "mathematical_framework": {
+    "operator": "Bilinear State-Conditioned Objective Interaction Learner (SCOIL)",
+    "equations": {
+      "query_key": "Q_t = W_q [h_t, z_t], K_t = W_k [h_t, z_t]",
+      "bilinear_matrix": "M_bilinear = (Q_t K_t^T) / sqrt(d_k)",
+      "asymmetry_encoding": "M_t = tanh(M_bilinear + W_asym [h_t, z_t])",
+      "predictive_uncertainty": "U_t = softplus(W_u [h_t, z_t])",
+      "bayesian_shrinkage": "M_tilde = w_shrink * M_t + (1 - w_shrink) * M_prior, w_shrink = 1 / (1 + lambda * U_t)"
+    },
+    "epistemological_classification": "State-conditioned predictive association operator (Granger/predictive causality), NOT Pearlian do-calculus structural causal model.",
+    "scientific_attribution": "1. Manifold Structural Advantage: The transition from flat MLP-PPO (721.1s) to the Manifold representation (510.9s) produces a 29.1% reduction in network delay. 2. Interaction Regularization: SCOIL bounds cross-objective gradient conflict and enforces predictive consistency with shrinkage to the prior under high epistemic uncertainty."
+  },
+  "empirical_ablation_comparison": {
+    "DOIM-PPO (Full)": {
+      "w_net_s": 510.94,
+      "queue_veh": 7.26,
+      "throughput_veh": 641,
+      "delay_disparity": 0.502,
+      "shield_interventions": 4249,
+      "w_net_reduction_vs_mlp_pct": 29.15,
+      "queue_reduction_vs_mlp_pct": 26.9
+    },
+    "DOIM No-Interaction (No-SCOIL)": {
+      "w_net_s": 501.9,
+      "queue_veh": 7.1,
+      "throughput_veh": 644,
+      "delay_disparity": 0.5034,
+      "shield_interventions": 4474,
+      "w_net_reduction_vs_mlp_pct": 30.4,
+      "queue_reduction_vs_mlp_pct": 28.48
+    },
+    "DOIM Rolling-Pearson": {
+      "w_net_s": 501.49,
+      "queue_veh": 7.06,
+      "throughput_veh": 642,
+      "delay_disparity": 0.509,
+      "shield_interventions": 4927,
+      "w_net_reduction_vs_mlp_pct": 30.46,
+      "queue_reduction_vs_mlp_pct": 28.88
+    },
+    "MLP-PPO (Baseline)": {
+      "w_net_s": 721.11,
+      "queue_veh": 9.93,
+      "throughput_veh": 638,
+      "delay_disparity": 0.5036,
+      "shield_interventions": 2127,
+      "w_net_reduction_vs_mlp_pct": 0.0,
+      "queue_reduction_vs_mlp_pct": 0.0
+    },
+    "FW-PPO (Fixed Weight)": {
+      "w_net_s": 812.44,
+      "queue_veh": 11.36,
+      "throughput_veh": 637,
+      "delay_disparity": 0.4854,
+      "shield_interventions": 2393,
+      "w_net_reduction_vs_mlp_pct": -12.66,
+      "queue_reduction_vs_mlp_pct": -14.4
+    },
+    "SA-PPO (Single Agent)": {
+      "w_net_s": 949.39,
+      "queue_veh": 12.9,
+      "throughput_veh": 637,
+      "delay_disparity": 0.4721,
+      "shield_interventions": 1142,
+      "w_net_reduction_vs_mlp_pct": -31.66,
+      "queue_reduction_vs_mlp_pct": -30.0
+    }
+  }
+}

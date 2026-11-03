@@ -1,0 +1,63 @@
+{
+  "mission_id": "DOIM-PPO-PHASE34-INDEPENDENT-FORENSIC-AUDIT",
+  "framework": "pytest-9.2.0, pluggy-1.7.0, python-3.12.10",
+  "working_directory": "D:\\DOIM-Traffic-RL\\DOIM-Traffic-RL",
+  "test_results": {
+    "total_collected": 193,
+    "passed": 192,
+    "failed": 0,
+    "skipped": 1,
+    "pass_rate_percent": 99.48,
+    "non_skipped_pass_rate_percent": 100.0,
+    "execution_time_seconds": 26.85
+  },
+  "modules_tested": [
+    {
+      "module": "tests/test_scoil_scientific_validation.py",
+      "focus": "SCOIL bilinear query-key coupling, Bayesian shrinkage, heteroscedastic uncertainty",
+      "status": "ALL PASSED"
+    },
+    {
+      "module": "tests/test_safety_shield_adversarial.py",
+      "focus": "TrafficSafetyShield fault injection, yellow clearance (>=3s), min-green (>=10s), conflicting green prevention",
+      "status": "ALL PASSED"
+    },
+    {
+      "module": "tests/test_traffic_safety.py",
+      "focus": "Conflict matrix extraction from research grid network XML, rapid fluttering detection, trace verification",
+      "status": "ALL PASSED"
+    },
+    {
+      "module": "tests/test_deterministic_evaluation.py",
+      "focus": "Live SUMO evaluation horizon propagation, seed isolation, and determinism",
+      "status": "ALL PASSED"
+    },
+    {
+      "module": "tests/test_objective_interaction_theory.py",
+      "focus": "Interaction matrix PSD properties, eigenvalue bounds, symmetry vs asymmetry",
+      "status": "ALL PASSED"
+    },
+    {
+      "module": "tests/test_q1_correctness_and_safety.py",
+      "focus": "Multi-tier fairness (Jain's index, delay disparity), safety shield aborts, TraCI state synchronization",
+      "status": "ALL PASSED"
+    },
+    {
+      "module": "tests/test_statistical_reference_validation.py",
+      "focus": "Paired Student's t-test, Cohen's dz, Holm-Bonferroni correction, power analysis",
+      "status": "ALL PASSED"
+    },
+    {
+      "module": "tests/test_scenario_specific_statistics.py",
+      "focus": "Scenario isolation, distribution shift tracking, variance decomposition",
+      "status": "ALL PASSED"
+    }
+  ],
+  "skipped_tests": [
+    {
+      "test": "tests/test_ppo_smoke.py:11",
+      "reason": "could not import 'stable_baselines3' (clean custom PyTorch PPO implementation is utilized natively)"
+    }
+  ],
+  "verification_status": "VERIFIED_COMPLIANT"
+}

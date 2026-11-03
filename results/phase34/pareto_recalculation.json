@@ -1,0 +1,251 @@
+{
+  "mission_id": "DOIM-PPO-PHASE34-INDEPENDENT-FORENSIC-AUDIT",
+  "reference_point": [
+    1.2,
+    1.2,
+    1.2,
+    1.2,
+    1.2
+  ],
+  "normalization_bounds": {
+    "waiting": 600.0,
+    "queue": 20.0,
+    "co2": 120000.0,
+    "throughput_cap": 700.0,
+    "fairness": 1.0
+  },
+  "pareto_reference_front": {
+    "algorithms_on_front": [
+      "Max-Pressure"
+    ],
+    "front_points": [
+      [
+        0.26421666666666666,
+        0.142,
+        0.8903233333333334,
+        0.07428571428571429,
+        0.3868
+      ]
+    ]
+  },
+  "algorithm_evaluations": {
+    "Fixed-Time": {
+      "normalized_vector": [
+        0.6116,
+        0.3005,
+        0.9351,
+        0.0814,
+        0.4194
+      ],
+      "hypervolume_5d": 0.122447,
+      "generational_distance": 0.385847,
+      "inverted_generational_distance": 0.385847,
+      "on_pareto_front": false
+    },
+    "Actuated": {
+      "normalized_vector": [
+        1.2,
+        0.993,
+        1.1354,
+        0.0986,
+        0.4678
+      ],
+      "hypervolume_5d": 0.0,
+      "generational_distance": 1.291171,
+      "inverted_generational_distance": 1.291171,
+      "on_pareto_front": false
+    },
+    "Max-Pressure": {
+      "normalized_vector": [
+        0.2642,
+        0.142,
+        0.8903,
+        0.0743,
+        0.3868
+      ],
+      "hypervolume_5d": 0.280669,
+      "generational_distance": 0.0,
+      "inverted_generational_distance": 0.0,
+      "on_pareto_front": true
+    },
+    "FW-PPO": {
+      "normalized_vector": [
+        1.2,
+        0.568,
+        1.0054,
+        0.09,
+        0.4854
+      ],
+      "hypervolume_5d": 0.0,
+      "generational_distance": 1.03941,
+      "inverted_generational_distance": 1.03941,
+      "on_pareto_front": false
+    },
+    "SA-PPO": {
+      "normalized_vector": [
+        1.2,
+        0.645,
+        1.03,
+        0.09,
+        0.4721
+      ],
+      "hypervolume_5d": 0.0,
+      "generational_distance": 1.075046,
+      "inverted_generational_distance": 1.075046,
+      "on_pareto_front": false
+    },
+    "MLP-PPO": {
+      "normalized_vector": [
+        1.2,
+        0.4965,
+        0.9887,
+        0.0886,
+        0.5036
+      ],
+      "hypervolume_5d": 0.0,
+      "generational_distance": 1.012362,
+      "inverted_generational_distance": 1.012362,
+      "on_pareto_front": false
+    },
+    "DOIM-PPO": {
+      "normalized_vector": [
+        0.8516,
+        0.363,
+        0.9481,
+        0.0843,
+        0.502
+      ],
+      "hypervolume_5d": 0.057218,
+      "generational_distance": 0.640724,
+      "inverted_generational_distance": 0.640724,
+      "on_pareto_front": false
+    },
+    "DOIM_no_interaction": {
+      "normalized_vector": [
+        0.8365,
+        0.355,
+        0.9467,
+        0.08,
+        0.5034
+      ],
+      "hypervolume_5d": 0.06071,
+      "generational_distance": 0.624246,
+      "inverted_generational_distance": 0.624246,
+      "on_pareto_front": false
+    },
+    "DOIM_rolling_pearson": {
+      "normalized_vector": [
+        0.8358,
+        0.353,
+        0.9442,
+        0.0829,
+        0.509
+      ],
+      "hypervolume_5d": 0.060903,
+      "generational_distance": 0.62382,
+      "inverted_generational_distance": 0.62382,
+      "on_pareto_front": false
+    }
+  },
+  "pairwise_dominance": {
+    "Fixed-Time": {
+      "Fixed-Time": "Self",
+      "Actuated": "Dominates",
+      "Max-Pressure": "Dominated_By",
+      "FW-PPO": "Dominates",
+      "SA-PPO": "Dominates",
+      "MLP-PPO": "Dominates",
+      "DOIM-PPO": "Dominates",
+      "DOIM_no_interaction": "Non_Dominated",
+      "DOIM_rolling_pearson": "Dominates"
+    },
+    "Actuated": {
+      "Fixed-Time": "Dominated_By",
+      "Actuated": "Self",
+      "Max-Pressure": "Dominated_By",
+      "FW-PPO": "Non_Dominated",
+      "SA-PPO": "Non_Dominated",
+      "MLP-PPO": "Non_Dominated",
+      "DOIM-PPO": "Non_Dominated",
+      "DOIM_no_interaction": "Non_Dominated",
+      "DOIM_rolling_pearson": "Non_Dominated"
+    },
+    "Max-Pressure": {
+      "Fixed-Time": "Dominates",
+      "Actuated": "Dominates",
+      "Max-Pressure": "Self",
+      "FW-PPO": "Dominates",
+      "SA-PPO": "Dominates",
+      "MLP-PPO": "Dominates",
+      "DOIM-PPO": "Dominates",
+      "DOIM_no_interaction": "Dominates",
+      "DOIM_rolling_pearson": "Dominates"
+    },
+    "FW-PPO": {
+      "Fixed-Time": "Dominated_By",
+      "Actuated": "Non_Dominated",
+      "Max-Pressure": "Dominated_By",
+      "FW-PPO": "Self",
+      "SA-PPO": "Non_Dominated",
+      "MLP-PPO": "Non_Dominated",
+      "DOIM-PPO": "Non_Dominated",
+      "DOIM_no_interaction": "Non_Dominated",
+      "DOIM_rolling_pearson": "Non_Dominated"
+    },
+    "SA-PPO": {
+      "Fixed-Time": "Dominated_By",
+      "Actuated": "Non_Dominated",
+      "Max-Pressure": "Dominated_By",
+      "FW-PPO": "Non_Dominated",
+      "SA-PPO": "Self",
+      "MLP-PPO": "Non_Dominated",
+      "DOIM-PPO": "Non_Dominated",
+      "DOIM_no_interaction": "Non_Dominated",
+      "DOIM_rolling_pearson": "Non_Dominated"
+    },
+    "MLP-PPO": {
+      "Fixed-Time": "Dominated_By",
+      "Actuated": "Non_Dominated",
+      "Max-Pressure": "Dominated_By",
+      "FW-PPO": "Non_Dominated",
+      "SA-PPO": "Non_Dominated",
+      "MLP-PPO": "Self",
+      "DOIM-PPO": "Dominated_By",
+      "DOIM_no_interaction": "Dominated_By",
+      "DOIM_rolling_pearson": "Non_Dominated"
+    },
+    "DOIM-PPO": {
+      "Fixed-Time": "Dominated_By",
+      "Actuated": "Non_Dominated",
+      "Max-Pressure": "Dominated_By",
+      "FW-PPO": "Non_Dominated",
+      "SA-PPO": "Non_Dominated",
+      "MLP-PPO": "Dominates",
+      "DOIM-PPO": "Self",
+      "DOIM_no_interaction": "Non_Dominated",
+      "DOIM_rolling_pearson": "Non_Dominated"
+    },
+    "DOIM_no_interaction": {
+      "Fixed-Time": "Non_Dominated",
+      "Actuated": "Non_Dominated",
+      "Max-Pressure": "Dominated_By",
+      "FW-PPO": "Non_Dominated",
+      "SA-PPO": "Non_Dominated",
+      "MLP-PPO": "Dominates",
+      "DOIM-PPO": "Non_Dominated",
+      "DOIM_no_interaction": "Self",
+      "DOIM_rolling_pearson": "Non_Dominated"
+    },
+    "DOIM_rolling_pearson": {
+      "Fixed-Time": "Dominated_By",
+      "Actuated": "Non_Dominated",
+      "Max-Pressure": "Dominated_By",
+      "FW-PPO": "Non_Dominated",
+      "SA-PPO": "Non_Dominated",
+      "MLP-PPO": "Non_Dominated",
+      "DOIM-PPO": "Non_Dominated",
+      "DOIM_no_interaction": "Non_Dominated",
+      "DOIM_rolling_pearson": "Self"
+    }
+  }
+}

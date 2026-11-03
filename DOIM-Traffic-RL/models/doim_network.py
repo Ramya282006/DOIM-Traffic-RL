@@ -279,10 +279,26 @@ class DOIMNetwork(nn.Module):
         Auxiliary forward pass: predicts next-step objective vector z_{t+1} via residual dynamics:
             z_{t+1} = clamp(z_t + Δz(manifold, action, z_t), 0.0, 1.0)
         Prevents future observation leakage and guarantees action conditioning.
+        Defensively handles both 1D and batched 2D inputs.
         """
+        if manifold.dim() == 1:
+            manifold = manifold.unsqueeze(0)
+
+        if actions.dim() == 1:
+            if actions.size(0) == self.num_controllable_tls:
+                actions = actions.unsqueeze(0)
+            elif manifold.size(0) > 1 and actions.size(0) == manifold.size(0):
+                actions = actions.unsqueeze(-1)
+            else:
+                actions = actions.unsqueeze(0)
+        elif actions.dim() == 0:
+            actions = actions.view(1, 1)
+
         if current_obj is None:
             current_obj = torch.zeros(manifold.size(0), self.num_objectives, device=manifold.device)
+        elif current_obj.dim() == 1:
+            current_obj = current_obj.unsqueeze(0)
+
         aux_input = torch.cat([manifold, actions.float(), current_obj], dim=-1)
         delta = self.aux_predictor(aux_input)
         return torch.clamp(current_obj + delta, 0.0, 1.0)
-

@@ -586,9 +586,16 @@ class StatisticalAnalyzer:
         return float(hv)
 
     @staticmethod
-    def cliffs_delta(x: np.ndarray, y: np.ndarray) -> float:
+    def cliffs_delta(x: np.ndarray, y: np.ndarray, higher_is_better: bool = True) -> float:
         """
         Computes Cliff's delta non-parametric effect size in [-1, 1].
+        
+        Args:
+            x: Treatment or candidate algorithm sample.
+            y: Baseline sample.
+            higher_is_better: If True (default), positive delta indicates x > y.
+                If False (cost metrics like delay, emissions, queue), positive delta
+                indicates x < y (i.e. x is better because its cost is lower).
         """
         x_arr = np.asarray(x, dtype=np.float64)
         y_arr = np.asarray(y, dtype=np.float64)
@@ -602,7 +609,25 @@ class StatisticalAnalyzer:
             greater += int(np.sum(xi > y_arr))
             less += int(np.sum(xi < y_arr))
 
-        return float((greater - less) / (n_x * n_y))
+        raw_delta = float((greater - less) / (n_x * n_y))
+        return raw_delta if higher_is_better else -raw_delta
+
+    @staticmethod
+    def compute_metric_effect_size(x: np.ndarray, y: np.ndarray, metric_name: str) -> float:
+        """
+        Computes Cliff's delta oriented so that positive values consistently indicate
+        superiority of candidate x over baseline y for the given traffic metric.
+        
+        Cost metrics (lower is better): delay, queue, co2, emissions, waiting_time, fairness_disparity.
+        Benefit metrics (higher is better): throughput, reward, speed, completion_rate.
+        """
+        cost_metrics = {
+            "delay", "total_delay", "mean_delay", "queue", "queue_length",
+            "mean_queue", "co2", "co2_emissions", "emissions", "waiting_time",
+            "fairness_disparity", "gini",
+        }
+        higher_is_better = metric_name.lower().strip() not in cost_metrics
+        return StatisticalAnalyzer.cliffs_delta(x, y, higher_is_better=higher_is_better)
 
     
     @staticmethod

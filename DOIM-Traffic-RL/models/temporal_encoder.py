@@ -3,7 +3,6 @@ import torch.nn as nn
 
 
 class TemporalTrafficEncoder(nn.Module):
-
     """
     Temporal encoder for spatial traffic representations.
 
@@ -23,7 +22,6 @@ class TemporalTrafficEncoder(nn.Module):
         hidden_dim=64,
         num_layers=1,
     ):
-
         super().__init__()
 
         self.gru = nn.GRU(
@@ -34,7 +32,6 @@ class TemporalTrafficEncoder(nn.Module):
         )
 
     def forward(self, x):
-
         # x:
         # [batch, sequence, spatial_dim]
 
@@ -47,20 +44,15 @@ class TemporalTrafficEncoder(nn.Module):
 
 
 def aggregate_spatial_embeddings(
-    spatial_embeddings
-):
-
+    spatial_embeddings: torch.Tensor,
+) -> torch.Tensor:
     """
-    Aggregate node-level spatial embeddings
-    into one network-level representation.
+    Aggregate node-level spatial embeddings into one network-level representation.
 
     Input:
-        [num_intersections, spatial_dim]
+        [num_intersections, spatial_dim] or [batch, num_intersections, spatial_dim]
 
     Output:
-        [spatial_dim]
+        [spatial_dim] or [batch, spatial_dim]
     """
-
-    return spatial_embeddings.mean(
-        dim=0
-    )
+    return spatial_embeddings.mean(dim=-2)

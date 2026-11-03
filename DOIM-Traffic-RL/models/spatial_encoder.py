@@ -27,6 +27,11 @@ class NativeGCNConv(nn.Module):
         # Adjacency matrix with self-loops
         adj = torch.eye(num_nodes, device=device, dtype=x.dtype)
         if edge_index.numel() > 0:
+            if edge_index.min() < 0 or edge_index.max() >= num_nodes:
+                raise ValueError(
+                    f"edge_index contains indices out of bounds [0, {num_nodes - 1}]: "
+                    f"min={edge_index.min().item()}, max={edge_index.max().item()}"
+                )
             src, dst = edge_index[0], edge_index[1]
             adj.index_put_((src, dst), torch.ones_like(src, dtype=x.dtype))
             adj.index_put_((dst, src), torch.ones_like(dst, dtype=x.dtype))

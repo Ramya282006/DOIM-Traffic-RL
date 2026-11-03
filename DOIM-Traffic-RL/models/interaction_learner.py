@@ -181,6 +181,18 @@ class StateConditionedInteractionLearner(nn.Module):
             NLL = 0.5 * ( (z_hat - z_next)^2 / (sigma^2 + eps) + log(sigma^2 + eps) )
         Otherwise optimizes MSE.
         """
+        # Defensive guards for 1D/2D inputs to ensure proper 3D batch shape
+        if m_t.dim() == 2:
+            m_t = m_t.unsqueeze(0)
+        if actions.dim() == 1:
+            actions = actions.unsqueeze(0)
+        if z_t.dim() == 1:
+            z_t = z_t.unsqueeze(0)
+        if z_next.dim() == 1:
+            z_next = z_next.unsqueeze(0)
+        if uncertainty is not None and uncertainty.dim() == 2:
+            uncertainty = uncertainty.unsqueeze(0)
+
         delta_primary = self.action_impact(actions.float())  # [B, K]
         delta_cross = torch.bmm(m_t, delta_primary.unsqueeze(-1)).squeeze(-1)  # [B, K]
         z_pred_next = torch.clamp(z_t + delta_cross, 0.0, 1.0)

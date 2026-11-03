@@ -1,0 +1,33 @@
+{
+  "run_id": "DOIM_no_interaction_north_south_surge_s42_20261103_221907",
+  "algorithm": "DOIM_no_interaction",
+  "scenario": "north_south_surge",
+  "seed": 42,
+  "train_seed": 42,
+  "eval_seed": 42,
+  "episode_id": 0,
+  "evaluation_mode": "train_rollout",
+  "eval_horizon": null,
+  "total_steps": 5000,
+  "total_reward": -3913.550415545702,
+  "average_reward": -0.7827100831091404,
+  "average_waiting": 532.1578,
+  "max_waiting": 1071.0,
+  "average_queue": 7.5352,
+  "max_queue": 23.0,
+  "average_co2": 114168.28477365723,
+  "total_throughput": 1760.0,
+  "average_fairness": 0.5064553217321635,
+  "fairness_metric_name": "jain_disparity",
+  "fairness_metric_unit": "unknown",
+  "fairness_disparity": null,
+  "fairness_variance": null,
+  "total_shield_interventions": 12154,
+  "average_weights": [
+    0.21015858161747455,
+    0.11146254453510046,
+    0.24523647795915604,
+    0.27715418760478494,
+    0.15598820763230323
+  ]
+}

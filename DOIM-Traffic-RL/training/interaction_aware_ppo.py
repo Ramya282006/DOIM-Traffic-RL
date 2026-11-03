@@ -6,6 +6,7 @@ Preference Adaptation, and Safety-Shielded SUMO Simulation.
 
 import os
 import sys
+import json
 from pathlib import Path
 import time
 from typing import Dict, List, Optional, Tuple, Union
@@ -559,6 +560,7 @@ def train_interaction_aware_ppo(
     agent = InteractionAwarePPOAgent(config=config, device="cpu", ablation_mode=ablation_mode)
     rollout_size = config.policy.n_steps
     buffer = RolloutBuffer(buffer_size=rollout_size)
+    loss_history = []
 
     obs, info = env.reset(seed=seed)
     current_step = 0
@@ -689,9 +691,21 @@ def train_interaction_aware_ppo(
                 raw_state=raw_state,
             )
         loss_dict = agent.update(buffer, last_value=last_val)
-        print(f"Step {current_step}/{total_timesteps} | Policy Loss: {loss_dict['policy_loss']:.4f} | Aux Loss: {loss_dict['aux_loss']:.4f}")
+        grad_steps = (len(loss_history) + 1) * agent.n_epochs * (rollout_size // config.policy.batch_size)
+        loss_entry = {
+            "step": current_step,
+            "update_index": len(loss_history) + 1,
+            "gradient_steps": grad_steps,
+            **loss_dict
+        }
+        loss_history.append(loss_entry)
+        print(f"Step {current_step}/{total_timesteps} | Update {loss_entry['update_index']} | GradSteps: {grad_steps} | Policy Loss: {loss_dict['policy_loss']:.4f} | Aux Loss: {loss_dict['aux_loss']:.4f}")
 
     env.close()
+
+    # Save loss history curve
+    with open(run.run_dir / "loss_history.json", "w", encoding="utf-8") as f:
+        json.dump(loss_history, f, indent=2)
 
     # Save final model
     model_save_path = run.checkpoints_dir / "ia_moppo_final.pt"
@@ -707,7 +721,7 @@ def train_interaction_aware_ppo(
     if eval_episodes > 0:
         actual_eval_seed = eval_seed if eval_seed is not None else seed + 1000
         print(f"\n[EVALUATION] Launching {eval_episodes} deterministic evaluation episodes with seed {actual_eval_seed} (Horizon: {eval_horizon}s)...")
-        evaluate_interaction_aware_ppo(
+        eval_runs = evaluate_interaction_aware_ppo(
             agent_or_checkpoint=agent,
             config_path=config_path,
             scenario_override=scenario_override,
@@ -721,6 +735,7 @@ def train_interaction_aware_ppo(
             enforce_safety_shield=enforce_safety_shield,
             training_timesteps=total_timesteps,
         )
+        run.eval_runs = eval_runs
 
     return run
 

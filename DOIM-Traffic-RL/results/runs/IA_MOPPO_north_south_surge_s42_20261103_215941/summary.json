@@ -1,0 +1,33 @@
+{
+  "run_id": "IA_MOPPO_north_south_surge_s42_20261103_215941",
+  "algorithm": "IA_MOPPO",
+  "scenario": "north_south_surge",
+  "seed": 42,
+  "train_seed": 42,
+  "eval_seed": 42,
+  "episode_id": 0,
+  "evaluation_mode": "train_rollout",
+  "eval_horizon": null,
+  "total_steps": 10000,
+  "total_reward": -7967.610125720501,
+  "average_reward": -0.7967610125720501,
+  "average_waiting": 568.5741,
+  "max_waiting": 1212.0,
+  "average_queue": 8.033,
+  "max_queue": 23.0,
+  "average_co2": 115166.36484882812,
+  "total_throughput": 3537.0,
+  "average_fairness": 0.5100760315023363,
+  "fairness_metric_name": "jain_disparity",
+  "fairness_metric_unit": "unknown",
+  "fairness_disparity": null,
+  "fairness_variance": null,
+  "total_shield_interventions": 23003,
+  "average_weights": [
+    0.21113217838555576,
+    0.10794213829115033,
+    0.24213600388765336,
+    0.28600582513660194,
+    0.1527838546961546
+  ]
+}

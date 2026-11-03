@@ -44,10 +44,14 @@ class RolloutBuffer:
         self.interaction_matrices = []
         self.raw_states = []
         self.actions = []
+        self.exec_actions = []
         self.rewards = []
         self.values = []
         self.log_probs = []
         self.dones = []
+        self.terminateds = []
+        self.truncateds = []
+        self.bootstrap_values = []
         self.next_objectives = []
         self.weights = []
         self.prev_weights = []
@@ -70,6 +74,10 @@ class RolloutBuffer:
         spatial_hist: Optional[torch.Tensor] = None,
         prev_weights: Optional[torch.Tensor] = None,
         same_episode_mask: float = 1.0,
+        exec_action: Optional[np.ndarray] = None,
+        terminated: bool = False,
+        truncated: bool = False,
+        bootstrap_value: float = 0.0,
     ):
         hist = node_hist if node_hist is not None else spatial_hist
         if hist is None:
@@ -79,10 +87,14 @@ class RolloutBuffer:
         self.interaction_matrices.append(int_mat.squeeze(0).detach().cpu() if int_mat.dim() > 2 and int_mat.size(0) == 1 else int_mat.detach().cpu())
         self.raw_states.append(raw_state.squeeze(0).detach().cpu() if raw_state.dim() > 1 and raw_state.size(0) == 1 else raw_state.detach().cpu())
         self.actions.append(torch.tensor(action, dtype=torch.long))
+        self.exec_actions.append(torch.tensor(exec_action if exec_action is not None else action, dtype=torch.long))
         self.rewards.append(float(reward))
         self.values.append(float(value))
         self.log_probs.append(float(log_prob))
         self.dones.append(bool(done))
+        self.terminateds.append(bool(terminated))
+        self.truncateds.append(bool(truncated))
+        self.bootstrap_values.append(float(bootstrap_value))
         self.next_objectives.append(next_obj_vec.squeeze(0).detach().cpu() if next_obj_vec.dim() > 1 and next_obj_vec.size(0) == 1 else next_obj_vec.detach().cpu())
         self.weights.append(weights.squeeze(0).detach().cpu() if weights.dim() > 1 and weights.size(0) == 1 else weights.detach().cpu())
         pw = prev_weights if prev_weights is not None else weights
@@ -98,21 +110,45 @@ class RolloutBuffer:
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Computes Generalized Advantage Estimation (GAE).
+        Mathematically distinguishes absorbing termination (absorbing state, V=0) from
+        time-limit truncation (bootstrap V(s_{t+1}) with zero advantage bleeding across episodes).
         """
         n = len(self.rewards)
         advantages = np.zeros(n, dtype=np.float32)
         last_gae_lam = 0.0
 
         for t in reversed(range(n)):
-            if t == n - 1:
-                next_non_terminal = 1.0 - float(self.dones[t])
-                next_val = last_value
-            else:
-                next_non_terminal = 1.0 - float(self.dones[t])
-                next_val = self.values[t + 1]
+            is_term = self.terminateds[t] if self.terminateds else self.dones[t]
+            is_trunc = self.truncateds[t] if self.truncateds else False
+            boot_val = self.bootstrap_values[t] if self.bootstrap_values else 0.0
 
-            delta = self.rewards[t] + gamma * next_val * next_non_terminal - self.values[t]
-            last_gae_lam = delta + gamma * gae_lambda * next_non_terminal * last_gae_lam
+            if t == n - 1:
+                if is_term:
+                    next_val = 0.0
+                    delta = self.rewards[t] - self.values[t]
+                    last_gae_lam = delta
+                elif is_trunc:
+                    next_val = boot_val
+                    delta = self.rewards[t] + gamma * next_val - self.values[t]
+                    last_gae_lam = delta
+                else:
+                    next_val = last_value
+                    delta = self.rewards[t] + gamma * next_val - self.values[t]
+                    last_gae_lam = delta + gamma * gae_lambda * last_gae_lam
+            else:
+                if is_term:
+                    next_val = 0.0
+                    delta = self.rewards[t] - self.values[t]
+                    last_gae_lam = delta
+                elif is_trunc:
+                    next_val = boot_val
+                    delta = self.rewards[t] + gamma * next_val - self.values[t]
+                    last_gae_lam = delta
+                else:
+                    next_val = self.values[t + 1]
+                    delta = self.rewards[t] + gamma * next_val - self.values[t]
+                    last_gae_lam = delta + gamma * gae_lambda * last_gae_lam
+
             advantages[t] = last_gae_lam
 
         returns = advantages + np.array(self.values, dtype=np.float32)
@@ -198,6 +234,58 @@ class InteractionAwarePPOAgent:
         if "optimizer_state_dict" in checkpoint:
             self.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
         return int(checkpoint.get("step", 0))
+
+    def get_value(
+        self,
+        node_history: Optional[torch.Tensor] = None,
+        obj_vec: torch.Tensor = None,
+        raw_state: torch.Tensor = None,
+        rolling_pearson: Optional[np.ndarray] = None,
+        spatial_history: Optional[torch.Tensor] = None,
+    ) -> float:
+        """
+        Computes critic state value V(s) without sampling an action, used for
+        value bootstrapping at time-limit truncation boundaries.
+        """
+        use_precomputed_spatial = False
+        if node_history is None and spatial_history is not None:
+            spatial_seq = spatial_history
+            if spatial_seq.dim() == 2:
+                spatial_seq = spatial_seq.unsqueeze(0)
+            spatial_seq = spatial_seq.to(self.device)
+            use_precomputed_spatial = True
+        elif node_history is not None:
+            if node_history.dim() == 3:
+                node_history = node_history.unsqueeze(0)
+            node_history = node_history.to(self.device)
+        else:
+            raise ValueError("Either node_history or spatial_history must be provided.")
+
+        if obj_vec.dim() == 1:
+            obj_vec = obj_vec.unsqueeze(0)
+        if raw_state.dim() == 1:
+            raw_state = raw_state.unsqueeze(0)
+
+        obj_vec = obj_vec.to(self.device)
+        raw_state = raw_state.to(self.device)
+
+        with torch.no_grad():
+            if not use_precomputed_spatial:
+                spatial_seq = self.network.encode_spatial_sequence(node_history)
+            traffic_emb = self.network.encode_temporal(spatial_seq)
+            if self.ablation_mode == "no_interaction":
+                int_mat = torch.zeros(1, 5, 5, device=self.device)
+            elif self.ablation_mode == "rolling_pearson":
+                if rolling_pearson is not None:
+                    int_mat = torch.tensor(rolling_pearson, dtype=torch.float32, device=self.device).unsqueeze(0)
+                else:
+                    int_mat = torch.zeros(1, 5, 5, device=self.device)
+            else:
+                scoil_out = self.interaction_learner(traffic_emb, obj_vec)
+                int_mat = scoil_out["shrunk_matrix"]
+
+            out = self.network(spatial_seq, obj_vec, int_mat, raw_state)
+            return float(out["value"].item())
 
     def act(
         self,
@@ -295,6 +383,7 @@ class InteractionAwarePPOAgent:
         int_mats = torch.stack(buffer.interaction_matrices, dim=0).to(self.device)
         raw_states = torch.stack(buffer.raw_states, dim=0).to(self.device)
         actions = torch.stack(buffer.actions, dim=0).to(self.device)
+        exec_actions = torch.stack(buffer.exec_actions, dim=0).to(self.device)
         old_log_probs = torch.tensor(buffer.log_probs, dtype=torch.float32).to(self.device)
         returns = returns.to(self.device)
         advantages = advantages.to(self.device)
@@ -314,6 +403,7 @@ class InteractionAwarePPOAgent:
                 b_int = int_mats[b_idx]
                 b_raw = raw_states[b_idx]
                 b_act = actions[b_idx]
+                b_exec_act = exec_actions[b_idx]
                 b_old_lp = old_log_probs[b_idx]
                 b_ret = returns[b_idx]
                 b_adv = advantages[b_idx]
@@ -364,10 +454,13 @@ class InteractionAwarePPOAgent:
                 value_loss = F.mse_loss(values, b_ret)
 
                 # 6. AUXILIARY RESIDUAL OBJECTIVE DYNAMICS LOSS
-                pred_next_obj = self.network.predict_next_objectives(manifold, b_act, b_obj)
+                # Conditions predictive models on executed physical actions (which caused the state change)
+                # while preserving proposed policy actions b_act for policy gradient surrogate loss
+                pred_next_obj = self.network.predict_next_objectives(manifold, b_exec_act, b_obj)
                 aux_loss = F.mse_loss(pred_next_obj, b_next_obj)
+                live_unc = scoil_out.get("uncertainty") if self.ablation_mode not in ("no_interaction", "rolling_pearson") else None
                 scoil_pred_loss = self.interaction_learner.compute_predictive_loss(
-                    live_int_mat, b_obj, b_act, b_next_obj
+                    live_int_mat, b_obj, b_exec_act, b_next_obj, uncertainty=live_unc
                 )
 
                 # 7. URGENCY-REGULATED PREFERENCE ADAPTATION WITH ANTI-COLLAPSE ENTROPY BARRIER
@@ -460,6 +553,7 @@ def train_interaction_aware_ppo(
         sumo_config=config.simulation.sumo_config,
         enforce_safety_shield=shield_enabled,
         max_steps=1800,
+        objective_config=config.get("objectives"),
     )
 
     agent = InteractionAwarePPOAgent(config=config, device="cpu", ablation_mode=ablation_mode)
@@ -478,9 +572,11 @@ def train_interaction_aware_ppo(
         print(f"ACTIVE ABLATION MODE: {ablation_mode}")
     print("=" * 80)
 
-    # Initialize raw node history buffer with real graph snapshots
+    # Initialize raw node history buffer with causal zero-padding
+    # Prior steps are zero-padded; initial observation is placed at active index
     node_feat = torch.tensor(info["node_features"], dtype=torch.float32).unsqueeze(0) # [1, 9, 5]
-    node_history = node_feat.unsqueeze(1).repeat(1, 10, 1, 1) # [1, 10, 9, 5]
+    node_history = torch.zeros(1, 10, node_feat.size(1), node_feat.size(2), dtype=torch.float32)
+    node_history[:, -1] = node_feat
     raw_state = torch.tensor(info["raw_state"], dtype=torch.float32).unsqueeze(0)
 
     while current_step < total_timesteps:
@@ -507,6 +603,23 @@ def train_interaction_aware_ppo(
             done = terminated or truncated
 
             next_obj_vec = torch.tensor(next_info["normalized_objectives"], dtype=torch.float32).unsqueeze(0)
+            next_node_feat = torch.tensor(next_info["node_features"], dtype=torch.float32).unsqueeze(0).unsqueeze(1)
+            next_node_history = torch.cat([node_history[:, 1:], next_node_feat], dim=1)
+            next_raw_state = torch.tensor(next_info["raw_state"], dtype=torch.float32).unsqueeze(0)
+
+            # Distinguish proposed action from executed action under safety shield
+            exec_action = np.array(next_info.get("executed_action", action), dtype=np.int64)
+
+            # Compute bootstrap value for non-terminal time-limit truncation
+            if truncated and not terminated:
+                bootstrap_val = agent.get_value(
+                    node_history=next_node_history,
+                    obj_vec=next_obj_vec,
+                    raw_state=next_raw_state,
+                    rolling_pearson=next_info.get("interaction_matrix"),
+                )
+            else:
+                bootstrap_val = 0.0
 
             # Store step in experiment run log
             run.log_step(
@@ -542,10 +655,16 @@ def train_interaction_aware_ppo(
                 weights=weights[0],
                 prev_weights=prev_w,
                 same_episode_mask=same_episode_mask,
+                exec_action=exec_action,
+                terminated=terminated,
+                truncated=truncated,
+                bootstrap_value=bootstrap_val,
             )
 
             current_step += 1
             info = next_info
+            node_history = next_node_history
+            raw_state = next_raw_state
 
             # Periodic model checkpoint
             if checkpoint_interval > 0 and current_step % checkpoint_interval == 0:
@@ -553,17 +672,13 @@ def train_interaction_aware_ppo(
                 agent.save_checkpoint(ckpt_path, step=current_step)
                 print(f"[CHECKPOINT] Periodic model saved to {ckpt_path.name}")
 
-            # Roll node history forward with real node features from SUMO
-            new_node_feat = torch.tensor(info["node_features"], dtype=torch.float32).unsqueeze(0).unsqueeze(1)
-            node_history = torch.cat([node_history[:, 1:], new_node_feat], dim=1)
-            raw_state = torch.tensor(info["raw_state"], dtype=torch.float32).unsqueeze(0)
-
             if done:
                 obs, info = env.reset(seed=seed + current_step)
                 episodes += 1
                 last_weights = None
                 node_feat = torch.tensor(info["node_features"], dtype=torch.float32).unsqueeze(0)
-                node_history = node_feat.unsqueeze(1).repeat(1, 10, 1, 1)
+                node_history = torch.zeros(1, 10, node_feat.size(1), node_feat.size(2), dtype=torch.float32)
+                node_history[:, -1] = node_feat
                 raw_state = torch.tensor(info["raw_state"], dtype=torch.float32).unsqueeze(0)
 
         # Update network parameters
@@ -668,11 +783,13 @@ def evaluate_interaction_aware_ppo(
             sumo_config=config.simulation.sumo_config,
             enforce_safety_shield=shield_enabled,
             max_steps=effective_horizon,
+            objective_config=config.get("objectives"),
         )
 
         obs, info = env.reset(seed=current_eval_seed)
         node_feat = torch.tensor(info["node_features"], dtype=torch.float32).unsqueeze(0)
-        node_history = node_feat.unsqueeze(1).repeat(1, 10, 1, 1)
+        node_history = torch.zeros(1, 10, node_feat.size(1), node_feat.size(2), dtype=torch.float32)
+        node_history[:, -1] = node_feat
         raw_state = torch.tensor(info["raw_state"], dtype=torch.float32).unsqueeze(0)
 
         step = 0

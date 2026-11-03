@@ -60,6 +60,28 @@ def normalize_evaluation_mode(mode: str) -> str:
     return EVALUATION_MODE_ALIASES.get(m, m)
 
 
+def get_actual_sumo_version() -> str:
+    """Queries actual runtime SUMO or eclipse-sumo package version dynamically."""
+    try:
+        import traci
+        if hasattr(traci, "isLoaded") and traci.isLoaded():
+            ver = traci.getVersion()
+            return str(ver[1] if isinstance(ver, (list, tuple)) and len(ver) > 1 else ver)
+    except Exception:
+        pass
+    try:
+        import importlib.metadata
+        return str(importlib.metadata.version("eclipse-sumo"))
+    except Exception:
+        pass
+    try:
+        import importlib.metadata
+        return str(importlib.metadata.version("traci"))
+    except Exception:
+        pass
+    return "UNAVAILABLE"
+
+
 def get_environment_info() -> Dict[str, str]:
     """Captures runtime environment provenance (Python, PyTorch, SUMO, platform)."""
     import platform
@@ -73,11 +95,8 @@ def get_environment_info() -> Dict[str, str]:
         env_info["torch_version"] = str(torch.__version__)
     except Exception:
         env_info["torch_version"] = "UNAVAILABLE"
-    try:
-        import traci
-        env_info["sumo_version"] = "1.28.0"
-    except Exception:
-        env_info["sumo_version"] = "UNAVAILABLE"
+
+    env_info["sumo_version"] = get_actual_sumo_version()
     return env_info
 
 
@@ -96,6 +115,102 @@ REQUIRED_MANIFEST_SCHEMA_FIELDS = [
     "completion_status",
 ]
 
+
+
+SCHEMA_VERSION_CURRENT = "2.1.0"
+
+PREREGISTERED_ALGORITHMS = {
+    "Fixed_Time",
+    "FixedTime",
+    "Actuated",
+    "MaxPressure",
+    "FW_PPO",
+    "FixedWeightPPO",
+    "SA_PPO",
+    "StateAdaptivePPO",
+    "MLP_PPO",
+    "IA_MOPPO",
+    "DOIM",
+    "DOIM_Traffic_RL",
+    "DOIM_no_interaction",
+    "DOIM_rolling_pearson",
+    "DOIM_no_shield",
+}
+
+
+def is_confirmatory_benchmark_eligible(
+    manifest_or_run: Any,
+    declared_tier: str = "confirmatory",
+    required_horizon: Optional[int] = None,
+    allow_legacy: bool = False,
+) -> Tuple[bool, List[str], Optional[Dict[str, Any]]]:
+    """
+    IEEE T-ITS Strict Fail-Closed Benchmark Eligibility Predicate.
+    Evaluates whether an experiment run artifact qualifies for publication-grade confirmatory reporting.
+    """
+    reasons: List[str] = []
+    
+    status, class_msg, manifest_data = classify_experiment_manifest(
+        manifest_or_run, allow_legacy=allow_legacy
+    )
+    
+    if status in (ManifestStatus.INCOMPLETE, ManifestStatus.INVALID) or manifest_data is None:
+        reasons.append(f"Manifest status '{status}': {class_msg}")
+        return False, reasons, None
+
+    if status == ManifestStatus.LEGACY_VALID and not allow_legacy:
+        reasons.append("Legacy migrated manifest is excluded from strict confirmatory cohort.")
+        return False, reasons, manifest_data
+
+    completion = str(manifest_data.get("completion_status", "")).upper()
+    if completion != "COMPLETED":
+        reasons.append(f"Run completion status is '{completion}' (must be 'COMPLETED').")
+
+    if manifest_data.get("has_safety_fault", False) or manifest_data.get("fatal_error"):
+        reasons.append(f"Run recorded fatal simulator or safety shield fault: {manifest_data.get('fatal_error')}")
+
+    algo = str(manifest_data.get("algorithm", ""))
+    if algo not in PREREGISTERED_ALGORITHMS:
+        reasons.append(f"Algorithm '{algo}' is not in the preregistered comparison set.")
+
+    eval_mode = normalize_evaluation_mode(manifest_data.get("evaluation_mode", ""))
+    tier = declared_tier.lower()
+    
+    if tier == "confirmatory":
+        if eval_mode != "deterministic_eval":
+            reasons.append(f"Confirmatory evaluation mode must be 'deterministic_eval', got '{eval_mode}'.")
+            
+        total_steps = int(manifest_data.get("training_timesteps", 0))
+        if total_steps < 5000:
+            reasons.append(f"Training budget {total_steps} is below confirmatory threshold (>=5,000 required; 128-step diagnostics rejected).")
+
+        horizon = manifest_data.get("eval_horizon") or manifest_data.get("total_steps") or 0
+        min_horizon = required_horizon if required_horizon is not None else 1800
+        if horizon < min_horizon:
+            reasons.append(f"Evaluation horizon {horizon}s is below required {min_horizon}s.")
+
+        is_learning_agent = algo not in ("Fixed_Time", "FixedTime", "Actuated", "MaxPressure")
+        ckpt_hash = manifest_data.get("model_checkpoint_sha256")
+        if is_learning_agent and (not ckpt_hash or ckpt_hash == "UNKNOWN" or len(ckpt_hash) < 32):
+            reasons.append("Missing or unverified model checkpoint SHA-256 provenance.")
+
+    elif tier == "pilot":
+        total_steps = int(manifest_data.get("training_timesteps", 0))
+        if total_steps < 5000:
+            reasons.append(f"Training budget {total_steps} is below pilot threshold (>=5,000 required).")
+
+    elif tier == "smoke":
+        pass
+    else:
+        reasons.append(f"Unknown declared experiment tier: '{declared_tier}'.")
+
+    train_seed = manifest_data.get("train_seed")
+    eval_seed = manifest_data.get("evaluation_seed")
+    if train_seed is None or eval_seed is None:
+        reasons.append("Missing explicit train_seed or evaluation_seed mapping.")
+
+    is_eligible = len(reasons) == 0
+    return is_eligible, reasons, manifest_data
 
 def migrate_legacy_manifest(data: Dict[str, Any]) -> Tuple[bool, str, Dict[str, Any]]:
     """
@@ -271,6 +386,7 @@ def classify_experiment_manifest(
         except (ValueError, TypeError):
             return ManifestStatus.INVALID, "training_timesteps must be a valid integer", None
 
+        manifest_data.setdefault("schema_version", SCHEMA_VERSION_CURRENT)
         return ManifestStatus.VALID, "Valid canonical experiment manifest.", manifest_data
 
     # Canonical schema not fully satisfied directly: check for legacy import
@@ -394,6 +510,7 @@ class ExperimentRun:
         Initializes manifest.json with runtime metadata adhering strictly to Phase 1 schema.
         """
         manifest = {
+            "schema_version": SCHEMA_VERSION_CURRENT,
             "experiment_id": self.experiment_id,
             "run_id": self.run_id,
             "experiment_name": self.experiment_name,

@@ -275,7 +275,7 @@ def test_evaluation_horizon_runtime_propagation_all_four_algorithms(tmp_path, mo
     class InstrumentedMockEnv:
         instances = []
 
-        def __init__(self, sumo_config=None, enforce_safety_shield=True, max_steps=1800):
+        def __init__(self, sumo_config=None, enforce_safety_shield=True, max_steps=1800, **kwargs):
             self.sumo_config = sumo_config
             self.enforce_safety_shield = enforce_safety_shield
             self.max_steps = int(max_steps)

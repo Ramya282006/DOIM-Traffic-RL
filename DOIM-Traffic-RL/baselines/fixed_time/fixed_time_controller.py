@@ -109,6 +109,7 @@ def run_fixed_time_experiment(
         sumo_config=config.simulation.sumo_config,
         enforce_safety_shield=config.safety_and_constraints.enforce_safety_shield,
         max_steps=total_timesteps,
+        objective_config=config.get("objectives"),
     )
 
     controller = FixedTimeController(cycle_time=cycle_time, num_controllable_tls=5)

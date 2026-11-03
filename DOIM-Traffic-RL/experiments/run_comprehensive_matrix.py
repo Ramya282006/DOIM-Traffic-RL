@@ -1,9 +1,14 @@
 """
-DOIM-Traffic-RL: Comprehensive Experimental Matrix Runner
-Executes multi-seed, multi-scenario evaluation of Proposed DOIM-Traffic-RL against
-all baselines (Fixed-Time, FW-PPO, SA-PPO) and architectural ablations.
-Supports configurable budgets (128 smoke, 5000 pilot, 10000 intermediate, 50000 main convergence),
-periodic checkpointing, and independent deterministic evaluation loops.
+DOIM-Traffic-RL: Comprehensive Experimental Matrix Runner (Phase H)
+Executes multi-seed, multi-scenario evaluation of Proposed DOIM-Traffic-RL (IA-MOPPO)
+against all transportation engineering baselines (Fixed-Time, Actuated, Max-Pressure),
+reinforcement learning baselines (FW-PPO, SA-PPO, parameter-matched MLP-PPO), and ablations.
+
+Supports:
+  - Experiment Tiers: 'smoke' (128), 'pilot' (5,000), 'intermediate' (10,000), 'main_convergence' (50,000)
+  - Strict Compute Gate: Aborts if steps > 5,000 without explicit --approve_expensive flag.
+  - Independent training seeds and held-out deterministic evaluation seeds (seed + 1000).
+  - Checkpoint provenance logging and fail-closed manifest generation.
 """
 
 import argparse
@@ -18,43 +23,72 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from training.interaction_aware_ppo import train_interaction_aware_ppo
-from baselines.fixed_time.fixed_time_controller import run_fixed_time_experiment
+from baselines.fixed_time.fixed_time_controller import run_fixed_time_experiment, evaluate_fixed_time
+from baselines.actuated.actuated_controller import run_actuated_experiment
+from baselines.max_pressure.max_pressure_controller import run_max_pressure_experiment
 from baselines.ppo.fixed_weight_ppo import train_fixed_weight_ppo
 from baselines.ppo.state_adaptive_ppo import train_state_adaptive_ppo
+from baselines.ppo.mlp_ppo import train_mlp_ppo
 from analysis.statistical_analyzer import StatisticalAnalyzer
 from analysis.plot_generator import PublicationPlotGenerator
 
 
+TIER_BUDGETS = {
+    "smoke": 128,
+    "pilot": 5000,
+    "intermediate": 10000,
+    "main_convergence": 50000,
+}
+
+
 def run_experiment_matrix(
-    timesteps: int = 128,
+    tier: str = "smoke",
+    timesteps: Optional[int] = None,
     seeds: List[int] = [42],
     include_ablations: bool = True,
+    include_all_baselines: bool = True,
     scenarios: List[str] = ["scenarios/directional_shift/north_south_surge.sumocfg"],
     eval_episodes: int = 1,
     eval_horizon: int = 1800,
     checkpoint_interval: int = 2500,
     output_root: str = "results/runs",
+    approve_expensive: bool = False,
 ):
-    total_algos = 6 if include_ablations else 4
-    total_runs = total_algos * len(seeds) * len(scenarios)
+    step_budget = timesteps if timesteps is not None else TIER_BUDGETS.get(tier.lower(), 128)
+    
+    # Strict compute approval gate
+    if step_budget > 5000 and not approve_expensive:
+        raise PermissionError(
+            f"COMPUTE APPROVAL BLOCKED: Requested training budget is {step_budget} steps (>5,000 threshold). "
+            f"Under IEEE T-ITS experimental protocol, expensive confirmatory experiments require explicit user sign-off. "
+            f"Please present compute plan to user and rerun with --approve_expensive."
+        )
+
+    num_algos = 7 if include_all_baselines else 4
+    if include_ablations:
+        num_algos += 2
+        
+    total_runs = num_algos * len(seeds) * len(scenarios)
     print("=" * 80)
-    print("STARTING DOIM-TRAFFIC-RL EXPERIMENT MATRIX")
-    print(f"Configurations: {total_algos} ({'4 Primary + 2 Ablations' if include_ablations else '4 Primary Baseline Comparison'})")
-    print(f"Total Runs: {total_runs} (Seeds: {seeds} | Scenarios: {scenarios})")
-    print(f"Training Timesteps per run: {timesteps} | Eval Episodes: {eval_episodes} (Horizon: {eval_horizon}s)")
+    print(f"STARTING DOIM-TRAFFIC-RL EXPERIMENT MATRIX (TIER: {tier.upper()})")
+    print(f"Configurations: {num_algos} algorithms | Total Runs: {total_runs}")
+    print(f"Seeds: {seeds} | Scenarios: {scenarios}")
+    print(f"Training Steps/Run: {step_budget} | Eval Episodes: {eval_episodes} (Horizon: {eval_horizon}s)")
     print("=" * 80)
 
     start_time = time.time()
 
     for scenario in scenarios:
         for seed in seeds:
-            print(f"\n>>> Running Scenario: {scenario} | Seed: {seed}")
+            print(f"\n=======================================================")
+            print(f">>> Scenario: {scenario} | Seed: {seed}")
+            print(f"=======================================================")
 
             # 1. Proposed DOIM-Traffic-RL (IA-MOPPO)
-            print("--- Running Proposed IA-MOPPO ---")
+            print("\n--- [1/7] Running Proposed IA-MOPPO ---")
             train_interaction_aware_ppo(
                 scenario_override=scenario,
-                total_timesteps=timesteps,
+                total_timesteps=step_budget,
                 seed=seed,
                 output_root=output_root,
                 checkpoint_interval=checkpoint_interval,
@@ -62,17 +96,15 @@ def run_experiment_matrix(
                 eval_horizon=eval_horizon,
             )
 
-            # 2. Fixed-Time Baseline (Rule-based non-learning controller)
-            print("--- Running Fixed-Time Baseline ---")
+            # 2. Fixed-Time Baseline
+            print("\n--- [2/7] Running Fixed-Time Baseline ---")
             run_fixed_time_experiment(
                 scenario_override=scenario,
-                total_timesteps=timesteps,
+                total_timesteps=step_budget,
                 seed=seed,
                 output_root=output_root,
             )
             if eval_episodes > 0:
-                from baselines.fixed_time.fixed_time_controller import evaluate_fixed_time
-                print("--- Evaluating Fixed-Time Baseline Deterministically ---")
                 evaluate_fixed_time(
                     scenario_override=scenario,
                     n_episodes=eval_episodes,
@@ -83,34 +115,66 @@ def run_experiment_matrix(
                     output_root=output_root,
                 )
 
-            # 3. Fixed-Weight PPO Baseline
-            print("--- Running Fixed-Weight PPO Baseline ---")
+            # 3. Actuated Traffic Controller Baseline
+            if include_all_baselines:
+                print("\n--- [3/7] Running Actuated Controller Baseline ---")
+                run_actuated_experiment(
+                    scenario_override=scenario,
+                    total_timesteps=step_budget,
+                    seed=seed,
+                    output_root=output_root,
+                )
+
+            # 4. Max-Pressure Controller Baseline
+            if include_all_baselines:
+                print("\n--- [4/7] Running Max-Pressure Controller Baseline ---")
+                run_max_pressure_experiment(
+                    scenario_override=scenario,
+                    total_timesteps=step_budget,
+                    seed=seed,
+                    output_root=output_root,
+                )
+
+            # 5. Fixed-Weight PPO Baseline
+            print("\n--- [5/7] Running Fixed-Weight PPO Baseline ---")
             train_fixed_weight_ppo(
                 scenario_override=scenario,
-                total_timesteps=timesteps,
+                total_timesteps=step_budget,
                 seed=seed,
                 eval_episodes=eval_episodes,
                 eval_horizon=eval_horizon,
                 output_root=output_root,
             )
 
-            # 4. State-Adaptive PPO Baseline (Direct state-to-preference)
-            print("--- Running State-Adaptive PPO Baseline ---")
+            # 6. State-Adaptive PPO Baseline
+            print("\n--- [6/7] Running State-Adaptive PPO Baseline ---")
             train_state_adaptive_ppo(
                 scenario_override=scenario,
-                total_timesteps=timesteps,
+                total_timesteps=step_budget,
                 seed=seed,
                 eval_episodes=eval_episodes,
                 eval_horizon=eval_horizon,
                 output_root=output_root,
             )
 
+            # 7. Parameter-Matched MLP-PPO Baseline
+            if include_all_baselines:
+                print("\n--- [7/7] Running Parameter-Matched MLP-PPO Baseline ---")
+                train_mlp_ppo(
+                    scenario_override=scenario,
+                    total_timesteps=step_budget,
+                    seed=seed,
+                    output_root=output_root,
+                    eval_episodes=eval_episodes,
+                    eval_horizon=eval_horizon,
+                )
+
             if include_ablations:
-                # 5. Ablation 1: w/o Interaction Manifold (M = 0)
-                print("--- Running Ablation 1: No Interaction Manifold ---")
+                # Ablation 1: No Interaction Manifold (M = 0)
+                print("\n--- [Ablation 1] Running IA-MOPPO w/o Interaction Manifold ---")
                 train_interaction_aware_ppo(
                     scenario_override=scenario,
-                    total_timesteps=timesteps,
+                    total_timesteps=step_budget,
                     seed=seed,
                     ablation_mode="no_interaction",
                     output_root=output_root,
@@ -119,11 +183,11 @@ def run_experiment_matrix(
                     eval_horizon=eval_horizon,
                 )
 
-                # 6. Ablation 2: Legacy Rolling Pearson Correlation
-                print("--- Running Ablation 2: Rolling Pearson Correlation ---")
+                # Ablation 2: Rolling Pearson Correlation
+                print("\n--- [Ablation 2] Running IA-MOPPO w/ Rolling Pearson Correlation ---")
                 train_interaction_aware_ppo(
                     scenario_override=scenario,
-                    total_timesteps=timesteps,
+                    total_timesteps=step_budget,
                     seed=seed,
                     ablation_mode="rolling_pearson",
                     output_root=output_root,
@@ -134,40 +198,45 @@ def run_experiment_matrix(
 
     elapsed = time.time() - start_time
     print("\n" + "=" * 80)
-    print(f"ALL EXPERIMENTS COMPLETED IN {elapsed:.1f}s! RUNNING STATISTICAL ANALYSIS...")
+    print(f"EXPERIMENT MATRIX COMPLETED in {elapsed:.2f} seconds ({elapsed/60.0:.2f} minutes).")
     print("=" * 80)
 
+    # Post-run analysis and reporting
     analyzer = StatisticalAnalyzer(runs_root=output_root)
-    analyzer.export_summary_tables()
-
-    plotter = PublicationPlotGenerator()
-    plotter.generate_all_plots()
-
-    print("\n" + "=" * 80)
-    print("COMPREHENSIVE MATRIX COMPLETE: DATA, TABLES, AND FIGURES READY!")
-    print("=" * 80)
+    df = analyzer.load_run_summaries(reject_incomplete=True)
+    print(f"Total valid runs loaded: {len(df)}")
+    
+    table_csv = Path(output_root).parent / "tables" / f"matrix_{tier}_comparison.csv"
+    table_md = Path(output_root).parent / "tables" / f"matrix_{tier}_comparison.md"
+    analyzer.export_latex_tables(output_csv=table_csv, output_markdown=table_md)
+    print(f"Generated comparison tables: {table_csv} and {table_md}")
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="DOIM-Traffic-RL Experiment Matrix Runner")
-    parser.add_argument("--timesteps", type=int, default=128, help="Budget: 128 (smoke), 5000 (pilot), 10000 (intermediate), 50000 (main)")
-    parser.add_argument("--seeds", nargs="+", type=int, default=[42], help="List of independent training seeds")
-    parser.add_argument("--scenarios", nargs="+", type=str, default=["scenarios/directional_shift/north_south_surge.sumocfg"], help="List of scenario sumocfg paths")
-    parser.add_argument("--eval_episodes", type=int, default=1, help="Number of frozen deterministic evaluation episodes per model (default: 1)")
-    parser.add_argument("--eval_horizon", type=int, default=1800, help="Evaluation horizon in seconds per episode (default: 1800)")
-    parser.add_argument("--checkpoint_interval", type=int, default=2500, help="Periodic checkpoint save interval")
-    parser.add_argument("--output_root", type=str, default="results/runs", help="Root directory for experiment logs")
-    parser.add_argument("--no_ablations", action="store_true", help="Skip ablations")
+    parser = argparse.ArgumentParser(description="DOIM-Traffic-RL Comprehensive Matrix Runner")
+    parser.add_argument("--tier", type=str, default="smoke", choices=["smoke", "pilot", "intermediate", "main_convergence"],
+                        help="Experiment budget tier")
+    parser.add_argument("--timesteps", type=int, default=None, help="Explicit timestep override")
+    parser.add_argument("--seeds", type=int, nargs="+", default=[42], help="List of random seeds")
+    parser.add_argument("--scenarios", type=str, nargs="+", default=["scenarios/directional_shift/north_south_surge.sumocfg"],
+                        help="List of scenario .sumocfg files")
+    parser.add_argument("--eval_episodes", type=int, default=1, help="Number of evaluation episodes per run")
+    parser.add_argument("--eval_horizon", type=int, default=1800, help="Evaluation horizon in simulated seconds")
+    parser.add_argument("--no_ablations", action="store_true", help="Disable ablation variants")
+    parser.add_argument("--output_root", type=str, default="results/runs", help="Output directory for runs")
+    parser.add_argument("--approve_expensive", action="store_true", help="Explicit user sign-off for >5,000 step runs")
+
     args = parser.parse_args()
 
     run_experiment_matrix(
+        tier=args.tier,
         timesteps=args.timesteps,
         seeds=args.seeds,
-        scenarios=args.scenarios,
         include_ablations=not args.no_ablations,
+        include_all_baselines=True,
+        scenarios=args.scenarios,
         eval_episodes=args.eval_episodes,
         eval_horizon=args.eval_horizon,
-        checkpoint_interval=args.checkpoint_interval,
         output_root=args.output_root,
+        approve_expensive=args.approve_expensive,
     )
-

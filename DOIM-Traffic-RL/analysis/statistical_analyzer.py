@@ -112,11 +112,29 @@ class StatisticalAnalyzer:
                 if reject_incomplete:
                     continue
 
+            # Fail-closed safety fault check: reject safety-faulted runs from benchmark eligibility
+            if migrated_manifest and (migrated_manifest.get("safety_fault") or migrated_manifest.get("is_valid_run") is False):
+                self.rejected_runs.append({
+                    "run_dir": str(run_dir.name),
+                    "status": "SAFETY_FAULTED",
+                    "reason": migrated_manifest.get("fault_reason", "Critical safety fault detected in manifest; run is invalid"),
+                })
+                if reject_incomplete:
+                    continue
+
             try:
                 with open(summary_path, "r", encoding="utf-8") as f:
                     data = json.load(f)
 
                 data["run_dir"] = str(run_dir)
+                if data.get("safety_fault") or data.get("is_valid_run") is False:
+                    self.rejected_runs.append({
+                        "run_dir": str(run_dir.name),
+                        "status": "SAFETY_FAULTED",
+                        "reason": data.get("fault_reason", "Critical safety fault recorded in summary.json; run is invalid"),
+                    })
+                    if reject_incomplete:
+                        continue
 
                 # Cross-Artifact Consistency Checks (Summary vs Manifest vs Metrics CSV)
                 inconsistencies = []
@@ -488,6 +506,98 @@ class StatisticalAnalyzer:
             "baseline_mean": float(np.mean(base_vals)),
             "target_mean": float(np.mean(target_vals)),
         }
+
+
+    @staticmethod
+    def compute_pareto_front(points: np.ndarray) -> np.ndarray:
+        """
+        Identifies non-dominated points in minimization sense (all objectives lower is better).
+        Args:
+            points: [N, D] array of objective scores.
+        Returns:
+            [P, D] array of non-dominated points.
+        """
+        pts = np.asarray(points, dtype=np.float64)
+        n = len(pts)
+        if n <= 1:
+            return pts
+
+        is_efficient = np.ones(n, dtype=bool)
+        for i, c in enumerate(pts):
+            if is_efficient[i]:
+                # Keep points that are not strictly dominated by c
+                # A point p is dominated by c if c <= p for all dims and c < p for at least one dim
+                is_dominated = np.all(c <= pts, axis=1) & np.any(c < pts, axis=1)
+                is_efficient[is_dominated] = False
+
+        return pts[is_efficient]
+
+    @staticmethod
+    def compute_hypervolume_2d(points: np.ndarray, ref_point: Tuple[float, float] = (1.0, 1.0)) -> float:
+        """
+        Computes 2D hypervolume bounded by a fixed reference point (e.g. [1.0, 1.0] in normalized urgency).
+        Higher hypervolume indicates superior multi-objective domination.
+        """
+        pareto_pts = StatisticalAnalyzer.compute_pareto_front(points)
+        if len(pareto_pts) == 0:
+            return 0.0
+
+        # Filter out points that do not dominate the reference point
+        valid_pts = [p for p in pareto_pts if p[0] <= ref_point[0] and p[1] <= ref_point[1]]
+        if not valid_pts:
+            return 0.0
+
+        # Sort by first objective ascending
+        sorted_pts = sorted(valid_pts, key=lambda x: x[0])
+        hv = 0.0
+        current_y_bound = ref_point[1]
+
+        for x, y in sorted_pts:
+            width = ref_point[0] - x
+            height = max(0.0, current_y_bound - y)
+            hv += width * height
+            current_y_bound = min(current_y_bound, y)
+
+        return float(hv)
+
+    @staticmethod
+    def cliffs_delta(x: np.ndarray, y: np.ndarray) -> float:
+        """
+        Computes Cliff's delta non-parametric effect size in [-1, 1].
+        """
+        x_arr = np.asarray(x, dtype=np.float64)
+        y_arr = np.asarray(y, dtype=np.float64)
+        n_x, n_y = len(x_arr), len(y_arr)
+        if n_x == 0 or n_y == 0:
+            return 0.0
+
+        greater = 0
+        less = 0
+        for xi in x_arr:
+            greater += int(np.sum(xi > y_arr))
+            less += int(np.sum(xi < y_arr))
+
+        return float((greater - less) / (n_x * n_y))
+
+    def export_latex_tables(self, output_csv: Optional[Union[str, Path]] = None, output_markdown: Optional[Union[str, Path]] = None):
+        """Exports latex/markdown tables for IEEE T-ITS manuscript."""
+        df = self.load_run_summaries()
+        if df.empty:
+            return
+        agg_df = self.aggregate_by_scenario_and_algorithm(df)
+        if output_csv:
+            p = Path(output_csv)
+            p.parent.mkdir(parents=True, exist_ok=True)
+            agg_df.to_csv(p, index=False)
+        if output_markdown:
+            p = Path(output_markdown)
+            p.parent.mkdir(parents=True, exist_ok=True)
+            try:
+                md_content = agg_df.to_markdown(index=False)
+            except Exception:
+                md_content = agg_df.to_string()
+            with open(p, "w", encoding="utf-8") as f:
+                f.write(md_content)
 
     def export_summary_tables(self, output_dir: Union[str, Path] = "results/tables"):
         """

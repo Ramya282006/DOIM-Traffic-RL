@@ -1,0 +1,33 @@
+{
+  "run_id": "Fixed_Time_north_south_surge_s1045_20261103_233141",
+  "algorithm": "Fixed_Time",
+  "scenario": "north_south_surge",
+  "seed": 1045,
+  "train_seed": 1045,
+  "eval_seed": 1045,
+  "episode_id": 0,
+  "evaluation_mode": "deterministic_eval",
+  "eval_horizon": 1800,
+  "total_steps": 1800,
+  "total_reward": -1158.5822345763445,
+  "average_reward": -0.6436567969868581,
+  "average_waiting": 355.05444444444447,
+  "max_waiting": 583.0,
+  "average_queue": 5.805555555555555,
+  "max_queue": 19.0,
+  "average_co2": 111811.63630696615,
+  "total_throughput": 644.0,
+  "average_fairness": 0.424370430101537,
+  "fairness_metric_name": "jain_disparity",
+  "fairness_metric_unit": "unknown",
+  "fairness_disparity": null,
+  "fairness_variance": null,
+  "total_shield_interventions": 0,
+  "average_weights": [
+    0.20000000298023224,
+    0.20000000298023224,
+    0.20000000298023224,
+    0.20000000298023224,
+    0.20000000298023224
+  ]
+}

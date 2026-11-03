@@ -1,0 +1,33 @@
+{
+  "run_id": "Actuated_arterial_corridor_s1042_20261103_234523",
+  "algorithm": "Actuated",
+  "scenario": "arterial_corridor",
+  "seed": 1042,
+  "train_seed": 1042,
+  "eval_seed": 1042,
+  "episode_id": 0,
+  "evaluation_mode": "deterministic_eval",
+  "eval_horizon": 1800,
+  "total_steps": 1800,
+  "total_reward": -1583.7001158744097,
+  "average_reward": -0.8798333977080054,
+  "average_waiting": 5196.263888888889,
+  "max_waiting": 8491.0,
+  "average_queue": 64.05277777777778,
+  "max_queue": 123.0,
+  "average_co2": 342481.29738023545,
+  "total_throughput": 1353.0,
+  "average_fairness": 0.5167449043111668,
+  "fairness_metric_name": "jain_disparity",
+  "fairness_metric_unit": "unknown",
+  "fairness_disparity": null,
+  "fairness_variance": null,
+  "total_shield_interventions": 0,
+  "average_weights": [
+    0.26757174125976035,
+    0.17263216497997444,
+    0.1924104955047369,
+    0.175802577038606,
+    0.19158302136593394
+  ]
+}

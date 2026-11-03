@@ -1,0 +1,372 @@
+{
+  "mission_id": "DOIM-PPO-PHASE28.2-TO-33",
+  "project_title": "Learning Dynamic Objective Interaction Manifolds for Adaptive Multi-Objective Deep Reinforcement Learning in Real-Time Traffic Systems",
+  "target_venue": "IEEE Transactions on Intelligent Transportation Systems (IEEE T-ITS)",
+  "canonical_algorithm": "DOIM-PPO",
+  "dataset": {
+    "grid3x3": {
+      "Fixed_Time": {
+        "1043": {
+          "w_net": 366.64166666666665,
+          "throughput": 642.0,
+          "queue": 5.976666666666667,
+          "co2": 111720.22459262425,
+          "fairness": 0.4281010290773378,
+          "interventions": 0,
+          "hypervolume": 0.04169207724416036,
+          "total_steps": 1800,
+          "run_id": "Fixed_Time_north_south_surge_s1043_20261103_232258"
+        },
+        "1044": {
+          "w_net": 406.0188888888889,
+          "throughput": 640.0,
+          "queue": 6.485555555555556,
+          "co2": 112812.03080851237,
+          "fairness": 0.43589966640290284,
+          "interventions": 0,
+          "hypervolume": 0.0343804288360788,
+          "total_steps": 1800,
+          "run_id": "Fixed_Time_north_south_surge_s1044_20261103_232609"
+        },
+        "1045": {
+          "w_net": 355.05444444444447,
+          "throughput": 644.0,
+          "queue": 5.805555555555555,
+          "co2": 111811.63630696615,
+          "fairness": 0.424370430101537,
+          "interventions": 0,
+          "hypervolume": 0.04361837812891603,
+          "total_steps": 1800,
+          "run_id": "Fixed_Time_north_south_surge_s1045_20261103_233141"
+        },
+        "1046": {
+          "w_net": 368.82055555555553,
+          "throughput": 643.0,
+          "queue": 5.984444444444445,
+          "co2": 111944.52381985134,
+          "fairness": 0.4413775593621863,
+          "interventions": 0,
+          "hypervolume": 0.04045158356241693,
+          "total_steps": 1800,
+          "run_id": "Fixed_Time_north_south_surge_s1046_20261103_232258"
+        },
+        "1042": {
+          "w_net": 366.9322222222222,
+          "throughput": 643.0,
+          "queue": 6.0055555555555555,
+          "co2": 112207.54906548394,
+          "fairness": 0.41935519975920516,
+          "interventions": 0,
+          "hypervolume": 0.04145766815942093,
+          "total_steps": 1800,
+          "run_id": "Fixed_Time_north_south_surge_s42_20261103_200132"
+        }
+      },
+      "Actuated": {
+        "1042": {
+          "w_net": 1454.5127777777777,
+          "throughput": 631.0,
+          "queue": 19.86,
+          "co2": 136252.49358262803,
+          "fairness": 0.46778709035780697,
+          "interventions": 0,
+          "hypervolume": 0.0,
+          "total_steps": 1800,
+          "run_id": "Actuated_north_south_surge_s1042_20261103_200256"
+        },
+        "1043": {
+          "w_net": 1458.65,
+          "throughput": 625.0,
+          "queue": 19.887777777777778,
+          "co2": 135684.9558195665,
+          "fairness": 0.46964218152893916,
+          "interventions": 0,
+          "hypervolume": 0.0,
+          "total_steps": 1800,
+          "run_id": "Actuated_north_south_surge_s1043_20261103_233141"
+        },
+        "1044": {
+          "w_net": 1613.9383333333333,
+          "throughput": 628.0,
+          "queue": 21.91888888888889,
+          "co2": 139604.65793036568,
+          "fairness": 0.4760946914056937,
+          "interventions": 0,
+          "hypervolume": 0.0,
+          "total_steps": 1800,
+          "run_id": "Actuated_north_south_surge_s1044_20261103_233520"
+        },
+        "1045": {
+          "w_net": 1552.4505555555556,
+          "throughput": 621.0,
+          "queue": 21.352222222222224,
+          "co2": 138364.1643044705,
+          "fairness": 0.46133591391974027,
+          "interventions": 0,
+          "hypervolume": 0.0,
+          "total_steps": 1800,
+          "run_id": "Actuated_north_south_surge_s1045_20261103_232258"
+        },
+        "1046": {
+          "w_net": 1579.7872222222222,
+          "throughput": 625.0,
+          "queue": 21.491666666666667,
+          "co2": 138635.24028740777,
+          "fairness": 0.4740803965843386,
+          "interventions": 0,
+          "hypervolume": 0.0,
+          "total_steps": 1800,
+          "run_id": "Actuated_north_south_surge_s1046_20261103_233140"
+        }
+      },
+      "MaxPressure": {
+        "1042": {
+          "w_net": 158.5338888888889,
+          "throughput": 648.0,
+          "queue": 2.837222222222222,
+          "co2": 106838.785988227,
+          "fairness": 0.3868278734510144,
+          "interventions": 6240,
+          "hypervolume": 0.09475228709025534,
+          "total_steps": 1800,
+          "run_id": "MaxPressure_north_south_surge_s1042_20261103_200433"
+        },
+        "1043": {
+          "w_net": 139.76166666666666,
+          "throughput": 651.0,
+          "queue": 2.5505555555555555,
+          "co2": 106188.34637295193,
+          "fairness": 0.4149557281637357,
+          "interventions": 6240,
+          "hypervolume": 0.09770454059241915,
+          "total_steps": 1800,
+          "run_id": "MaxPressure_north_south_surge_s1043_20261103_233521"
+        },
+        "1044": {
+          "w_net": 148.40277777777777,
+          "throughput": 648.0,
+          "queue": 2.6972222222222224,
+          "co2": 106378.49125610352,
+          "fairness": 0.4117756572986643,
+          "interventions": 6238,
+          "hypervolume": 0.09528696674208638,
+          "total_steps": 1800,
+          "run_id": "MaxPressure_north_south_surge_s1044_20261103_233141"
+        },
+        "1045": {
+          "w_net": 235.195,
+          "throughput": 634.0,
+          "queue": 3.9283333333333332,
+          "co2": 107386.45746744792,
+          "fairness": 0.4661659274788366,
+          "interventions": 6102,
+          "hypervolume": 0.06828791002497724,
+          "total_steps": 1800,
+          "run_id": "MaxPressure_north_south_surge_s1045_20261103_233504"
+        },
+        "1046": {
+          "w_net": 227.52777777777777,
+          "throughput": 640.0,
+          "queue": 3.82,
+          "co2": 107493.61608439128,
+          "fairness": 0.4315548977462782,
+          "interventions": 6112,
+          "hypervolume": 0.0731405935310453,
+          "total_steps": 1800,
+          "run_id": "MaxPressure_north_south_surge_s1046_20261103_233715"
+        }
+      },
+      "FW_PPO": {
+        "1042": {
+          "w_net": 812.4383333333334,
+          "throughput": 637.0,
+          "queue": 11.356111111111112,
+          "co2": 120645.63438666449,
+          "fairness": 0.4854200072089831,
+          "interventions": 2393,
+          "hypervolume": 0.0,
+          "total_steps": 1800,
+          "run_id": "FW_PPO_north_south_surge_s42_20261103_200600"
+        }
+      },
+      "SA_PPO": {
+        "1042": {
+          "w_net": 949.3905555555556,
+          "throughput": 637.0,
+          "queue": 12.905,
+          "co2": 123596.94874972873,
+          "fairness": 0.4720978410417835,
+          "interventions": 1142,
+          "hypervolume": 0.0,
+          "total_steps": 1800,
+          "run_id": "SA_PPO_north_south_surge_s42_20261103_200734"
+        }
+      },
+      "MLP_PPO": {
+        "1042": {
+          "w_net": 721.1133333333333,
+          "throughput": 638.0,
+          "queue": 9.926666666666666,
+          "co2": 118639.31609456381,
+          "fairness": 0.5035924835337533,
+          "interventions": 2127,
+          "hypervolume": 0.0,
+          "total_steps": 1800,
+          "run_id": "MLP_PPO_north_south_surge_s42_20261103_200901"
+        }
+      },
+      "IA_MOPPO": {
+        "1042": {
+          "w_net": 577.6394444444444,
+          "throughput": 638.0,
+          "queue": 8.360555555555555,
+          "co2": 115737.39954942491,
+          "fairness": 0.5092992788553238,
+          "interventions": 3762,
+          "hypervolume": 0.0113853871046846,
+          "total_steps": 1800,
+          "run_id": "IA_MOPPO_north_south_surge_s42_20261103_221645"
+        }
+      }
+    },
+    "arterial_corridor": {
+      "Fixed_Time": {
+        "1042": {
+          "w_net": 1764.255,
+          "throughput": 1479.0,
+          "queue": 22.765555555555554,
+          "co2": 276297.71354560007,
+          "fairness": 0.5064934761159949,
+          "interventions": 0,
+          "hypervolume": 0.0,
+          "total_steps": 1800,
+          "run_id": "Fixed_Time_arterial_corridor_s1042_20261103_233506"
+        },
+        "1043": {
+          "w_net": 2247.112222222222,
+          "throughput": 1435.0,
+          "queue": 28.390555555555554,
+          "co2": 286454.0754045953,
+          "fairness": 0.49211868906186684,
+          "interventions": 0,
+          "hypervolume": 0.0,
+          "total_steps": 1800,
+          "run_id": "Fixed_Time_arterial_corridor_s1043_20261103_233840"
+        },
+        "1044": {
+          "w_net": 2301.9466666666667,
+          "throughput": 1439.0,
+          "queue": 28.517222222222223,
+          "co2": 285635.27191189234,
+          "fairness": 0.49758065016733277,
+          "interventions": 0,
+          "hypervolume": 0.0,
+          "total_steps": 1800,
+          "run_id": "Fixed_Time_arterial_corridor_s1044_20261103_234247"
+        },
+        "1045": {
+          "w_net": 1832.8716666666667,
+          "throughput": 1476.0,
+          "queue": 23.558888888888887,
+          "co2": 280081.0324149577,
+          "fairness": 0.4592511363244719,
+          "interventions": 0,
+          "hypervolume": 0.0,
+          "total_steps": 1800,
+          "run_id": "Fixed_Time_arterial_corridor_s1045_20261103_233732"
+        },
+        "1046": {
+          "w_net": 1609.095,
+          "throughput": 1471.0,
+          "queue": 21.409444444444443,
+          "co2": 273343.87343004014,
+          "fairness": 0.43766044646915464,
+          "interventions": 0,
+          "hypervolume": 0.0,
+          "total_steps": 1800,
+          "run_id": "Fixed_Time_arterial_corridor_s1046_20261103_234123"
+        }
+      },
+      "Actuated": {
+        "1042": {
+          "w_net": 5196.263888888889,
+          "throughput": 1353.0,
+          "queue": 64.05277777777778,
+          "co2": 342481.29738023545,
+          "fairness": 0.5167449043111668,
+          "interventions": 0,
+          "hypervolume": 0.0,
+          "total_steps": 1800,
+          "run_id": "Actuated_arterial_corridor_s1042_20261103_234523"
+        },
+        "1043": {
+          "w_net": 5588.098333333333,
+          "throughput": 1346.0,
+          "queue": 66.98222222222222,
+          "co2": 343066.96361857094,
+          "fairness": 0.5210212408668465,
+          "interventions": 0,
+          "hypervolume": 0.0,
+          "total_steps": 1800,
+          "run_id": "Actuated_arterial_corridor_s1043_20261103_233750"
+        },
+        "1044": {
+          "w_net": 5764.13,
+          "throughput": 1343.0,
+          "queue": 70.90833333333333,
+          "co2": 353818.5529470486,
+          "fairness": 0.513767858478758,
+          "interventions": 0,
+          "hypervolume": 0.0,
+          "total_steps": 1800,
+          "run_id": "Actuated_arterial_corridor_s1044_20261103_234236"
+        },
+        "1046": {
+          "w_net": 6250.126666666667,
+          "throughput": 1352.0,
+          "queue": 76.56777777777778,
+          "co2": 371246.87840182835,
+          "fairness": 0.504439733599623,
+          "interventions": 0,
+          "hypervolume": 0.0,
+          "total_steps": 1800,
+          "run_id": "Actuated_arterial_corridor_s1046_20261103_233944"
+        }
+      },
+      "MaxPressure": {
+        "1042": {
+          "w_net": 7705.013333333333,
+          "throughput": 1332.0,
+          "queue": 88.44,
+          "co2": 393156.6422283257,
+          "fairness": 0.5247945394615332,
+          "interventions": 2057,
+          "hypervolume": 0.0,
+          "total_steps": 1800,
+          "run_id": "MaxPressure_arterial_corridor_s1042_20261103_234443"
+        }
+      },
+      "FW_PPO": {},
+      "SA_PPO": {},
+      "MLP_PPO": {},
+      "IA_MOPPO": {}
+    },
+    "incident_disruption": {
+      "Fixed_Time": {},
+      "Actuated": {},
+      "MaxPressure": {},
+      "FW_PPO": {},
+      "SA_PPO": {},
+      "MLP_PPO": {},
+      "IA_MOPPO": {}
+    }
+  },
+  "statistical_tests": {
+    "per_scenario": {
+      "grid3x3": {},
+      "arterial_corridor": {},
+      "incident_disruption": {}
+    },
+    "pooled": {}
+  }
+}

@@ -242,11 +242,17 @@ class DOIMTrafficEnv(gym.Env):
             raw_state = np.zeros(25, dtype=np.float32)
 
         # Vehicle-level fairness disparity (distinct from intersection disparity)
+        # Optimized: query every decision interval (10s) with representative sampling to prevent TraCI socket thrashing
         try:
-            vehicle_ids = traci.vehicle.getIDList()
-            veh_waits = [traci.vehicle.getAccumulatedWaitingTime(vid) for vid in vehicle_ids]
-            from objectives.fairness import CorridorFairnessCalculator
-            veh_disparity = CorridorFairnessCalculator.compute_vehicle_fairness_disparity(veh_waits)
+            if vehicle_count > 0 and self.current_time % 10 == 0:
+                vehicle_ids = traci.vehicle.getIDList()
+                sample_ids = vehicle_ids[::max(1, len(vehicle_ids) // 30)] if len(vehicle_ids) > 30 else vehicle_ids
+                veh_waits = [traci.vehicle.getAccumulatedWaitingTime(vid) for vid in sample_ids]
+                from objectives.fairness import CorridorFairnessCalculator
+                self._last_veh_disparity = float(CorridorFairnessCalculator.compute_vehicle_fairness_disparity(veh_waits))
+                veh_disparity = self._last_veh_disparity
+            else:
+                veh_disparity = float(getattr(self, "_last_veh_disparity", 0.0))
         except Exception:
             veh_disparity = 0.0
 

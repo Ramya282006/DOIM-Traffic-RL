@@ -1,0 +1,52 @@
+{
+  "project": "DOIM-PPO",
+  "title": "Learning Dynamic Objective Interaction Manifolds for Adaptive Multi-Objective Deep Reinforcement Learning in Real-Time Traffic Systems",
+  "target_venue": "IEEE Transactions on Intelligent Transportation Systems (IEEE T-ITS)",
+  "code_repository": "https://github.com/Ramya282006/DOIM-Traffic-RL",
+  "canonical_algorithm": "DOIM-PPO",
+  "internal_algorithm_tag": "IA_MOPPO",
+  "evidence_catalog": {
+    "protocol_and_ledger": {
+      "frozen_protocol": "research_docs/phase28/EXPERIMENT_PROTOCOL_FROZEN.md",
+      "master_ledger": "research_docs/phase28/MASTER_RESEARCH_VALIDATION_LEDGER.md",
+      "tier2_matrix": "research_docs/phase28/PHASE28_2_FINAL_TIER2_MATRIX.md",
+      "statistical_correction": "research_docs/phase28/PHASE28_2_1_STATISTICAL_DESIGN_CORRECTION.md",
+      "training_budget_justification": "research_docs/phase28/PHASE28_2_1_TRAINING_BUDGET_JUSTIFICATION.md"
+    },
+    "phase_reports": {
+      "phase28_scorecard": "research_docs/phase28/INDEPENDENT_RESEARCH_VALIDATION_SCORECARD.md",
+      "phase28_1_integrity_audit": "research_docs/phase28/PHASE28_1_PILOT_INTEGRITY_AUDIT.md",
+      "phase28_2_1_feasibility_pilot": "research_docs/phase28/PHASE28_2_1_FEASIBILITY_PILOT_REPORT.md",
+      "phase29_confirmatory_benchmark": "research_docs/phase29/CONFIRMATORY_BENCHMARK_REPORT.md",
+      "phase30_multiobjective_ablation": "research_docs/phase30/MULTIOBJECTIVE_ABLATION_REPORT.md",
+      "phase31_generalization_robustness": "research_docs/phase31/GENERALIZATION_ROBUSTNESS_REPORT.md",
+      "phase32_safety_reproducibility": "research_docs/phase32/SAFETY_REPRODUCIBILITY_REPORT.md",
+      "phase33_final_validation_report": "research_docs/phase33/FINAL_INDEPENDENT_VALIDATION_REPORT.md"
+    },
+    "source_code_and_architecture": {
+      "interaction_learner": "models/interaction_learner.py",
+      "spatial_encoder": "models/spatial_encoder.py",
+      "temporal_encoder": "models/temporal_encoder.py",
+      "safety_shield": "environment/safety_shield.py",
+      "sumo_env": "environment/sumo_env.py",
+      "doim_processor": "environment/doim_processor.py",
+      "objective_engine": "objectives/objective_engine.py",
+      "fairness_calculator": "objectives/fairness.py",
+      "experiment_framework": "common/experiment.py"
+    },
+    "experimental_pipelines": {
+      "confirmatory_baselines_runner": "experiments/run_baselines_campaign.py",
+      "confirmatory_rl_runner": "experiments/run_rl_campaign.py",
+      "statistical_analyzer": "analysis/confirmatory_analyzer.py",
+      "ablation_pareto_analyzer": "analysis/ablation_pareto_analyzer.py",
+      "generalization_benchmark": "experiments/run_generalization_benchmark.py",
+      "safety_auditor": "experiments/verify_safety_and_reproducibility.py"
+    },
+    "verification_evidence": {
+      "unit_tests": "tests/",
+      "adversarial_shield_test": "tests/test_safety_shield.py",
+      "results_directory": "results/runs/",
+      "confirmatory_master_json": "results/tier2_confirmatory_results.json"
+    }
+  }
+}

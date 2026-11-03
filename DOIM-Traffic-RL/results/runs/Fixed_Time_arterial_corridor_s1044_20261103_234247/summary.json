@@ -1,0 +1,33 @@
+{
+  "run_id": "Fixed_Time_arterial_corridor_s1044_20261103_234247",
+  "algorithm": "Fixed_Time",
+  "scenario": "arterial_corridor",
+  "seed": 1044,
+  "train_seed": 1044,
+  "eval_seed": 1044,
+  "episode_id": 0,
+  "evaluation_mode": "deterministic_eval",
+  "eval_horizon": 1800,
+  "total_steps": 1800,
+  "total_reward": -1534.3083981573582,
+  "average_reward": -0.8523935545318656,
+  "average_waiting": 2301.9466666666667,
+  "max_waiting": 4500.0,
+  "average_queue": 28.517222222222223,
+  "max_queue": 99.0,
+  "average_co2": 285635.27191189234,
+  "total_throughput": 1439.0,
+  "average_fairness": 0.49758065016733277,
+  "fairness_metric_name": "jain_disparity",
+  "fairness_metric_unit": "unknown",
+  "fairness_disparity": null,
+  "fairness_variance": null,
+  "total_shield_interventions": 0,
+  "average_weights": [
+    0.20000000298023224,
+    0.20000000298023224,
+    0.20000000298023224,
+    0.20000000298023224,
+    0.20000000298023224
+  ]
+}

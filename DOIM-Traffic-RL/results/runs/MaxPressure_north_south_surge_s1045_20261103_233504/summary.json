@@ -1,0 +1,33 @@
+{
+  "run_id": "MaxPressure_north_south_surge_s1045_20261103_233504",
+  "algorithm": "MaxPressure",
+  "scenario": "north_south_surge",
+  "seed": 1045,
+  "train_seed": 1045,
+  "eval_seed": 1045,
+  "episode_id": 0,
+  "evaluation_mode": "deterministic_eval",
+  "eval_horizon": 1800,
+  "total_steps": 1800,
+  "total_reward": -1009.2090657949448,
+  "average_reward": -0.5606717032194137,
+  "average_waiting": 235.195,
+  "max_waiting": 1426.0,
+  "average_queue": 3.9283333333333332,
+  "max_queue": 25.0,
+  "average_co2": 107386.45746744792,
+  "total_throughput": 634.0,
+  "average_fairness": 0.4661659274788366,
+  "fairness_metric_name": "jain_disparity",
+  "fairness_metric_unit": "unknown",
+  "fairness_disparity": null,
+  "fairness_variance": null,
+  "total_shield_interventions": 6102,
+  "average_weights": [
+    0.19703882647885215,
+    0.20717043211890593,
+    0.213594169318676,
+    0.18688653914464845,
+    0.19531003328661123
+  ]
+}

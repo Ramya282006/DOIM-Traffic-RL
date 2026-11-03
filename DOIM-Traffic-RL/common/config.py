@@ -104,6 +104,11 @@ def load_experiment_config(
     Returns:
         ConfigDict wrapping the final merged configuration.
     """
+    p = Path(default_config_path)
+    if not p.exists():
+        fallback_p = Path(__file__).resolve().parent.parent / default_config_path
+        if fallback_p.exists():
+            default_config_path = fallback_p
     config = load_yaml(default_config_path)
     
     if scenario_config_path:

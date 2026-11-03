@@ -1,0 +1,33 @@
+{
+  "run_id": "MaxPressure_arterial_corridor_s1042_20261103_234443",
+  "algorithm": "MaxPressure",
+  "scenario": "arterial_corridor",
+  "seed": 1042,
+  "train_seed": 1042,
+  "eval_seed": 1042,
+  "episode_id": 0,
+  "evaluation_mode": "deterministic_eval",
+  "eval_horizon": 1800,
+  "total_steps": 1800,
+  "total_reward": -1620.4196213632822,
+  "average_reward": -0.9002331229796012,
+  "average_waiting": 7705.013333333333,
+  "max_waiting": 11483.0,
+  "average_queue": 88.44,
+  "max_queue": 189.0,
+  "average_co2": 393156.6422283257,
+  "total_throughput": 1332.0,
+  "average_fairness": 0.5247945394615332,
+  "fairness_metric_name": "jain_disparity",
+  "fairness_metric_unit": "unknown",
+  "fairness_disparity": null,
+  "fairness_variance": null,
+  "total_shield_interventions": 2057,
+  "average_weights": [
+    0.23427634216017193,
+    0.1788165759543578,
+    0.23057261683046817,
+    0.21201905440953042,
+    0.14431540993352732
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "run_id": "DOIM_rolling_pearson_north_south_surge_s42_20261103_201331",
+  "algorithm": "DOIM_rolling_pearson",
+  "scenario": "north_south_surge",
+  "seed": 42,
+  "train_seed": 42,
+  "eval_seed": 42,
+  "episode_id": 0,
+  "evaluation_mode": "train_rollout",
+  "eval_horizon": null,
+  "total_steps": 1000,
+  "total_reward": -719.8420542925596,
+  "average_reward": -0.7198420542925597,
+  "average_waiting": 506.101,
+  "max_waiting": 969.0,
+  "average_queue": 7.21,
+  "max_queue": 21.0,
+  "average_co2": 110559.87956018066,
+  "total_throughput": 334.0,
+  "average_fairness": 0.5010282598435879,
+  "fairness_metric_name": "jain_disparity",
+  "fairness_metric_unit": "unknown",
+  "fairness_disparity": null,
+  "fairness_variance": null,
+  "total_shield_interventions": 2656,
+  "average_weights": [
+    0.19146785098314284,
+    0.15951675398647785,
+    0.2285020844489336,
+    0.21452850371599197,
+    0.2059848067909479
+  ]
+}

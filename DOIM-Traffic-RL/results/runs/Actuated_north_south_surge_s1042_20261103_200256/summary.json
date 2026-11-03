@@ -1,0 +1,33 @@
+{
+  "run_id": "Actuated_north_south_surge_s1042_20261103_200256",
+  "algorithm": "Actuated",
+  "scenario": "north_south_surge",
+  "seed": 1042,
+  "train_seed": 1042,
+  "eval_seed": 1042,
+  "episode_id": 0,
+  "evaluation_mode": "deterministic_eval",
+  "eval_horizon": 1800,
+  "total_steps": 1800,
+  "total_reward": -1519.4874247312546,
+  "average_reward": -0.8441596804062526,
+  "average_waiting": 1454.5127777777777,
+  "max_waiting": 2466.0,
+  "average_queue": 19.86,
+  "max_queue": 43.0,
+  "average_co2": 136252.49358262803,
+  "total_throughput": 631.0,
+  "average_fairness": 0.46778709035780697,
+  "fairness_metric_name": "jain_disparity",
+  "fairness_metric_unit": "unknown",
+  "fairness_disparity": null,
+  "fairness_variance": null,
+  "total_shield_interventions": 0,
+  "average_weights": [
+    0.28229935944080353,
+    0.21381543389625018,
+    0.16509907700121404,
+    0.16007252651784154,
+    0.17871360358264712
+  ]
+}

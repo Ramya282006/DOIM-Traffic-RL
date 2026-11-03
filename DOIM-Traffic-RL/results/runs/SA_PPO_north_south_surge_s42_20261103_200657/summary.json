@@ -1,0 +1,33 @@
+{
+  "run_id": "SA_PPO_north_south_surge_s42_20261103_200657",
+  "algorithm": "SA_PPO",
+  "scenario": "north_south_surge",
+  "seed": 42,
+  "train_seed": 42,
+  "eval_seed": 42,
+  "episode_id": 0,
+  "evaluation_mode": "train_rollout",
+  "eval_horizon": null,
+  "total_steps": 1000,
+  "total_reward": -556.8623354248703,
+  "average_reward": -0.5568623354248703,
+  "average_waiting": 795.179,
+  "max_waiting": 1426.0,
+  "average_queue": 11.346,
+  "max_queue": 28.0,
+  "average_co2": 116664.17030236816,
+  "total_throughput": 334.0,
+  "average_fairness": 0.48650267215073106,
+  "fairness_metric_name": "jain_disparity",
+  "fairness_metric_unit": "unknown",
+  "fairness_disparity": null,
+  "fairness_variance": null,
+  "total_shield_interventions": 579,
+  "average_weights": [
+    9.349830821156501e-05,
+    0.9962216461014249,
+    0.0008264460563659672,
+    0.0024890939020500583,
+    0.0003693157881498337
+  ]
+}

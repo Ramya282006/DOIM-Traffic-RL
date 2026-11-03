@@ -124,6 +124,13 @@ def run_experiment_matrix(
                     seed=seed,
                     output_root=output_root,
                 )
+                if eval_episodes > 0:
+                    run_actuated_experiment(
+                        scenario_override=scenario,
+                        total_timesteps=eval_horizon,
+                        seed=seed + 1000,
+                        output_root=output_root,
+                    )
 
             # 4. Max-Pressure Controller Baseline
             if include_all_baselines:
@@ -134,6 +141,13 @@ def run_experiment_matrix(
                     seed=seed,
                     output_root=output_root,
                 )
+                if eval_episodes > 0:
+                    run_max_pressure_experiment(
+                        scenario_override=scenario,
+                        total_timesteps=eval_horizon,
+                        seed=seed + 1000,
+                        output_root=output_root,
+                    )
 
             # 5. Fixed-Weight PPO Baseline
             print("\n--- [5/7] Running Fixed-Weight PPO Baseline ---")

@@ -30,7 +30,7 @@ class MaxPressureTrafficController:
 
     def select_actions(
         self,
-        current_phases: Dict[str, int],
+        current_phases: Union[Dict[str, int], List[int]],
         network_feature_matrix: np.ndarray,
         tls_id_list: List[str],
     ) -> np.ndarray:
@@ -39,9 +39,13 @@ class MaxPressureTrafficController:
         If the current phase has highest pressure, retain (a = 0).
         If another phase has higher pressure, request transition (a = 1).
         """
+        if isinstance(current_phases, (list, tuple)):
+            current_phases_dict = {tid: current_phases[i] for i, tid in enumerate(self.controllable_tls_ids)}
+        else:
+            current_phases_dict = current_phases or {}
         actions = []
         for tid in self.controllable_tls_ids:
-            c_phase = current_phases.get(tid, 0)
+            c_phase = current_phases_dict.get(tid, 0)
             
             # Simple heuristic pressure proxy from spatial queues:
             # Under arterial demand, alternating phases correspond to N-S vs E-W movements.
@@ -88,17 +92,16 @@ def run_max_pressure_experiment(
     )
     
     env = DOIMTrafficEnv(
-        config_path=scenario_path,
-        seed=seed,
+        sumo_config=scenario_path,
         max_steps=total_timesteps,
-        use_safety_shield=True,
+        enforce_safety_shield=True,
     )
+    
+    obs, info = env.reset(seed=seed)
     
     controller = MaxPressureTrafficController(
         controllable_tls_ids=env.controllable_tls,
     )
-    
-    obs, info = env.reset(seed=seed)
     tls_list = sorted(env.doim_processor.tls_ids) if env.doim_processor else []
     
     total_reward = 0.0

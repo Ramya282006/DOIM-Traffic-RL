@@ -83,3 +83,27 @@ To verify that ranking is not an artifact of reference point selection, sensitiv
    - While Fixed-Time minimizes delay on the dominant surge direction, DOIM-PPO records **lower average fairness disparity** ($106.67$ vs Fixed-Time's $150.25$ and FW-PPO's $217.20$), indicating that the adaptive objective preference head actively protects starved minor approaches even during early training.
 3. **Confirmed Requirement for Full Convergence:**
    - Validating the core claim that DOIM-PPO achieves an expanded Pareto front requires completing the frozen Tier 2 confirmatory benchmark ($\ge 5,000$ to $50,000$ steps) where policy learning overcomes exploration variance.
+
+
+---
+
+## 5. Empirical Hypervolume & Trade-Offs from Option A Evaluation (Seed 1042)
+
+Following the execution of the Option A matrix on the host system, the 2D Hypervolume in $(\text{Delay}, \text{Throughput})$ space was recalculated from raw simulation rollouts over the 1,800-second evaluation horizon on held-out seed 1042:
+
+- **Space Formulation:** Normalized Delay $f_1 = \text{delay} / 1500.0 \in [0, 1]$ (minimization); Normalized Throughput $f_2 = (700.0 - \text{throughput}) / 700.0 \in [0, 1]$ (minimization).
+- **Reference Point:** $\mathbf{r}_{\text{ref}} = (1.2, 1.2)$.
+
+| Algorithm / Policy | Average Delay (s) | Total Throughput (veh) | Normalized Point $(f_1, f_2)$ | Hypervolume (HV) | HV Expansion vs MLP-PPO |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| **DOIM-PPO (IA-MOPPO)** | **510.94** | **641.0** | **(0.341, 0.084)** | **0.9588** | **+19.9%** |
+| **MLP-PPO** | 721.11 | 638.0 | (0.481, 0.089) | 0.7994 | Baseline (0.0%) |
+| **FW-PPO** | 812.44 | 637.0 | (0.542, 0.090) | 0.7308 | -8.6% |
+| **SA-PPO** | 949.39 | 637.0 | (0.633, 0.090) | 0.6295 | -21.3% |
+| **Actuated** | 1,454.51 | 631.0 | (0.970, 0.099) | 0.2537 | -68.3% |
+| **Fixed-Time** | 366.93 | 643.0 | (0.245, 0.081) | 1.0687 | +33.7% |
+| **Max-Pressure** | 158.53 | 648.0 | (0.106, 0.074) | 1.2319 | +54.1% |
+
+### Key Multi-Objective Findings:
+1. **Dominance Over All Deep RL Baselines:** DOIM-PPO achieves an empirical hypervolume of **0.9588**, outperforming parameter-matched MLP-PPO (0.7994, +19.9% improvement), Fixed-Weight PPO (0.7308, +31.2% improvement), and State-Adaptive PPO (0.6295, +52.3% improvement).
+2. **Trade-Off Navigation:** Under directional surge conditions, DOIM-PPO dynamically balances queue discharge against fairness, preventing excessive delay on secondary cross-streets while maintaining competitive corridor throughput.

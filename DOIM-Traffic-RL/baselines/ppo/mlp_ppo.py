@@ -126,10 +126,9 @@ def train_mlp_ppo(
     )
     
     env = DOIMTrafficEnv(
-        config_path=scenario_path,
-        seed=seed,
+        sumo_config=scenario_path,
         max_steps=total_timesteps,
-        use_safety_shield=True,
+        enforce_safety_shield=True,
     )
     
     obs, info = env.reset(seed=seed)
@@ -160,7 +159,49 @@ def train_mlp_ppo(
     # Save checkpoint
     ckpt_path = exp.checkpoints_dir / "mlp_ppo_final.pt"
     torch.save(agent.network.state_dict(), ckpt_path)
-    
     summary = exp.close(status="COMPLETED", final_model_path=str(ckpt_path))
+
+    # Evaluation phase on held-out seed
+    if eval_episodes > 0:
+        eval_seed = seed + 1000
+        eval_exp = ExperimentRun(
+            experiment_name=f"MLP_PPO_{Path(scenario_path).stem}_s{seed}_e{eval_seed}",
+            algorithm="MLP_PPO",
+            config=config.to_dict() if hasattr(config, "to_dict") else dict(config),
+            train_seed=seed,
+            eval_seed=eval_seed,
+            scenario=Path(scenario_path).stem,
+            output_root=output_root,
+            training_timesteps=total_timesteps,
+            evaluation_mode="deterministic_eval",
+            eval_horizon=eval_horizon,
+        )
+        eval_env = DOIMTrafficEnv(
+            sumo_config=scenario_path,
+            max_steps=eval_horizon,
+            enforce_safety_shield=True,
+        )
+        obs, info = eval_env.reset(seed=eval_seed)
+        for step in range(eval_horizon):
+            feat = info.get("feature_matrix", np.zeros((9, 5))).flatten()
+            raw = info.get("raw_state", np.zeros(25))
+            flat_obs = torch.tensor(np.concatenate([feat, raw]), dtype=torch.float32)
+            action, value, log_prob = agent.act(flat_obs, deterministic=True)
+            obs, reward, terminated, truncated, info = eval_env.step(action)
+            eval_exp.log_step(
+                step=step,
+                sim_time=float(step + 1),
+                reward=float(reward),
+                raw_objs=info.get("raw_objectives", np.zeros(5)),
+                norm_objs=info.get("normalized_objectives", np.zeros(5)),
+                weights=np.ones(5) * 0.2,
+                actions=action.tolist(),
+                shield_interventions=info.get("shield_interventions", 0),
+            )
+            if terminated or truncated:
+                break
+        eval_env.close()
+        eval_exp.close(status="COMPLETED", final_model_path=str(ckpt_path))
+
     return summary
 

@@ -54,7 +54,7 @@ class ActuatedTrafficController:
 
     def select_actions(
         self,
-        current_phases: Dict[str, int],
+        current_phases: Union[Dict[str, int], List[int]],
         approach_queues: Dict[str, float],
         approach_vehicles: Optional[Dict[str, int]] = None,
     ) -> np.ndarray:
@@ -62,9 +62,13 @@ class ActuatedTrafficController:
         Determines binary transition decisions a_j in {0, 1} for each controllable intersection
         using NEMA gap-out passage timers and min/max green constraints.
         """
+        if isinstance(current_phases, (list, tuple)):
+            current_phases_dict = {tid: current_phases[i] for i, tid in enumerate(self.controllable_tls_ids)}
+        else:
+            current_phases_dict = current_phases or {}
         actions = []
         for tid in self.controllable_tls_ids:
-            c_phase = current_phases.get(tid, 0)
+            c_phase = current_phases_dict.get(tid, 0)
             if c_phase != self.last_phase.get(tid, 0):
                 self.time_in_phase[tid] = 0
                 self.last_phase[tid] = c_phase
@@ -145,11 +149,12 @@ def run_actuated_experiment(
     )
 
     env = DOIMTrafficEnv(
-        config_path=scenario_path,
-        seed=seed,
+        sumo_config=scenario_path,
         max_steps=total_timesteps,
-        use_safety_shield=True,
+        enforce_safety_shield=True,
     )
+
+    obs, info = env.reset(seed=seed)
 
     controller = ActuatedTrafficController(
         controllable_tls_ids=env.controllable_tls,
@@ -158,8 +163,6 @@ def run_actuated_experiment(
         gap_threshold_sec=gap_threshold_sec,
         unit_extension_sec=unit_extension_sec,
     )
-
-    obs, info = env.reset(seed=seed)
     controller.reset()
 
     total_reward = 0.0

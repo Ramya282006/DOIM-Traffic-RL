@@ -1,0 +1,33 @@
+{
+  "run_id": "MLP_PPO_north_south_surge_s42_20261104_105126",
+  "algorithm": "MLP_PPO",
+  "scenario": "north_south_surge",
+  "seed": 42,
+  "train_seed": 42,
+  "eval_seed": 1044,
+  "episode_id": 0,
+  "evaluation_mode": "deterministic_eval",
+  "eval_horizon": 1800,
+  "total_steps": 1800,
+  "total_reward": -1333.8882895857096,
+  "average_reward": -0.7410490497698387,
+  "average_waiting": 709.3933333333333,
+  "max_waiting": 1272.0,
+  "average_queue": 9.65,
+  "max_queue": 26.0,
+  "average_co2": 118371.88748440213,
+  "total_throughput": 639.0,
+  "average_fairness": 0.523696059199671,
+  "fairness_metric_name": "jain_disparity",
+  "fairness_metric_unit": "unknown",
+  "fairness_disparity": null,
+  "fairness_variance": null,
+  "total_shield_interventions": 2193,
+  "average_weights": [
+    0.1999999999999934,
+    0.1999999999999934,
+    0.1999999999999934,
+    0.1999999999999934,
+    0.1999999999999934
+  ]
+}

@@ -1,0 +1,758 @@
+{
+  "summary_by_scenario": {
+    "arterial_corridor": {
+      "Actuated": {
+        "n_runs": 5,
+        "seeds": [
+          1042,
+          1043,
+          1044,
+          1045,
+          1046
+        ],
+        "waiting_time": {
+          "mean": 5704.89,
+          "std": 378.67,
+          "min": 5196.26,
+          "max": 6250.13
+        },
+        "queue_length": {
+          "mean": 69.44,
+          "std": 4.71
+        },
+        "throughput": {
+          "mean": 1344.2,
+          "std": 10.47
+        },
+        "shield_interventions": {
+          "mean": 0.0,
+          "std": 0.0
+        }
+      },
+      "Fixed-Time": {
+        "n_runs": 5,
+        "seeds": [
+          1042,
+          1043,
+          1044,
+          1045,
+          1046
+        ],
+        "waiting_time": {
+          "mean": 1951.06,
+          "std": 306.83,
+          "min": 1609.1,
+          "max": 2301.95
+        },
+        "queue_length": {
+          "mean": 24.93,
+          "std": 3.31
+        },
+        "throughput": {
+          "mean": 1460.0,
+          "std": 21.24
+        },
+        "shield_interventions": {
+          "mean": 0.0,
+          "std": 0.0
+        }
+      },
+      "DOIM-PPO": {
+        "n_runs": 5,
+        "seeds": [
+          1042,
+          1043,
+          1044,
+          1045,
+          1046
+        ],
+        "waiting_time": {
+          "mean": 1840.21,
+          "std": 82.4,
+          "min": 1746.32,
+          "max": 1931.04
+        },
+        "queue_length": {
+          "mean": 23.23,
+          "std": 1.28
+        },
+        "throughput": {
+          "mean": 1426.8,
+          "std": 8.35
+        },
+        "shield_interventions": {
+          "mean": 3956.4,
+          "std": 82.61
+        }
+      },
+      "Max-Pressure": {
+        "n_runs": 5,
+        "seeds": [
+          1042,
+          1043,
+          1044,
+          1045,
+          1046
+        ],
+        "waiting_time": {
+          "mean": 7359.7,
+          "std": 841.2,
+          "min": 6297.71,
+          "max": 8442.22
+        },
+        "queue_length": {
+          "mean": 85.13,
+          "std": 9.17
+        },
+        "throughput": {
+          "mean": 1329.8,
+          "std": 37.57
+        },
+        "shield_interventions": {
+          "mean": 2031.4,
+          "std": 246.28
+        }
+      },
+      "MLP-PPO": {
+        "n_runs": 5,
+        "seeds": [
+          1042,
+          1043,
+          1044,
+          1045,
+          1046
+        ],
+        "waiting_time": {
+          "mean": 2864.52,
+          "std": 304.37,
+          "min": 2644.68,
+          "max": 3315.42
+        },
+        "queue_length": {
+          "mean": 37.48,
+          "std": 3.77
+        },
+        "throughput": {
+          "mean": 1400.8,
+          "std": 9.81
+        },
+        "shield_interventions": {
+          "mean": 1703.2,
+          "std": 62.59
+        }
+      }
+    },
+    "incident_disruption": {
+      "Actuated": {
+        "n_runs": 5,
+        "seeds": [
+          1042,
+          1043,
+          1044,
+          1045,
+          1046
+        ],
+        "waiting_time": {
+          "mean": 3608.64,
+          "std": 223.72,
+          "min": 3269.5,
+          "max": 3811.07
+        },
+        "queue_length": {
+          "mean": 46.62,
+          "std": 2.37
+        },
+        "throughput": {
+          "mean": 1048.4,
+          "std": 9.99
+        },
+        "shield_interventions": {
+          "mean": 0.0,
+          "std": 0.0
+        }
+      },
+      "Fixed-Time": {
+        "n_runs": 5,
+        "seeds": [
+          1042,
+          1043,
+          1044,
+          1045,
+          1046
+        ],
+        "waiting_time": {
+          "mean": 1298.04,
+          "std": 120.28,
+          "min": 1101.44,
+          "max": 1396.7
+        },
+        "queue_length": {
+          "mean": 17.94,
+          "std": 1.62
+        },
+        "throughput": {
+          "mean": 1090.6,
+          "std": 5.18
+        },
+        "shield_interventions": {
+          "mean": 0.0,
+          "std": 0.0
+        }
+      },
+      "DOIM-PPO": {
+        "n_runs": 5,
+        "seeds": [
+          1042,
+          1043,
+          1044,
+          1045,
+          1046
+        ],
+        "waiting_time": {
+          "mean": 1667.26,
+          "std": 54.87,
+          "min": 1592.47,
+          "max": 1736.95
+        },
+        "queue_length": {
+          "mean": 22.03,
+          "std": 0.71
+        },
+        "throughput": {
+          "mean": 994.8,
+          "std": 5.72
+        },
+        "shield_interventions": {
+          "mean": 4582.6,
+          "std": 81.18
+        }
+      },
+      "Max-Pressure": {
+        "n_runs": 5,
+        "seeds": [
+          1042,
+          1043,
+          1044,
+          1045,
+          1046
+        ],
+        "waiting_time": {
+          "mean": 4911.58,
+          "std": 297.69,
+          "min": 4606.09,
+          "max": 5289.35
+        },
+        "queue_length": {
+          "mean": 59.48,
+          "std": 2.96
+        },
+        "throughput": {
+          "mean": 939.4,
+          "std": 48.93
+        },
+        "shield_interventions": {
+          "mean": 2921.2,
+          "std": 73.74
+        }
+      },
+      "MLP-PPO": {
+        "n_runs": 5,
+        "seeds": [
+          1042,
+          1043,
+          1044,
+          1045,
+          1046
+        ],
+        "waiting_time": {
+          "mean": 2865.37,
+          "std": 240.42,
+          "min": 2683.29,
+          "max": 3287.18
+        },
+        "queue_length": {
+          "mean": 36.61,
+          "std": 2.29
+        },
+        "throughput": {
+          "mean": 980.4,
+          "std": 15.31
+        },
+        "shield_interventions": {
+          "mean": 1773.2,
+          "std": 59.18
+        }
+      }
+    },
+    "grid3x3": {
+      "Actuated": {
+        "n_runs": 5,
+        "seeds": [
+          1042,
+          1043,
+          1044,
+          1045,
+          1046
+        ],
+        "waiting_time": {
+          "mean": 1531.87,
+          "std": 72.11,
+          "min": 1454.51,
+          "max": 1613.94
+        },
+        "queue_length": {
+          "mean": 20.9,
+          "std": 0.96
+        },
+        "throughput": {
+          "mean": 626.0,
+          "std": 3.74
+        },
+        "shield_interventions": {
+          "mean": 0.0,
+          "std": 0.0
+        }
+      },
+      "DOIM_no_interaction": {
+        "n_runs": 2,
+        "seeds": [
+          42,
+          1042
+        ],
+        "waiting_time": {
+          "mean": 517.03,
+          "std": 21.4,
+          "min": 501.9,
+          "max": 532.16
+        },
+        "queue_length": {
+          "mean": 7.32,
+          "std": 0.31
+        },
+        "throughput": {
+          "mean": 1202.0,
+          "std": 789.13
+        },
+        "shield_interventions": {
+          "mean": 8314.0,
+          "std": 5430.58
+        }
+      },
+      "DOIM_rolling_pearson": {
+        "n_runs": 1,
+        "seeds": [
+          1042
+        ],
+        "waiting_time": {
+          "mean": 501.49,
+          "std": 0.0,
+          "min": 501.49,
+          "max": 501.49
+        },
+        "queue_length": {
+          "mean": 7.06,
+          "std": 0.0
+        },
+        "throughput": {
+          "mean": 642.0,
+          "std": 0.0
+        },
+        "shield_interventions": {
+          "mean": 4927.0,
+          "std": 0.0
+        }
+      },
+      "Fixed-Time": {
+        "n_runs": 5,
+        "seeds": [
+          1042,
+          1043,
+          1044,
+          1045,
+          1046
+        ],
+        "waiting_time": {
+          "mean": 372.69,
+          "std": 19.41,
+          "min": 355.05,
+          "max": 406.02
+        },
+        "queue_length": {
+          "mean": 6.05,
+          "std": 0.26
+        },
+        "throughput": {
+          "mean": 642.4,
+          "std": 1.52
+        },
+        "shield_interventions": {
+          "mean": 0.0,
+          "std": 0.0
+        }
+      },
+      "FW-PPO": {
+        "n_runs": 1,
+        "seeds": [
+          1042
+        ],
+        "waiting_time": {
+          "mean": 812.44,
+          "std": 0.0,
+          "min": 812.44,
+          "max": 812.44
+        },
+        "queue_length": {
+          "mean": 11.36,
+          "std": 0.0
+        },
+        "throughput": {
+          "mean": 637.0,
+          "std": 0.0
+        },
+        "shield_interventions": {
+          "mean": 2393.0,
+          "std": 0.0
+        }
+      },
+      "DOIM-PPO": {
+        "n_runs": 6,
+        "seeds": [
+          42,
+          1042,
+          1043,
+          1044,
+          1045,
+          1046
+        ],
+        "waiting_time": {
+          "mean": 517.57,
+          "std": 45.15,
+          "min": 469.91,
+          "max": 591.8
+        },
+        "queue_length": {
+          "mean": 7.32,
+          "std": 0.54
+        },
+        "throughput": {
+          "mean": 829.0,
+          "std": 455.61
+        },
+        "shield_interventions": {
+          "mean": 5616.3,
+          "std": 3402.72
+        }
+      },
+      "Max-Pressure": {
+        "n_runs": 5,
+        "seeds": [
+          1042,
+          1043,
+          1044,
+          1045,
+          1046
+        ],
+        "waiting_time": {
+          "mean": 181.88,
+          "std": 45.73,
+          "min": 139.76,
+          "max": 235.19
+        },
+        "queue_length": {
+          "mean": 3.17,
+          "std": 0.65
+        },
+        "throughput": {
+          "mean": 644.2,
+          "std": 7.01
+        },
+        "shield_interventions": {
+          "mean": 6186.4,
+          "std": 72.57
+        }
+      },
+      "MLP-PPO": {
+        "n_runs": 5,
+        "seeds": [
+          1042,
+          1043,
+          1044,
+          1045,
+          1046
+        ],
+        "waiting_time": {
+          "mean": 712.86,
+          "std": 25.66,
+          "min": 680.82,
+          "max": 750.53
+        },
+        "queue_length": {
+          "mean": 9.82,
+          "std": 0.32
+        },
+        "throughput": {
+          "mean": 641.2,
+          "std": 5.5
+        },
+        "shield_interventions": {
+          "mean": 2196.6,
+          "std": 49.98
+        }
+      },
+      "SA-PPO": {
+        "n_runs": 1,
+        "seeds": [
+          1042
+        ],
+        "waiting_time": {
+          "mean": 949.39,
+          "std": 0.0,
+          "min": 949.39,
+          "max": 949.39
+        },
+        "queue_length": {
+          "mean": 12.9,
+          "std": 0.0
+        },
+        "throughput": {
+          "mean": 637.0,
+          "std": 0.0
+        },
+        "shield_interventions": {
+          "mean": 1142.0,
+          "std": 0.0
+        }
+      }
+    }
+  },
+  "paired_comparisons": [
+    {
+      "scenario": "arterial_corridor",
+      "comparison": "DOIM-PPO vs Fixed-Time",
+      "metric": "waiting_time_s",
+      "n_pairs": 5,
+      "df": 4,
+      "mean_difference": -110.84,
+      "std_difference": 350.64,
+      "t_statistic": -0.7069,
+      "p_value": 0.5186543396961993,
+      "cohens_d": -0.3161,
+      "seeds": [
+        1042,
+        1043,
+        1044,
+        1045,
+        1046
+      ]
+    },
+    {
+      "scenario": "arterial_corridor",
+      "comparison": "DOIM-PPO vs Actuated",
+      "metric": "waiting_time_s",
+      "n_pairs": 5,
+      "df": 4,
+      "mean_difference": -3864.68,
+      "std_difference": 317.43,
+      "t_statistic": -27.2237,
+      "p_value": 1.0825877114110582e-05,
+      "cohens_d": -12.1748,
+      "seeds": [
+        1042,
+        1043,
+        1044,
+        1045,
+        1046
+      ]
+    },
+    {
+      "scenario": "arterial_corridor",
+      "comparison": "DOIM-PPO vs Max-Pressure",
+      "metric": "waiting_time_s",
+      "n_pairs": 5,
+      "df": 4,
+      "mean_difference": -5519.49,
+      "std_difference": 797.33,
+      "t_statistic": -15.4791,
+      "p_value": 0.0001016675972093843,
+      "cohens_d": -6.9225,
+      "seeds": [
+        1042,
+        1043,
+        1044,
+        1045,
+        1046
+      ]
+    },
+    {
+      "scenario": "arterial_corridor",
+      "comparison": "DOIM-PPO vs MLP-PPO",
+      "metric": "waiting_time_s",
+      "n_pairs": 5,
+      "df": 4,
+      "mean_difference": -1024.3,
+      "std_difference": 376.37,
+      "t_statistic": -6.0855,
+      "p_value": 0.00368609608500016,
+      "cohens_d": -2.7215,
+      "seeds": [
+        1042,
+        1043,
+        1044,
+        1045,
+        1046
+      ]
+    },
+    {
+      "scenario": "incident_disruption",
+      "comparison": "DOIM-PPO vs Fixed-Time",
+      "metric": "waiting_time_s",
+      "n_pairs": 5,
+      "df": 4,
+      "mean_difference": 369.23,
+      "std_difference": 156.74,
+      "t_statistic": 5.2673,
+      "p_value": 0.0062234567431330556,
+      "cohens_d": 2.3556,
+      "seeds": [
+        1042,
+        1043,
+        1044,
+        1045,
+        1046
+      ]
+    },
+    {
+      "scenario": "incident_disruption",
+      "comparison": "DOIM-PPO vs Actuated",
+      "metric": "waiting_time_s",
+      "n_pairs": 5,
+      "df": 4,
+      "mean_difference": -1941.37,
+      "std_difference": 176.19,
+      "t_statistic": -24.638,
+      "p_value": 1.6105557247752878e-05,
+      "cohens_d": -11.0184,
+      "seeds": [
+        1042,
+        1043,
+        1044,
+        1045,
+        1046
+      ]
+    },
+    {
+      "scenario": "incident_disruption",
+      "comparison": "DOIM-PPO vs Max-Pressure",
+      "metric": "waiting_time_s",
+      "n_pairs": 5,
+      "df": 4,
+      "mean_difference": -3244.32,
+      "std_difference": 320.79,
+      "t_statistic": -22.6148,
+      "p_value": 2.2643188523260577e-05,
+      "cohens_d": -10.1137,
+      "seeds": [
+        1042,
+        1043,
+        1044,
+        1045,
+        1046
+      ]
+    },
+    {
+      "scenario": "incident_disruption",
+      "comparison": "DOIM-PPO vs MLP-PPO",
+      "metric": "waiting_time_s",
+      "n_pairs": 5,
+      "df": 4,
+      "mean_difference": -1198.11,
+      "std_difference": 249.44,
+      "t_statistic": -10.7403,
+      "p_value": 0.000425981434150453,
+      "cohens_d": -4.8032,
+      "seeds": [
+        1042,
+        1043,
+        1044,
+        1045,
+        1046
+      ]
+    },
+    {
+      "scenario": "grid3x3",
+      "comparison": "DOIM-PPO vs Fixed-Time",
+      "metric": "waiting_time_s",
+      "n_pairs": 5,
+      "df": 4,
+      "mean_difference": 140.8,
+      "std_difference": 57.0,
+      "t_statistic": 5.5234,
+      "p_value": 0.005247048082968618,
+      "cohens_d": 2.4701,
+      "seeds": [
+        1042,
+        1043,
+        1044,
+        1045,
+        1046
+      ]
+    },
+    {
+      "scenario": "grid3x3",
+      "comparison": "DOIM-PPO vs Actuated",
+      "metric": "waiting_time_s",
+      "n_pairs": 5,
+      "df": 4,
+      "mean_difference": -1018.38,
+      "std_difference": 89.56,
+      "t_statistic": -25.4264,
+      "p_value": 1.4208451994831622e-05,
+      "cohens_d": -11.371,
+      "seeds": [
+        1042,
+        1043,
+        1044,
+        1045,
+        1046
+      ]
+    },
+    {
+      "scenario": "grid3x3",
+      "comparison": "DOIM-PPO vs Max-Pressure",
+      "metric": "waiting_time_s",
+      "n_pairs": 5,
+      "df": 4,
+      "mean_difference": 331.61,
+      "std_difference": 57.92,
+      "t_statistic": 12.8024,
+      "p_value": 0.00021454805341507228,
+      "cohens_d": 5.7254,
+      "seeds": [
+        1042,
+        1043,
+        1044,
+        1045,
+        1046
+      ]
+    },
+    {
+      "scenario": "grid3x3",
+      "comparison": "DOIM-PPO vs MLP-PPO",
+      "metric": "waiting_time_s",
+      "n_pairs": 5,
+      "df": 4,
+      "mean_difference": -199.36,
+      "std_difference": 66.16,
+      "t_statistic": -6.7382,
+      "p_value": 0.0025278987431517365,
+      "cohens_d": -3.0134,
+      "seeds": [
+        1042,
+        1043,
+        1044,
+        1045,
+        1046
+      ]
+    }
+  ]
+}

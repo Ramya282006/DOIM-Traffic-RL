@@ -1,0 +1,33 @@
+{
+  "run_id": "IA_MOPPO_incident_disruption_s42_20261104_023514",
+  "algorithm": "IA_MOPPO",
+  "scenario": "incident_disruption",
+  "seed": 42,
+  "train_seed": 42,
+  "eval_seed": 1042,
+  "episode_id": 0,
+  "evaluation_mode": "deterministic_eval",
+  "eval_horizon": 1800,
+  "total_steps": 1800,
+  "total_reward": -1557.9160604178905,
+  "average_reward": -0.8655089224543836,
+  "average_waiting": 1736.9488888888889,
+  "max_waiting": 2820.0,
+  "average_queue": 22.89,
+  "max_queue": 43.0,
+  "average_co2": 236168.5838676622,
+  "total_throughput": 991.0,
+  "average_fairness": 0.45779978792700504,
+  "fairness_metric_name": "jain_disparity",
+  "fairness_metric_unit": "unknown",
+  "fairness_disparity": null,
+  "fairness_variance": null,
+  "total_shield_interventions": 4621,
+  "average_weights": [
+    0.21936799758838282,
+    0.11646200737191571,
+    0.2464600766284598,
+    0.2515099731998311,
+    0.1661999433156517
+  ]
+}

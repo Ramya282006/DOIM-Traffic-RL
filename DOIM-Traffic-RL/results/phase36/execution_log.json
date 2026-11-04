@@ -1,0 +1,470 @@
+{
+  "total_time_s": 2673.3539156913757,
+  "results": [
+    {
+      "algo": "Fixed-Time",
+      "scenario": "grid3x3",
+      "seed": 1042,
+      "status": "REUSED"
+    },
+    {
+      "algo": "Fixed-Time",
+      "scenario": "grid3x3",
+      "seed": 1043,
+      "status": "REUSED"
+    },
+    {
+      "algo": "Fixed-Time",
+      "scenario": "grid3x3",
+      "seed": 1044,
+      "status": "REUSED"
+    },
+    {
+      "algo": "Fixed-Time",
+      "scenario": "grid3x3",
+      "seed": 1045,
+      "status": "REUSED"
+    },
+    {
+      "algo": "Fixed-Time",
+      "scenario": "grid3x3",
+      "seed": 1046,
+      "status": "REUSED"
+    },
+    {
+      "algo": "Actuated",
+      "scenario": "grid3x3",
+      "seed": 1042,
+      "status": "REUSED"
+    },
+    {
+      "algo": "Actuated",
+      "scenario": "grid3x3",
+      "seed": 1043,
+      "status": "REUSED"
+    },
+    {
+      "algo": "Actuated",
+      "scenario": "grid3x3",
+      "seed": 1044,
+      "status": "REUSED"
+    },
+    {
+      "algo": "Actuated",
+      "scenario": "grid3x3",
+      "seed": 1045,
+      "status": "REUSED"
+    },
+    {
+      "algo": "Actuated",
+      "scenario": "grid3x3",
+      "seed": 1046,
+      "status": "REUSED"
+    },
+    {
+      "algo": "Max-Pressure",
+      "scenario": "grid3x3",
+      "seed": 1042,
+      "status": "REUSED"
+    },
+    {
+      "algo": "Max-Pressure",
+      "scenario": "grid3x3",
+      "seed": 1043,
+      "status": "REUSED"
+    },
+    {
+      "algo": "Max-Pressure",
+      "scenario": "grid3x3",
+      "seed": 1044,
+      "status": "REUSED"
+    },
+    {
+      "algo": "Max-Pressure",
+      "scenario": "grid3x3",
+      "seed": 1045,
+      "status": "REUSED"
+    },
+    {
+      "algo": "Max-Pressure",
+      "scenario": "grid3x3",
+      "seed": 1046,
+      "status": "REUSED"
+    },
+    {
+      "algo": "Fixed-Time",
+      "scenario": "arterial_corridor",
+      "seed": 1042,
+      "status": "REUSED"
+    },
+    {
+      "algo": "Fixed-Time",
+      "scenario": "arterial_corridor",
+      "seed": 1043,
+      "status": "REUSED"
+    },
+    {
+      "algo": "Fixed-Time",
+      "scenario": "arterial_corridor",
+      "seed": 1044,
+      "status": "REUSED"
+    },
+    {
+      "algo": "Fixed-Time",
+      "scenario": "arterial_corridor",
+      "seed": 1045,
+      "status": "REUSED"
+    },
+    {
+      "algo": "Fixed-Time",
+      "scenario": "arterial_corridor",
+      "seed": 1046,
+      "status": "REUSED"
+    },
+    {
+      "algo": "Actuated",
+      "scenario": "arterial_corridor",
+      "seed": 1042,
+      "status": "REUSED"
+    },
+    {
+      "algo": "Actuated",
+      "scenario": "arterial_corridor",
+      "seed": 1043,
+      "status": "REUSED"
+    },
+    {
+      "algo": "Actuated",
+      "scenario": "arterial_corridor",
+      "seed": 1044,
+      "status": "REUSED"
+    },
+    {
+      "algo": "Actuated",
+      "scenario": "arterial_corridor",
+      "seed": 1045,
+      "status": "REUSED"
+    },
+    {
+      "algo": "Actuated",
+      "scenario": "arterial_corridor",
+      "seed": 1046,
+      "status": "REUSED"
+    },
+    {
+      "algo": "Max-Pressure",
+      "scenario": "arterial_corridor",
+      "seed": 1042,
+      "status": "REUSED"
+    },
+    {
+      "algo": "Max-Pressure",
+      "scenario": "arterial_corridor",
+      "seed": 1043,
+      "status": "REUSED"
+    },
+    {
+      "algo": "Max-Pressure",
+      "scenario": "arterial_corridor",
+      "seed": 1044,
+      "status": "REUSED"
+    },
+    {
+      "algo": "Max-Pressure",
+      "scenario": "arterial_corridor",
+      "seed": 1045,
+      "status": "REUSED"
+    },
+    {
+      "algo": "Max-Pressure",
+      "scenario": "arterial_corridor",
+      "seed": 1046,
+      "status": "REUSED"
+    },
+    {
+      "algo": "Fixed-Time",
+      "scenario": "incident_disruption",
+      "seed": 1042,
+      "status": "REUSED"
+    },
+    {
+      "algo": "Fixed-Time",
+      "scenario": "incident_disruption",
+      "seed": 1043,
+      "status": "REUSED"
+    },
+    {
+      "algo": "Fixed-Time",
+      "scenario": "incident_disruption",
+      "seed": 1044,
+      "status": "REUSED"
+    },
+    {
+      "algo": "Fixed-Time",
+      "scenario": "incident_disruption",
+      "seed": 1045,
+      "status": "REUSED"
+    },
+    {
+      "algo": "Fixed-Time",
+      "scenario": "incident_disruption",
+      "seed": 1046,
+      "status": "REUSED"
+    },
+    {
+      "algo": "Actuated",
+      "scenario": "incident_disruption",
+      "seed": 1042,
+      "status": "REUSED"
+    },
+    {
+      "algo": "Actuated",
+      "scenario": "incident_disruption",
+      "seed": 1043,
+      "status": "REUSED"
+    },
+    {
+      "algo": "Actuated",
+      "scenario": "incident_disruption",
+      "seed": 1044,
+      "status": "REUSED"
+    },
+    {
+      "algo": "Actuated",
+      "scenario": "incident_disruption",
+      "seed": 1045,
+      "status": "REUSED"
+    },
+    {
+      "algo": "Actuated",
+      "scenario": "incident_disruption",
+      "seed": 1046,
+      "status": "REUSED"
+    },
+    {
+      "algo": "Max-Pressure",
+      "scenario": "incident_disruption",
+      "seed": 1042,
+      "status": "REUSED"
+    },
+    {
+      "algo": "Max-Pressure",
+      "scenario": "incident_disruption",
+      "seed": 1043,
+      "status": "REUSED"
+    },
+    {
+      "algo": "Max-Pressure",
+      "scenario": "incident_disruption",
+      "seed": 1044,
+      "status": "REUSED"
+    },
+    {
+      "algo": "Max-Pressure",
+      "scenario": "incident_disruption",
+      "seed": 1045,
+      "status": "REUSED"
+    },
+    {
+      "algo": "Max-Pressure",
+      "scenario": "incident_disruption",
+      "seed": 1046,
+      "status": "REUSED"
+    },
+    {
+      "algo": "DOIM-PPO",
+      "scenario": "grid3x3",
+      "seed": 1042,
+      "status": "REUSED"
+    },
+    {
+      "algo": "DOIM-PPO",
+      "scenario": "grid3x3",
+      "seed": 1043,
+      "status": "REUSED"
+    },
+    {
+      "algo": "DOIM-PPO",
+      "scenario": "grid3x3",
+      "seed": 1044,
+      "status": "REUSED"
+    },
+    {
+      "algo": "DOIM-PPO",
+      "scenario": "grid3x3",
+      "seed": 1045,
+      "status": "REUSED"
+    },
+    {
+      "algo": "DOIM-PPO",
+      "scenario": "grid3x3",
+      "seed": 1046,
+      "status": "REUSED"
+    },
+    {
+      "algo": "DOIM-PPO",
+      "scenario": "arterial_corridor",
+      "seed": 1042,
+      "status": "REUSED"
+    },
+    {
+      "algo": "DOIM-PPO",
+      "scenario": "arterial_corridor",
+      "seed": 1043,
+      "status": "REUSED"
+    },
+    {
+      "algo": "DOIM-PPO",
+      "scenario": "arterial_corridor",
+      "seed": 1044,
+      "status": "REUSED"
+    },
+    {
+      "algo": "DOIM-PPO",
+      "scenario": "arterial_corridor",
+      "seed": 1045,
+      "status": "REUSED"
+    },
+    {
+      "algo": "DOIM-PPO",
+      "scenario": "arterial_corridor",
+      "seed": 1046,
+      "status": "REUSED"
+    },
+    {
+      "algo": "DOIM-PPO",
+      "scenario": "incident_disruption",
+      "seed": 1042,
+      "status": "REUSED"
+    },
+    {
+      "algo": "DOIM-PPO",
+      "scenario": "incident_disruption",
+      "seed": 1043,
+      "status": "REUSED"
+    },
+    {
+      "algo": "DOIM-PPO",
+      "scenario": "incident_disruption",
+      "seed": 1044,
+      "status": "REUSED"
+    },
+    {
+      "algo": "DOIM-PPO",
+      "scenario": "incident_disruption",
+      "seed": 1045,
+      "status": "REUSED"
+    },
+    {
+      "algo": "DOIM-PPO",
+      "scenario": "incident_disruption",
+      "seed": 1046,
+      "status": "SUCCESS",
+      "elapsed": 241.45654225349426
+    },
+    {
+      "algo": "MLP-PPO",
+      "scenario": "grid3x3",
+      "seed": 1042,
+      "status": "REUSED"
+    },
+    {
+      "algo": "MLP-PPO",
+      "scenario": "grid3x3",
+      "seed": 1043,
+      "status": "SUCCESS",
+      "elapsed": 170.14648985862732
+    },
+    {
+      "algo": "MLP-PPO",
+      "scenario": "grid3x3",
+      "seed": 1044,
+      "status": "SUCCESS",
+      "elapsed": 170.1519820690155
+    },
+    {
+      "algo": "MLP-PPO",
+      "scenario": "grid3x3",
+      "seed": 1045,
+      "status": "SUCCESS",
+      "elapsed": 166.82307243347168
+    },
+    {
+      "algo": "MLP-PPO",
+      "scenario": "grid3x3",
+      "seed": 1046,
+      "status": "SUCCESS",
+      "elapsed": 174.51603889465332
+    },
+    {
+      "algo": "MLP-PPO",
+      "scenario": "arterial_corridor",
+      "seed": 1042,
+      "status": "SUCCESS",
+      "elapsed": 185.11675572395325
+    },
+    {
+      "algo": "MLP-PPO",
+      "scenario": "arterial_corridor",
+      "seed": 1043,
+      "status": "SUCCESS",
+      "elapsed": 222.3959879875183
+    },
+    {
+      "algo": "MLP-PPO",
+      "scenario": "arterial_corridor",
+      "seed": 1044,
+      "status": "SUCCESS",
+      "elapsed": 130.85182309150696
+    },
+    {
+      "algo": "MLP-PPO",
+      "scenario": "arterial_corridor",
+      "seed": 1045,
+      "status": "SUCCESS",
+      "elapsed": 168.62900924682617
+    },
+    {
+      "algo": "MLP-PPO",
+      "scenario": "arterial_corridor",
+      "seed": 1046,
+      "status": "SUCCESS",
+      "elapsed": 238.9839105606079
+    },
+    {
+      "algo": "MLP-PPO",
+      "scenario": "incident_disruption",
+      "seed": 1042,
+      "status": "SUCCESS",
+      "elapsed": 137.17583179473877
+    },
+    {
+      "algo": "MLP-PPO",
+      "scenario": "incident_disruption",
+      "seed": 1043,
+      "status": "SUCCESS",
+      "elapsed": 163.7362608909607
+    },
+    {
+      "algo": "MLP-PPO",
+      "scenario": "incident_disruption",
+      "seed": 1044,
+      "status": "SUCCESS",
+      "elapsed": 168.34516501426697
+    },
+    {
+      "algo": "MLP-PPO",
+      "scenario": "incident_disruption",
+      "seed": 1045,
+      "status": "SUCCESS",
+      "elapsed": 185.6914098262787
+    },
+    {
+      "algo": "MLP-PPO",
+      "scenario": "incident_disruption",
+      "seed": 1046,
+      "status": "SUCCESS",
+      "elapsed": 146.07737970352173
+    }
+  ]
+}

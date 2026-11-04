@@ -1,0 +1,33 @@
+{
+  "run_id": "IA_MOPPO_arterial_corridor_s42_20261104_023152",
+  "algorithm": "IA_MOPPO",
+  "scenario": "arterial_corridor",
+  "seed": 42,
+  "train_seed": 42,
+  "eval_seed": 1046,
+  "episode_id": 0,
+  "evaluation_mode": "deterministic_eval",
+  "eval_horizon": 1800,
+  "total_steps": 1800,
+  "total_reward": -1577.1195247769356,
+  "average_reward": -0.8761775137649642,
+  "average_waiting": 1919.7755555555555,
+  "max_waiting": 3146.0,
+  "average_queue": 24.440555555555555,
+  "max_queue": 59.0,
+  "average_co2": 284132.96120781795,
+  "total_throughput": 1418.0,
+  "average_fairness": 0.4988232702265183,
+  "fairness_metric_name": "jain_disparity",
+  "fairness_metric_unit": "unknown",
+  "fairness_disparity": null,
+  "fairness_variance": null,
+  "total_shield_interventions": 4099,
+  "average_weights": [
+    0.21931768673161667,
+    0.11643582126332654,
+    0.24647440400388507,
+    0.25160317483047645,
+    0.16616891415582763
+  ]
+}

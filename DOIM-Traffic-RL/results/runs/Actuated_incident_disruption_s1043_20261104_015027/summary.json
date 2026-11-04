@@ -1,0 +1,33 @@
+{
+  "run_id": "Actuated_incident_disruption_s1043_20261104_015027",
+  "algorithm": "Actuated",
+  "scenario": "incident_disruption",
+  "seed": 1043,
+  "train_seed": 1043,
+  "eval_seed": 1043,
+  "episode_id": 0,
+  "evaluation_mode": "deterministic_eval",
+  "eval_horizon": 1800,
+  "total_steps": 1800,
+  "total_reward": -1564.5721394717693,
+  "average_reward": -0.869206744150983,
+  "average_waiting": 3495.8794444444443,
+  "max_waiting": 5361.0,
+  "average_queue": 45.90888888888889,
+  "max_queue": 105.0,
+  "average_co2": 258737.0027781847,
+  "total_throughput": 1053.0,
+  "average_fairness": 0.4990177436090178,
+  "fairness_metric_name": "jain_disparity",
+  "fairness_metric_unit": "unknown",
+  "fairness_disparity": null,
+  "fairness_variance": null,
+  "total_shield_interventions": 0,
+  "average_weights": [
+    0.1962178701410691,
+    0.18261908296081755,
+    0.18256823377476797,
+    0.2372913738174571,
+    0.20130343867672815
+  ]
+}

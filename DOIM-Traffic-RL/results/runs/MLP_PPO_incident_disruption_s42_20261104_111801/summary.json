@@ -1,0 +1,33 @@
+{
+  "run_id": "MLP_PPO_incident_disruption_s42_20261104_111801",
+  "algorithm": "MLP_PPO",
+  "scenario": "incident_disruption",
+  "seed": 42,
+  "train_seed": 42,
+  "eval_seed": 1043,
+  "episode_id": 0,
+  "evaluation_mode": "deterministic_eval",
+  "eval_horizon": 1800,
+  "total_steps": 1800,
+  "total_reward": -1587.0295357108116,
+  "average_reward": -0.8816830753948953,
+  "average_waiting": 2808.8005555555555,
+  "max_waiting": 4696.0,
+  "average_queue": 36.08611111111111,
+  "max_queue": 89.0,
+  "average_co2": 257763.30234849718,
+  "total_throughput": 969.0,
+  "average_fairness": 0.5352438029812442,
+  "fairness_metric_name": "jain_disparity",
+  "fairness_metric_unit": "unknown",
+  "fairness_disparity": null,
+  "fairness_variance": null,
+  "total_shield_interventions": 1827,
+  "average_weights": [
+    0.1999999999999934,
+    0.1999999999999934,
+    0.1999999999999934,
+    0.1999999999999934,
+    0.1999999999999934
+  ]
+}

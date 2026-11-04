@@ -1,0 +1,33 @@
+{
+  "run_id": "Fixed_Time_incident_disruption_s1046_20261104_014520",
+  "algorithm": "Fixed_Time",
+  "scenario": "incident_disruption",
+  "seed": 1046,
+  "train_seed": 1046,
+  "eval_seed": 1046,
+  "episode_id": 0,
+  "evaluation_mode": "deterministic_eval",
+  "eval_horizon": 1800,
+  "total_steps": 1800,
+  "total_reward": -1543.9336715340614,
+  "average_reward": -0.8577409286300341,
+  "average_waiting": 1396.7016666666666,
+  "max_waiting": 2713.0,
+  "average_queue": 19.28611111111111,
+  "max_queue": 57.0,
+  "average_co2": 209078.65113213434,
+  "total_throughput": 1084.0,
+  "average_fairness": 0.5197544855210516,
+  "fairness_metric_name": "jain_disparity",
+  "fairness_metric_unit": "unknown",
+  "fairness_disparity": null,
+  "fairness_variance": null,
+  "total_shield_interventions": 0,
+  "average_weights": [
+    0.20000000298023224,
+    0.20000000298023224,
+    0.20000000298023224,
+    0.20000000298023224,
+    0.20000000298023224
+  ]
+}

@@ -1,0 +1,84 @@
+{
+  "grid3x3": {
+    "Actuated": {
+      "mean_hv": 0.0,
+      "count": 5
+    },
+    "DOIM_no_interaction": {
+      "mean_hv": 0.346878,
+      "count": 2
+    },
+    "DOIM_rolling_pearson": {
+      "mean_hv": 0.233323,
+      "count": 1
+    },
+    "Fixed-Time": {
+      "mean_hv": 0.315308,
+      "count": 5
+    },
+    "FW-PPO": {
+      "mean_hv": 0.119486,
+      "count": 1
+    },
+    "DOIM-PPO": {
+      "mean_hv": 0.26631,
+      "count": 6
+    },
+    "Max-Pressure": {
+      "mean_hv": 0.421414,
+      "count": 5
+    },
+    "MLP-PPO": {
+      "mean_hv": 0.150463,
+      "count": 5
+    },
+    "SA-PPO": {
+      "mean_hv": 0.075446,
+      "count": 1
+    }
+  },
+  "arterial_corridor": {
+    "Actuated": {
+      "mean_hv": 0.0,
+      "count": 5
+    },
+    "Fixed-Time": {
+      "mean_hv": 0.136567,
+      "count": 5
+    },
+    "DOIM-PPO": {
+      "mean_hv": 0.130104,
+      "count": 5
+    },
+    "Max-Pressure": {
+      "mean_hv": 0.0,
+      "count": 5
+    },
+    "MLP-PPO": {
+      "mean_hv": 0.045572,
+      "count": 5
+    }
+  },
+  "incident_disruption": {
+    "Actuated": {
+      "mean_hv": 0.019013,
+      "count": 5
+    },
+    "Fixed-Time": {
+      "mean_hv": 0.227458,
+      "count": 5
+    },
+    "DOIM-PPO": {
+      "mean_hv": 0.164502,
+      "count": 5
+    },
+    "Max-Pressure": {
+      "mean_hv": 0.000167,
+      "count": 5
+    },
+    "MLP-PPO": {
+      "mean_hv": 0.049902,
+      "count": 5
+    }
+  }
+}

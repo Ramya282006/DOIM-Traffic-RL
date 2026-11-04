@@ -1,0 +1,46 @@
+{
+  "mission_id": "DOIM-PPO-PHASE37-FRESH-REPRODUCTION",
+  "scenario": "grid3x3",
+  "algorithm": "Fixed-Time",
+  "seed": 1042,
+  "elapsed_seconds": 100.52571964263916,
+  "all_metrics_bitwise_matched": true,
+  "comparisons": {
+    "total_steps": {
+      "historical": 1800,
+      "fresh_reproduced": 1800,
+      "absolute_diff": 0.0,
+      "match": true
+    },
+    "average_waiting": {
+      "historical": 366.9322222222222,
+      "fresh_reproduced": 366.9322222222222,
+      "absolute_diff": 0.0,
+      "match": true
+    },
+    "average_queue": {
+      "historical": 6.0055555555555555,
+      "fresh_reproduced": 6.0055555555555555,
+      "absolute_diff": 0.0,
+      "match": true
+    },
+    "total_throughput": {
+      "historical": 643.0,
+      "fresh_reproduced": 643.0,
+      "absolute_diff": 0.0,
+      "match": true
+    },
+    "average_co2": {
+      "historical": 112207.54906548394,
+      "fresh_reproduced": 112207.54906548394,
+      "absolute_diff": 0.0,
+      "match": true
+    },
+    "total_shield_interventions": {
+      "historical": 0,
+      "fresh_reproduced": 0,
+      "absolute_diff": 0.0,
+      "match": true
+    }
+  }
+}

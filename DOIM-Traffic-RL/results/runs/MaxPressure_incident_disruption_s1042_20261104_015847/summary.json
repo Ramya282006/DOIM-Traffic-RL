@@ -1,0 +1,33 @@
+{
+  "run_id": "MaxPressure_incident_disruption_s1042_20261104_015847",
+  "algorithm": "MaxPressure",
+  "scenario": "incident_disruption",
+  "seed": 1042,
+  "train_seed": 1042,
+  "eval_seed": 1042,
+  "episode_id": 0,
+  "evaluation_mode": "deterministic_eval",
+  "eval_horizon": 1800,
+  "total_steps": 1800,
+  "total_reward": -1504.3316847682,
+  "average_reward": -0.8357398248712222,
+  "average_waiting": 4768.436111111111,
+  "max_waiting": 8981.0,
+  "average_queue": 57.333888888888886,
+  "max_queue": 154.0,
+  "average_co2": 274027.99649787054,
+  "total_throughput": 988.0,
+  "average_fairness": 0.5494838183952703,
+  "fairness_metric_name": "jain_disparity",
+  "fairness_metric_unit": "unknown",
+  "fairness_disparity": null,
+  "fairness_variance": null,
+  "total_shield_interventions": 3027,
+  "average_weights": [
+    0.1345703297522333,
+    0.18445710141625668,
+    0.15688963997695182,
+    0.237324589813749,
+    0.28675833887524077
+  ]
+}

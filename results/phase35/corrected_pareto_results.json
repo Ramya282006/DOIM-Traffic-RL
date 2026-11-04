@@ -1,0 +1,170 @@
+{
+  "mission_id": "DOIM-PPO-PHASE35-PARETO-REVALIDATION",
+  "normalization_bounds": {
+    "waiting": 600.0,
+    "queue": 20.0,
+    "co2": 120000.0,
+    "throughput_cap": 700.0,
+    "fairness": 1.0
+  },
+  "reference_points_tested": {
+    "nominal_1.2": [
+      1.2,
+      1.2,
+      1.2,
+      1.2,
+      1.2
+    ],
+    "conservative_1.5": [
+      1.5,
+      1.5,
+      1.5,
+      1.5,
+      1.5
+    ],
+    "tight_1.0": [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+    ]
+  },
+  "hypervolume_sensitivity": {
+    "nominal_1.2": {
+      "Fixed-Time": 0.122447,
+      "Actuated": 0.0,
+      "Max-Pressure": 0.280669,
+      "FW-PPO": 0.0,
+      "SA-PPO": 0.0,
+      "MLP-PPO": 0.0,
+      "DOIM-PPO": 0.057218,
+      "DOIM_no_interaction": 0.06071,
+      "DOIM_rolling_pearson": 0.060903
+    },
+    "conservative_1.5": {
+      "Fixed-Time": 0.92289,
+      "Actuated": 0.0,
+      "Max-Pressure": 1.623855,
+      "FW-PPO": 0.09624,
+      "SA-PPO": 0.0,
+      "MLP-PPO": 0.215156,
+      "DOIM-PPO": 0.57493,
+      "DOIM_no_interaction": 0.594892,
+      "DOIM_rolling_pearson": 0.59462
+    },
+    "tight_1.0": {
+      "Fixed-Time": 0.00941,
+      "Actuated": 0.0,
+      "Max-Pressure": 0.039303,
+      "FW-PPO": 0.0,
+      "SA-PPO": 0.0,
+      "MLP-PPO": 0.0,
+      "DOIM-PPO": 0.002239,
+      "DOIM_no_interaction": 0.00257,
+      "DOIM_rolling_pearson": 0.002667
+    }
+  },
+  "pairwise_dominance": {
+    "Fixed-Time": {
+      "Fixed-Time": "Self",
+      "Actuated": "Dominates",
+      "Max-Pressure": "Dominated_By",
+      "FW-PPO": "Dominates",
+      "SA-PPO": "Dominates",
+      "MLP-PPO": "Dominates",
+      "DOIM-PPO": "Dominates",
+      "DOIM_no_interaction": "Non_Dominated",
+      "DOIM_rolling_pearson": "Dominates"
+    },
+    "Actuated": {
+      "Fixed-Time": "Dominated_By",
+      "Actuated": "Self",
+      "Max-Pressure": "Dominated_By",
+      "FW-PPO": "Non_Dominated",
+      "SA-PPO": "Non_Dominated",
+      "MLP-PPO": "Non_Dominated",
+      "DOIM-PPO": "Non_Dominated",
+      "DOIM_no_interaction": "Non_Dominated",
+      "DOIM_rolling_pearson": "Non_Dominated"
+    },
+    "Max-Pressure": {
+      "Fixed-Time": "Dominates",
+      "Actuated": "Dominates",
+      "Max-Pressure": "Self",
+      "FW-PPO": "Dominates",
+      "SA-PPO": "Dominates",
+      "MLP-PPO": "Dominates",
+      "DOIM-PPO": "Dominates",
+      "DOIM_no_interaction": "Dominates",
+      "DOIM_rolling_pearson": "Dominates"
+    },
+    "FW-PPO": {
+      "Fixed-Time": "Dominated_By",
+      "Actuated": "Non_Dominated",
+      "Max-Pressure": "Dominated_By",
+      "FW-PPO": "Self",
+      "SA-PPO": "Non_Dominated",
+      "MLP-PPO": "Non_Dominated",
+      "DOIM-PPO": "Non_Dominated",
+      "DOIM_no_interaction": "Non_Dominated",
+      "DOIM_rolling_pearson": "Non_Dominated"
+    },
+    "SA-PPO": {
+      "Fixed-Time": "Dominated_By",
+      "Actuated": "Non_Dominated",
+      "Max-Pressure": "Dominated_By",
+      "FW-PPO": "Non_Dominated",
+      "SA-PPO": "Self",
+      "MLP-PPO": "Non_Dominated",
+      "DOIM-PPO": "Non_Dominated",
+      "DOIM_no_interaction": "Non_Dominated",
+      "DOIM_rolling_pearson": "Non_Dominated"
+    },
+    "MLP-PPO": {
+      "Fixed-Time": "Dominated_By",
+      "Actuated": "Non_Dominated",
+      "Max-Pressure": "Dominated_By",
+      "FW-PPO": "Non_Dominated",
+      "SA-PPO": "Non_Dominated",
+      "MLP-PPO": "Self",
+      "DOIM-PPO": "Dominated_By",
+      "DOIM_no_interaction": "Dominated_By",
+      "DOIM_rolling_pearson": "Non_Dominated"
+    },
+    "DOIM-PPO": {
+      "Fixed-Time": "Dominated_By",
+      "Actuated": "Non_Dominated",
+      "Max-Pressure": "Dominated_By",
+      "FW-PPO": "Non_Dominated",
+      "SA-PPO": "Non_Dominated",
+      "MLP-PPO": "Dominates",
+      "DOIM-PPO": "Self",
+      "DOIM_no_interaction": "Non_Dominated",
+      "DOIM_rolling_pearson": "Non_Dominated"
+    },
+    "DOIM_no_interaction": {
+      "Fixed-Time": "Non_Dominated",
+      "Actuated": "Non_Dominated",
+      "Max-Pressure": "Dominated_By",
+      "FW-PPO": "Non_Dominated",
+      "SA-PPO": "Non_Dominated",
+      "MLP-PPO": "Dominates",
+      "DOIM-PPO": "Non_Dominated",
+      "DOIM_no_interaction": "Self",
+      "DOIM_rolling_pearson": "Non_Dominated"
+    },
+    "DOIM_rolling_pearson": {
+      "Fixed-Time": "Dominated_By",
+      "Actuated": "Non_Dominated",
+      "Max-Pressure": "Dominated_By",
+      "FW-PPO": "Non_Dominated",
+      "SA-PPO": "Non_Dominated",
+      "MLP-PPO": "Non_Dominated",
+      "DOIM-PPO": "Non_Dominated",
+      "DOIM_no_interaction": "Non_Dominated",
+      "DOIM_rolling_pearson": "Self"
+    }
+  },
+  "scoil_vs_ablation_finding": "No-SCOIL (0.06071) and Rolling-Pearson (0.06090) achieve slightly higher single-point hypervolume than Full DOIM-PPO (0.05722) because they have 1.7% lower raw waiting time on seed 1042. However, this comes at the direct cost of +5.3% to +16.0% more safety shield overrides (4,474 and 4,927 vs 4,249 for DOIM). DOIM-PPO achieves superior phase discipline and stability."
+}

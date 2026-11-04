@@ -1,0 +1,33 @@
+{
+  "run_id": "MLP_PPO_arterial_corridor_s42_20261104_110645",
+  "algorithm": "MLP_PPO",
+  "scenario": "arterial_corridor",
+  "seed": 42,
+  "train_seed": 42,
+  "eval_seed": 1044,
+  "episode_id": 0,
+  "evaluation_mode": "deterministic_eval",
+  "eval_horizon": 1800,
+  "total_steps": 1800,
+  "total_reward": -1567.006410986185,
+  "average_reward": -0.8705591172145473,
+  "average_waiting": 2644.677222222222,
+  "max_waiting": 4802.0,
+  "average_queue": 34.63944444444444,
+  "max_queue": 98.0,
+  "average_co2": 301322.27507595485,
+  "total_throughput": 1396.0,
+  "average_fairness": 0.5137849359379875,
+  "fairness_metric_name": "jain_disparity",
+  "fairness_metric_unit": "unknown",
+  "fairness_disparity": null,
+  "fairness_variance": null,
+  "total_shield_interventions": 1770,
+  "average_weights": [
+    0.1999999999999934,
+    0.1999999999999934,
+    0.1999999999999934,
+    0.1999999999999934,
+    0.1999999999999934
+  ]
+}
